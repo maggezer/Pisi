@@ -34,6 +34,7 @@ const PISI_REMINDER_MISSED_GRACE_MS = 60 * 1000;
  *   clearTimeout?: Function,
  *   getProjectFolder: () => string | null,
  *   readTasks: (projectFolder: string) => any[],
+ *   completeTask?: (projectFolder: string, taskId: string) => any,
  *   readState: (projectFolder: string) => { ok: boolean, data?: any, missing?: boolean, error?: string },
  *   writeState: (projectFolder: string, state: any) => { ok: boolean, error?: string },
  *   getSettings?: () => { defaultTime?: string },
@@ -107,7 +108,7 @@ function createPisiReminderService(deps) {
     function activate(target) {
         deps.showWindow?.();
         if (target.kind === 'summary') send({ type: 'show-pending' });
-        else send({ type: 'open', key: target.key, taskId: target.taskId, nodePath: target.nodePath, blockId: target.blockId });
+        else send({ type: 'open', key: target.key, taskId: target.taskId, noteId: target.noteId, diaryDate: target.diaryDate });
     }
 
     function showNotification(target) {
@@ -243,12 +244,15 @@ function createPisiReminderService(deps) {
         return updateState((state) => dismissPisiReminders(state, (Array.isArray(keys) ? keys : [keys]).map(String)));
     }
 
-    /** Completion runs in the renderer so the task's note markup is updated too. */
-    function complete(key) {
+    /** Completes the task through the task service (task.complete.v1); no note is written (GV5). */
+    async function complete(key) {
         if (!key) return { ok: false, code: 'REMINDER_KEY_REQUIRED' };
         const taskId = String(key).split('@')[0];
-        deps.showWindow?.();
-        send({ type: 'complete', key: String(key), taskId });
+        const projectFolder = deps.getProjectFolder();
+        if (projectFolder && typeof deps.completeTask === 'function') {
+            const completed = await deps.completeTask(projectFolder, taskId);
+            if (completed && completed.ok === false) return completed;
+        }
         return dismiss([key]);
     }
 

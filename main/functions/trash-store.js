@@ -215,6 +215,7 @@ function walkPisiTrashFiles(rootPath, callback) {
 function collectPisiTrashIdentity(projectFolder, roots) {
     const nodeIds = new Set();
     const mapIds = new Set();
+    const diaryDates = new Set();
     const nodePaths = [];
     const mapPaths = [];
     for (const root of roots) {
@@ -225,6 +226,8 @@ function collectPisiTrashIdentity(projectFolder, roots) {
             if (!info.ok) return;
             if (ext === '.node') {
                 nodeIds.add(info.metadata.id);
+                const diaryDate = modules['main.taskService']?.getPisiNoteDiaryDate?.(projectFolder, filePath, info.data);
+                if (diaryDate) diaryDates.add(diaryDate);
                 nodePaths.push(toPisiTrashRelativePath(projectFolder, filePath));
             } else {
                 mapIds.add(info.metadata.id);
@@ -235,6 +238,7 @@ function collectPisiTrashIdentity(projectFolder, roots) {
     return {
         nodeIds,
         mapIds,
+        diaryDates,
         nodePaths: Array.from(new Set(nodePaths)),
         mapPaths: Array.from(new Set(mapPaths))
     };
@@ -300,12 +304,18 @@ function collectPisiTrashMapReferences(projectFolder, coveredRoots, nodeIds, rel
 }
 
 function archivePisiTrashReferences(projectFolder, coveredRoots, identity) {
+    // Tasks go with their place: the trashed notes (noteId) and diaries (diaryDate), §3.3.
     const taskState = taskStore.readPisiTaskStore(projectFolder);
-    const taskSplit = splitPisiTrashTaskStore(deepClonePisiTrashValue(taskState.tasks), coveredRoots);
+    const taskSplit = splitPisiTrashTaskStore(deepClonePisiTrashValue(taskState.tasks), { nodeIds: identity.nodeIds, diaryDates: identity.diaryDates });
     if (taskSplit.archived.length || taskSplit.dependencyRefs.length) {
-        taskStore.writePisiTaskStore(projectFolder, {
-            ...taskState,
-            tasks: taskSplit.remaining
+        taskStore.writePisiTaskStore(projectFolder, taskState, taskSplit.remaining);
+        // The other days these tasks were on lose them; the trashed diaries themselves are not written.
+        const trashedPaths = identity.nodePaths.map((relative) => fromPisiTrashRelativePath(projectFolder, relative));
+        modules['main.taskService'].rewritePisiDiarySectionsForTaskChange(projectFolder, taskState.tasks, taskSplit.remaining, { openPaths: trashedPaths });
+        const touched = new Set(taskSplit.dependencyRefs.map((ref) => ref.taskId));
+        modules['main.taskService'].emitPisiTasksChanged(projectFolder, {
+            changed: taskSplit.remaining.filter((task) => touched.has(task?.id)),
+            removedIds: taskSplit.archived.map((task) => task.id)
         });
     }
 
@@ -512,7 +522,7 @@ function restorePisiTrashMapReferences(projectFolder, references, restoredRelati
     return warnings;
 }
 
-function restorePisiTrashItem(projectFolder, trashId) {
+function restorePisiTrashItem(projectFolder, trashId, options = {}) {
     try {
         const projectRoot = path.resolve(projectFolder);
         const result = readPisiTrashManifest(projectRoot, trashId);
@@ -545,8 +555,17 @@ function restorePisiTrashItem(projectFolder, trashId) {
         const taskState = taskStore.readPisiTaskStore(projectRoot);
         let mergedTasks = [...taskState.tasks, ...restoredTasks];
         mergedTasks = mergePisiTrashTaskDependencies(mergedTasks, manifest.references?.taskDependencyRefs || [], restoredTaskIds);
+        let taskContext = null;
         if (restoredTasks.length || (manifest.references?.taskDependencyRefs || []).length) {
-            taskStore.writePisiTaskStore(projectRoot, { ...taskState, tasks: mergedTasks });
+            taskStore.writePisiTaskStore(projectRoot, taskState, mergedTasks);
+            const taskService = modules['main.taskService'];
+            taskContext = taskService.makePisiTaskCommandContext(options);
+            // A task deleted on its own goes back into its (closed) note where its block was.
+            if (manifest.kind === 'task') taskService.restorePisiTaskBlocks(projectRoot, manifest.references?.taskBlocks || [], taskContext);
+            const rewritten = taskService.rewritePisiDiarySectionsForTaskChange(projectRoot, taskState.tasks, mergedTasks, options);
+            taskContext.deferred.diaryDays.push(...rewritten.context.deferred.diaryDays);
+            const touched = new Set([...restoredTaskIds, ...(manifest.references?.taskDependencyRefs || []).map((ref) => ref.taskId)]);
+            taskService.emitPisiTasksChanged(projectRoot, { changed: mergedTasks.filter((task) => touched.has(task?.id)) });
         }
 
         const restoredRelationships = manifest.references?.relationships || [];
@@ -565,14 +584,103 @@ function restorePisiTrashItem(projectFolder, trashId) {
         return {
             ok: true,
             trashId: manifest.id,
-            restoredPath: fromPisiTrashRelativePath(projectRoot, manifest.originalTarget),
+            restoredPath: manifest.originalTarget ? fromPisiTrashRelativePath(projectRoot, manifest.originalTarget) : null,
             restoredTasks: restoredTasks.length,
             restoredRelationships: restoredRelationships.length,
-            warnings
+            deferred: taskContext?.deferred || { notes: [], diaryDays: [] },
+            warnings: [...warnings, ...(taskContext?.warnings || [])]
         };
     } catch (error) {
         return { ok: false, code: error.code || 'TRASH_RESTORE_FAILED', error: error.message };
     }
+}
+
+/**
+ * A Trash item for tasks deleted on their own (from the panel, or by removing
+ * their blocks from a note, §3.3). It holds no files: the records, the
+ * dependencies other tasks had on them and where their blocks were.
+ */
+function createPisiTaskTrashItem(projectFolder, { tasks = [], taskDependencyRefs = [], taskBlocks = [], label = '' } = {}) {
+    try {
+        const projectRoot = path.resolve(projectFolder);
+        const trashId = `trash_${crypto.randomUUID()}`;
+        ensurePisiTrashDirectories(projectRoot);
+        fs.mkdirSync(getPisiTrashItemDirectory(projectRoot, trashId), { recursive: true });
+        const manifest = {
+            version: PISI_TRASH_VERSION,
+            id: trashId,
+            kind: 'task',
+            label: String(label || '').slice(0, 200) || trashId,
+            deletedAt: new Date().toISOString(),
+            originalTarget: null,
+            parentMapPath: null,
+            entries: [],
+            nodeIds: [],
+            mapIds: [],
+            nodePaths: [],
+            mapPaths: [],
+            references: {
+                tasks: deepClonePisiTrashValue(tasks),
+                taskDependencyRefs: deepClonePisiTrashValue(taskDependencyRefs),
+                taskBlocks: deepClonePisiTrashValue(taskBlocks),
+                relationships: [],
+                mapReferences: []
+            }
+        };
+        writePisiTrashManifest(projectRoot, manifest);
+        return { ok: true, trashId, summary: summarizePisiTrashManifest(manifest) };
+    } catch (error) {
+        return { ok: false, code: error.code || 'TRASH_MOVE_FAILED', error: error.message };
+    }
+}
+
+/**
+ * Takes tasks back out of task Trash items (a note save brought their blocks
+ * back, §3.3): returns their records and the dependencies to restore. An item
+ * left without tasks is removed. Items of trashed notes are not touched: those
+ * tasks come back with their note.
+ */
+function takePisiTasksFromTrash(projectFolder, taskIds) {
+    const wanted = new Set(Array.isArray(taskIds) ? taskIds : []);
+    const tasks = [];
+    const dependencyRefs = [];
+    if (!wanted.size) return { tasks, dependencyRefs };
+    const projectRoot = path.resolve(projectFolder);
+    const itemsRoot = getPisiTrashItemsRoot(projectRoot);
+    if (!fs.existsSync(itemsRoot)) return { tasks, dependencyRefs };
+    for (const entry of fs.readdirSync(itemsRoot, { withFileTypes: true })) {
+        if (!wanted.size) break;
+        if (!entry.isDirectory() || !normalizePisiTrashId(entry.name)) continue;
+        const read = readPisiTrashManifest(projectRoot, entry.name);
+        if (!read.ok || read.manifest.kind !== 'task') continue;
+        const manifest = read.manifest;
+        const items = Array.isArray(manifest.references?.tasks) ? manifest.references.tasks : [];
+        const taken = items.filter((task) => wanted.has(task?.id));
+        if (!taken.length) continue;
+        const takenIds = new Set(taken.map((task) => task.id));
+        tasks.push(...taken);
+        for (const id of takenIds) wanted.delete(id);
+        const refs = Array.isArray(manifest.references.taskDependencyRefs) ? manifest.references.taskDependencyRefs : [];
+        for (const ref of refs) {
+            const deps = (ref.dependencies || []).filter((id) => takenIds.has(id));
+            if (deps.length) dependencyRefs.push({ taskId: ref.taskId, dependencies: deps });
+        }
+        const left = items.filter((task) => !takenIds.has(task?.id));
+        const itemDirectory = getPisiTrashItemDirectory(projectRoot, manifest.id);
+        if (!left.length) {
+            atomicMutation.capturePisiAtomicPathBeforeChange(itemDirectory);
+            const removed = removePisiTrashPathWithRetry(itemDirectory);
+            if (!removed.ok) throw Object.assign(new Error(removed.error), { code: removed.code });
+            continue;
+        }
+        manifest.references.tasks = left;
+        manifest.references.taskDependencyRefs = refs
+            .map((ref) => ({ ...ref, dependencies: (ref.dependencies || []).filter((id) => !takenIds.has(id)) }))
+            .filter((ref) => ref.dependencies.length);
+        manifest.references.taskBlocks = (manifest.references.taskBlocks || []).filter((block) => !takenIds.has(block?.taskId));
+        writePisiTrashManifest(projectRoot, manifest);
+    }
+    return { tasks, dependencyRefs };
 }
 
 function permanentlyDeletePisiTrashItem(projectFolder, trashId) {
@@ -642,6 +750,8 @@ const moduleApi = {
     readPisiTrashManifest,
     movePisiPathToTrash,
     restorePisiTrashItem,
+    createPisiTaskTrashItem,
+    takePisiTasksFromTrash,
     permanentlyDeletePisiTrashItem,
     emptyPisiTrash,
     preflightPisiTrashRestore

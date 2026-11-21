@@ -24,11 +24,9 @@ const STORE_CHAIN = [
     'relationship-store',
     'map-semantic-core',
     'map-operational-store',
-    'task-capture',
     'task-store',
     'trash-store',
-    'source-of-truth',
-    // Quick Add registers the Inbox systemRole definition here.
+    'task-service',
     'property-schema-store',
     // normalizePathForCompare and the project-root helpers live here.
     'electron-ipc'
@@ -46,8 +44,6 @@ function loadPisiMainStores() {
     defineRuntimeGlobal('recentInternalFileChanges', new Map());
     defineRuntimeGlobal('PISI_INTERNAL_CHANGE_TTL_MS', 6000);
     defineRuntimeGlobal('PISI_CONNECTION_KEYS', ['up-hub', 'down-hub', 'co-level', 'upstream', 'downstream']);
-    defineRuntimeGlobal('PISI_DIARY_MANAGED_START', '<!--PISI_DIARY_MANAGED_START-->');
-    defineRuntimeGlobal('PISI_DIARY_MANAGED_END', '<!--PISI_DIARY_MANAGED_END-->');
     defineRuntimeGlobal('projectWatchers', new Map());
     defineRuntimeGlobal('pendingProjectChangedPaths', new Set());
     // The path guard (assertProjectPath) reads the active project; tests assign it.

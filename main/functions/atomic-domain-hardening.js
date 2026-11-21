@@ -3,11 +3,6 @@ import { modules, registerMainModule } from '../module-registry.js';
 const domain = modules['main.domainCommandQuery'];
 
 const PISI_PERSISTENT_DOMAIN_MUTATIONS = [
-    'task.capture.v1',
-    'task.upsert.v1',
-    'task.update.v1',
-    'task.delete.v1',
-    'task.sync-projection.v1',
     'map.relationship.upsert.v1',
     'map.relationship.delete.v1',
     'map.relationship.reparent.v1',

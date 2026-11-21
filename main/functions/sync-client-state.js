@@ -94,7 +94,6 @@ export function createPisiSyncStateStore({ root, projectPath, secrets, platform 
     const dir = path.join(root, projectKey);
     const statePath = path.join(dir, 'state.json');
     const secretsPath = path.join(dir, 'secrets.json');
-    const guardsPath = path.join(dir, 'task-guards.json');
     const basePath = (fid) => path.join(dir, 'base', Buffer.from(String(fid), 'utf8').toString('hex'));
 
     return {
@@ -147,20 +146,6 @@ export function createPisiSyncStateStore({ root, projectPath, secrets, platform 
         },
         async removeBase(fid) {
             await fs.rm(basePath(fid), { force: true });
-        },
-        /** Task status guards of SV13 (sync-client-desktop.js); an empty object when there are none. */
-        async readTaskGuards() {
-            const raw = await readOptional(guardsPath);
-            if (raw === null) return {};
-            try {
-                const value = JSON.parse(raw.toString('utf8'));
-                return isPlainObject(value) ? value : {};
-            } catch {
-                return {};
-            }
-        },
-        async writeTaskGuards(guards) {
-            await writeFileAtomic(guardsPath, JSON.stringify(guards));
         },
         /** Removes the whole device state of this project (disconnect, revoked). Project files stay. */
         async destroy() {

@@ -131,32 +131,6 @@ Object.defineProperties(moduleApi8, {
 });
 registerMainModule('main.runtime', moduleApi8);
 
-const PISI_DIARY_MANAGED_START = '<!--PISI_DIARY_MANAGED_START-->';
-
-const moduleApi9 = {};
-Object.defineProperties(moduleApi9, {
-    PISI_DIARY_MANAGED_START: {
-        enumerable: true,
-        get() {
-            return PISI_DIARY_MANAGED_START;
-        }
-    }
-});
-registerMainModule('main.runtime', moduleApi9);
-
-const PISI_DIARY_MANAGED_END = '<!--PISI_DIARY_MANAGED_END-->';
-
-const moduleApi10 = {};
-Object.defineProperties(moduleApi10, {
-    PISI_DIARY_MANAGED_END: {
-        enumerable: true,
-        get() {
-            return PISI_DIARY_MANAGED_END;
-        }
-    }
-});
-registerMainModule('main.runtime', moduleApi10);
-
 let activeProjectFolder = null;
 
 const moduleApi11 = {};
@@ -373,34 +347,6 @@ ipcMain.handle('project:get-node-property-context', (_event, nodePath, preferred
             ...mapResult,
             mapPath
         };
-    });
-});
-
-ipcMain.handle('project:save-node-content', (_event, nodePath, content) => {
-    return projectOperation(() => {
-        const safeNodePath = assertProjectPath(nodePath, {
-            type: 'file',
-            extensions: ['.node']
-        });
-        return saveNodeContentWithHistory(safeNodePath, content, {
-            reason: 'editor-save'
-        });
-    });
-});
-
-ipcMain.handle('project:quick-add-task', (_event, projectFolder, payload) => {
-    return projectOperation(() => {
-        const safeProjectFolder = assertProjectPath(projectFolder, {
-            type: 'directory'
-        });
-        const safePayload = { ...(payload || {}) };
-        if (safePayload.nodePath) {
-            safePayload.nodePath = assertProjectPath(safePayload.nodePath, {
-                type: 'file',
-                extensions: ['.node']
-            });
-        }
-        return quickAddPisiTask(safeProjectFolder, safePayload);
     });
 });
 
@@ -659,15 +605,6 @@ ipcMain.handle('project:list-diary-dates', (_event, projectFolder) => {
             type: 'directory'
         });
         return listPisiDiaryDates(safeProjectFolder);
-    });
-});
-
-ipcMain.handle('project:sync-diary-missions', (_event, projectFolder, payload) => {
-    return projectOperation(() => {
-        const safeProjectFolder = assertProjectPath(projectFolder, {
-            type: 'directory'
-        });
-        return syncDiaryMissions(safeProjectFolder, payload);
     });
 });
 

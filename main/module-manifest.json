@@ -92,15 +92,8 @@
             "makePisiDiaryNodeTitle",
             "getPisiDiaryNodePath",
             "getOrCreateDiaryNode",
-            "stripPisiDiaryManagedSection",
-            "escapeHtmlForPisiDiary",
-            "sanitizePisiDiaryBlockHtml",
-            "normalizePisiDiarySyncEntry",
-            "buildPisiDiaryManagedSection",
             "listPisiDiaryNodePaths",
             "listPisiDiaryDates",
-            "syncDiaryMissions",
-            "organizeDiaryManualTasks",
             "createNodeUnderMap",
             "renamePisiFile"
         ]
@@ -146,16 +139,28 @@
         ]
     },
     {
-        "module": "main.taskCapture",
-        "path": "main/functions/task-capture.js",
+        "module": "main.taskService",
+        "path": "main/functions/task-service.js",
         "bindings": [
-            "escapePisiTaskHtml",
-            "normalizePisiTaskIso",
-            "pisiTodoTagFromCapture",
-            "findPisiInboxNode",
-            "getOrCreatePisiInboxNode",
-            "makePisiTaskCaptureBlock",
-            "quickAddPisiTask"
+            "setPisiTaskServiceClock",
+            "setPisiTaskServiceFaultHook",
+            "onPisiTasksChanged",
+            "emitPisiTasksChanged",
+            "getPisiNoteDiaryDate",
+            "listPisiTasks",
+            "createPisiTask",
+            "updatePisiTask",
+            "batchUpdatePisiTasks",
+            "completePisiTaskCommand",
+            "reopenPisiTaskCommand",
+            "movePisiTask",
+            "deletePisiTask",
+            "takePisiTasksOut",
+            "rewritePisiDiarySectionsForTaskChange",
+            "writePisiDiarySections",
+            "restorePisiTaskBlocks",
+            "canonicalizePisiTaskBlocks",
+            "makePisiTaskCommandContext"
         ]
     },
     {
@@ -274,6 +279,11 @@
         ]
     },
     {
+        "module": "main.taskDomain",
+        "path": "main/functions/task-domain.js",
+        "bindings": ["PISI_TASK_COMMANDS", "installPisiTaskDomainContracts", "savePisiNoteWithTasks", "bindPisiTaskIpc"]
+    },
+    {
         "module": "main.editorAssetDomain",
         "path": "main/functions/editor-asset-domain.js",
         "bindings": [
@@ -303,8 +313,8 @@
             "handlePisiStoreHistoryWrite",
             "flushPisiStoreHistory",
             "restorePisiStoreHistoryForPayload",
-            "restorePisiTaskProjections",
-            "installPisiStoreHistory"
+            "installPisiStoreHistory",
+            "restorePisiTaskDiarySections"
         ]
     },
     {
@@ -372,6 +382,6 @@
     {
         "module": "main.syncClient",
         "path": "main/functions/sync-client-desktop.js",
-        "bindings": ["filterPisiSyncProjectedTaskStatus", "getPisiSyncClientStatus", "requestPisiSyncClientTurn", "isPisiSyncClientBound"]
+        "bindings": ["getPisiSyncClientStatus", "requestPisiSyncClientTurn", "isPisiSyncClientBound"]
     }
 ]

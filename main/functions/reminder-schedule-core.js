@@ -46,7 +46,7 @@ function getPisiTaskReminderTime(task, options = {}) {
     if (explicit && /T/.test(String(task.reminderAt))) return explicit.getTime();
     const offset = PISI_REMINDER_RELATIVE_DAYS[String(task.reminderMode || '').toLowerCase()];
     if (offset === undefined) return null;
-    const due = parsePisiLocalDateTime(String(task.dueDate || task.deadline || '').slice(0, 10));
+    const due = parsePisiLocalDateTime(String(task.dueDate || '').slice(0, 10));
     if (!due) return null;
     const [hours, minutes] = normalizePisiReminderTimeOfDay(options.defaultTime).split(':').map(Number);
     // Calendar arithmetic in local time keeps the wall-clock hour across DST changes.
@@ -66,8 +66,8 @@ function normalizePisiReminderEntry(value) {
         taskId: String(value.taskId),
         time,
         title: String(value.title || ''),
-        nodePath: value.nodePath ? String(value.nodePath) : null,
-        blockId: value.blockId ? String(value.blockId) : null,
+        noteId: value.noteId ? String(value.noteId) : null,
+        diaryDate: value.diaryDate ? String(value.diaryDate) : null,
         missed: value.missed === true
     };
 }
@@ -95,8 +95,9 @@ function makePisiReminderEntry(task, time, key) {
         taskId: String(task.id),
         time,
         title: String(task.title || ''),
-        nodePath: task.source?.nodePath || null,
-        blockId: task.source?.blockId || null,
+        // Where the task lives (docs/task-plan.md §3.1): the renderer opens that note or diary.
+        noteId: typeof task.noteId === 'string' ? task.noteId : null,
+        diaryDate: typeof task.diaryDate === 'string' ? task.diaryDate : null,
         missed: false
     };
 }

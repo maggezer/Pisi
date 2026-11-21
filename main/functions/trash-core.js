@@ -43,16 +43,22 @@ function getPisiTrashItemKind(targetPath, stat = null) {
     return 'file';
 }
 
-function isPisiTaskAffectedByTrash(task, roots = []) {
-    const source = task?.source || {};
-    return [source.nodePath, source.mapPath].filter(Boolean).some((storedPath) => isPisiTrashPathCovered(storedPath, roots));
+/**
+ * Does a task go to the Trash with these notes? A task goes with its place
+ * (docs/task-plan.md §3.3): the note whose id is its `noteId` or the diary of
+ * its `diaryDate`. Old version 1 fields (`source.nodePath`) are not read (GV12).
+ */
+function isPisiTaskAffectedByTrash(task, place = {}) {
+    const nodeIds = place.nodeIds instanceof Set ? place.nodeIds : new Set(place.nodeIds || []);
+    const diaryDates = place.diaryDates instanceof Set ? place.diaryDates : new Set(place.diaryDates || []);
+    return (typeof task?.noteId === 'string' && nodeIds.has(task.noteId)) || (typeof task?.diaryDate === 'string' && diaryDates.has(task.diaryDate));
 }
 
-function splitPisiTrashTaskStore(tasks = [], roots = []) {
+function splitPisiTrashTaskStore(tasks = [], place = {}) {
     const archived = [];
     const remaining = [];
     for (const task of Array.isArray(tasks) ? tasks : []) {
-        if (isPisiTaskAffectedByTrash(task, roots)) archived.push(task);
+        if (isPisiTaskAffectedByTrash(task, place)) archived.push(task);
         else remaining.push(task);
     }
     const archivedIds = new Set(archived.map((task) => task.id).filter(Boolean));
