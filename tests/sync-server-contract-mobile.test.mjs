@@ -87,7 +87,7 @@ describe('mobil senkron istemcisi', { skip: SYNC_SERVER_SKIP }, () => {
         const phone = await pairedPhone(server, desktop);
         assert.match(JSON.parse(await phone.driver.readText(NOTE)).content, /Masaüstünde yazılan gizli metin/);
 
-        await phone.project.tasks.upsert({ id: 'task_phone_1', title: 'Telefondan görev', status: 'todo' });
+        await phone.project.tasks.create({ id: 'task_phone_1', title: 'Telefondan görev', status: 'todo' }, { diaryDate: '2026-11-17' });
         await phone.project.diary.setText('2026-11-17', 'Telefondan günlük');
         assert.equal((await phone.service.sync('test')).ok, true);
         assert.equal((await desktop.sync()).ok, true);
@@ -117,7 +117,7 @@ describe('mobil senkron istemcisi', { skip: SYNC_SERVER_SKIP }, () => {
             return fetchSpy(url, init);
         };
         try {
-            await phone.project.tasks.upsert({ id: 'task_phone_2', title: 'İkinci', status: 'todo' });
+            await phone.project.tasks.create({ id: 'task_phone_2', title: 'İkinci', status: 'todo' }, { diaryDate: '2026-11-17' });
             assert.equal((await phone.service.sync('test')).ok, true);
         } finally {
             globalThis.fetch = fetchSpy;
