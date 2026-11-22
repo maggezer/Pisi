@@ -321,7 +321,7 @@ try {
         await phone.syncNow('3: görev telefona');
         phone.offline = true;
         await phone.openFromMenu('tasks');
-        await phone.page.locator('[data-view="inbox"]').tap();
+        await phone.page.locator('[data-view="undated"]').tap();
         const box = phone.page.getByRole('checkbox', { name: 'Tamamla: Matris görevi' });
         await phone.tap(box);
         await phone.until(
