@@ -74,6 +74,7 @@
             "runPisiAtomicMutation",
             "PISI_ATOMIC_MUTATION_VERSION",
             "getActivePisiAtomicMutation",
+            "onPisiAtomicMutationCommit",
             "capturePisiAtomicPathBeforeChange",
             "capturePisiAtomicRenameBeforeChange",
             "recoverPisiAtomicMutations",
@@ -144,6 +145,10 @@
         "bindings": [
             "setPisiTaskServiceClock",
             "setPisiTaskServiceFaultHook",
+            "getPisiTaskServiceNow",
+            "readPisiWritableTaskState",
+            "applyPisiTaskNoteChange",
+            "writePisiDiarySectionsForChanges",
             "onPisiTasksChanged",
             "emitPisiTasksChanged",
             "getPisiNoteDiaryDate",
@@ -168,6 +173,11 @@
             "countPisiTaskTitleLinks",
             "renamePisiTaskTitleLinks"
         ]
+    },
+    {
+        "module": "main.taskRepair",
+        "path": "main/functions/task-repair.js",
+        "bindings": ["PISI_TASK_REPAIR_ACTIONS", "isPisiTaskRepairAction", "applyPisiTaskRepair"]
     },
     {
         "module": "main.structuredNodes",

@@ -5,7 +5,9 @@ import { pathToFileURL } from 'node:url';
 import zlib from 'node:zlib';
 import { PISI_DIARY_MARKER_FILE, PISI_DIARY_MARKER_TEXT, getPisiDiaryNodeKey, makePisiDiaryDocumentData } from '../shared/diary-rules.mjs';
 import { formatPisiDocumentId, formatPisiTaskId } from '../shared/ids.mjs';
-import { formatPisiTodoTag, normalizePisiTaskRecord } from '../shared/task-model.mjs';
+import { formatPisiTodoTag, normalizePisiTask, normalizePisiTaskRecord } from '../shared/task-model.mjs';
+import { makePisiTaskBlockHtml } from '../shared/task-blocks.mjs';
+import { groupPisiTasksByDay, replacePisiDiaryTaskSection } from '../shared/task-diary.mjs';
 
 // Writes a synthetic Pisi project for main-process performance measurements:
 // `notes` notes spread over maps of `perMap` notes. Every map owns a sidecar
@@ -25,13 +27,21 @@ import { formatPisiTodoTag, normalizePisiTaskRecord } from '../shared/task-model
 // Task and diary records are made by the shared rules the desktop and the
 // mobile app write them with (shared/task-model.mjs, shared/diary-rules.mjs);
 // the mobile large-project test (mobile/e2e/large-project.spec.mjs) uses them.
+// With `taskModel: 2` the n tasks are version 2 records (docs/task-plan.md
+// §3.1; the default stays version 1 for the mobile app until G8): every
+// fourth lives in its due day's diary, the others in a note, whose content
+// carries their task blocks (§3.2.1); every tenth repeats daily and was done on
+// the days before `today`. Every day a task is on gets its diary with the task
+// section the rule gives (§3.2.2, GV15), so the project has no Integrity
+// finding. `heavyNoteTasks: m` puts m more tasks into the first note (the
+// measurement of a note with many task blocks, G7).
 // With `images: n` (and `imageBytes`, about 700 KB by default) n notes, spread
 // over the project, carry an image block whose PNG lies in the note's sidecar
 // under its content's SHA-256 (pisi-definition.md); the pixels are noise, so the
 // PNG does not compress and the project has the size the sync measurement of
 // docs/sync-plan.md S6 asks for (tests/sync-server-contract-transfer.test.mjs).
 //
-// CLI: node scripts/generate-project-fixture.mjs <projectFolder> [notes=1000] [perMap=250] [relationships=0] [tasks=0] [diaryDays=0] [images=0]
+// CLI: node scripts/generate-project-fixture.mjs <projectFolder> [notes=1000] [perMap=250] [relationships=0] [tasks=0] [diaryDays=0] [images=0] [taskModel=1] [heavyNoteTasks=0]
 
 function uuid(seed) {
     // Deterministic ids keep runs comparable.
@@ -88,6 +98,65 @@ function makeTasks(count, today) {
             { now, makeUuid: () => uuid(`project-task-fallback-${index}`), normalizeStoredPath: (value) => value }
         );
     });
+}
+
+/**
+ * Version 2 tasks (§3.1) around `today`: the same days, priorities and done
+ * share as the version 1 tasks; every fourth lives in its due day's diary,
+ * the others in the notes `noteIds` (the first `heavy` extra ones in the
+ * first note); every tenth repeats daily and has been done on the three days
+ * before `today`.
+ */
+function makeTasksV2(count, heavy, today, noteIds) {
+    const tasks = [];
+    for (let index = 0; index < count + heavy; index += 1) {
+        const extra = index >= count;
+        const dueDate = extra ? shiftDay(today, (index % 30) - 10) : index < 12 ? today : shiftDay(today, (index % 700) - 350 || 1);
+        const repeat = !extra && index % 10 === 3;
+        const done = !repeat && index >= 12 && index % 5 === 4;
+        const inDiary = !extra && index % 4 === 1;
+        const place = inDiary ? { diaryDate: dueDate } : { noteId: extra ? noteIds[0] : noteIds[(index * 7) % noteIds.length] };
+        const created = new Date(Date.parse(STAMP) + index * 1000);
+        const due = repeat ? today : dueDate;
+        const completions = repeat
+            ? [3, 2, 1].map((back) => ({ date: shiftDay(today, -back), dueDate: shiftDay(today, -back), at: `${shiftDay(today, -back)}T07:30:00.000Z` }))
+            : [];
+        const normalized = normalizePisiTask(
+            {
+                id: formatPisiTaskId(uuid(`project-task-${index}`)),
+                title: `Görev ${index + 1}`,
+                status: done ? 'done' : 'todo',
+                priority: (index % 5) + 1,
+                dueDate: due,
+                dueTime: index % 3 === 0 ? `${String(8 + (index % 10)).padStart(2, '0')}:00` : null,
+                repeat: repeat ? 'daily' : 'none',
+                completions,
+                manualOrder: index,
+                ...place
+            },
+            null,
+            { now: created, makeUuid: () => uuid(`project-task-fallback-${index}`) }
+        );
+        if (!normalized.ok) throw new Error(`Görev ${index} üretilemedi: ${JSON.stringify(normalized.errors)}`);
+        const task = normalized.task;
+        if (done) Object.assign(task, { completedAt: STAMP, completedOn: STAMP.slice(0, 10) });
+        tasks.push(task);
+    }
+    return tasks;
+}
+
+/** Writes the diary of every day in `days` (a paragraph for `withText` days) with the task section of `byDay`. */
+async function writeDiaryV2(projectFolder, days, withText, byDay) {
+    await fs.mkdir(path.join(projectFolder, 'diary'), { recursive: true });
+    await fs.writeFile(path.join(projectFolder, 'diary', PISI_DIARY_MARKER_FILE), PISI_DIARY_MARKER_TEXT, 'utf8');
+    for (const [position, isoDate] of [...days].sort().entries()) {
+        const data = makePisiDiaryDocumentData({ isoDate, id: formatPisiDocumentId('.node', uuid(`project-diary-${isoDate}`)), now: STAMP });
+        const text = withText.has(isoDate)
+            ? `<div class="pisi-editor-block" data-pisi-block-id="blk_diary_${position}" data-pisi-block-type="paragraph">${isoDate} günlüğü: yürüyüş, okuma ve toplantı.</div>`
+            : '';
+        data.content = replacePisiDiaryTaskSection(text, isoDate, byDay.get(isoDate) || []) ?? text;
+        await writeJson(path.join(projectFolder, ...getPisiDiaryNodeKey(isoDate).split('/')), data);
+    }
 }
 
 /** A PNG of about `bytes` bytes: noise pixels (seeded, so runs repeat), stored without compression. */
@@ -152,8 +221,8 @@ async function writeDiary(projectFolder, days, today) {
 
 /**
  * @param {string} projectFolder
- * @param {{ notes?: number, perMap?: number, relationships?: boolean, tasks?: number, diaryDays?: number, today?: string, images?: number, imageBytes?: number }} [options]
- * @returns {Promise<{ notes: number, maps: number, relationships: number, tasks: number, diaryDays: number, images: number, imageBytes: number, directories: number, files: number, notePaths: string[] }>}
+ * @param {{ notes?: number, perMap?: number, relationships?: boolean, tasks?: number, diaryDays?: number, today?: string, images?: number, imageBytes?: number, taskModel?: number, heavyNoteTasks?: number }} [options]
+ * @returns {Promise<{ notes: number, maps: number, relationships: number, tasks: number, taskModel: number, diaryDays: number, diaries: number, images: number, imageBytes: number, directories: number, files: number, notePaths: string[] }>}
  */
 export async function generatePisiProjectFixture(projectFolder, options = {}) {
     const total = Math.max(1, Number(options.notes) || 1000);
@@ -173,6 +242,17 @@ export async function generatePisiProjectFixture(projectFolder, options = {}) {
         directories += 1;
     }
     const ids = Array.from({ length: total }, (_value, index) => `node_${uuid(`project-node-${index}`)}`);
+    const today = options.today || '2026-11-14';
+    const taskCount = Math.max(0, Number(options.tasks) || 0);
+    const taskModel = Number(options.taskModel) === 2 ? 2 : 1;
+    const heavyNoteTasks = taskModel === 2 ? Math.max(0, Number(options.heavyNoteTasks) || 0) : 0;
+    const tasksV2 = taskModel === 2 && taskCount + heavyNoteTasks ? makeTasksV2(taskCount, heavyNoteTasks, today, ids) : [];
+    const noteTaskIds = new Map();
+    for (const task of tasksV2) {
+        if (!task.noteId) continue;
+        if (!noteTaskIds.has(task.noteId)) noteTaskIds.set(task.noteId, []);
+        noteTaskIds.get(task.noteId).push(task.id);
+    }
     const titles = Array.from({ length: total }, (_value, index) => `Not ${String(index + 1).padStart(5, '0')}`);
     for (let mapIndex = 0; mapIndex < mapCount; mapIndex += 1) {
         const mapId = `map_${uuid(`project-map-${mapIndex}`)}`;
@@ -190,6 +270,9 @@ export async function generatePisiProjectFixture(projectFolder, options = {}) {
             const notePath = path.join(mapFolder, `${titles[index]}.node`);
             const linked = index % 10 === 0 && index + 1 < total;
             let content = noteContent(index, linked ? ids[index + 1] : '', linked ? titles[index + 1] : '');
+            for (const [position, taskId] of (noteTaskIds.get(ids[index]) || []).entries()) {
+                content += makePisiTaskBlockHtml({ blockId: `blk_${index}_t${position}`, taskId });
+            }
             if (imageStep && index % imageStep === 0 && images < imageCount) {
                 const image = await writeNoteImage(path.join(mapFolder, nodeSidecar), index, imageSize);
                 content += image.html;
@@ -241,24 +324,41 @@ export async function generatePisiProjectFixture(projectFolder, options = {}) {
         files += 1;
     }
     await writeJson(path.join(projectFolder, '.pisi', 'relationships.json'), { version: 1, relationships });
-    const today = options.today || '2026-11-14';
-    const taskCount = Math.max(0, Number(options.tasks) || 0);
-    if (taskCount) {
-        await writeJson(path.join(projectFolder, '.pisi', 'tasks.json'), { version: 1, updatedAt: STAMP, tasks: makeTasks(taskCount, today) });
-        files += 1;
-    }
     const diaryDays = Math.max(0, Number(options.diaryDays) || 0);
-    if (diaryDays) {
-        await writeDiary(projectFolder, diaryDays, today);
-        files += diaryDays + 1;
-        directories += 1;
+    let diaries = diaryDays;
+    if (taskModel === 2) {
+        if (tasksV2.length) {
+            await writeJson(path.join(projectFolder, '.pisi', 'tasks.json'), { version: 2, updatedAt: STAMP, tasks: tasksV2 });
+            files += 1;
+        }
+        const byDay = groupPisiTasksByDay(tasksV2);
+        const withText = new Set(Array.from({ length: diaryDays }, (_value, offset) => shiftDay(today, -offset)));
+        const days = new Set([...withText, ...byDay.keys()]);
+        diaries = days.size;
+        if (days.size) {
+            await writeDiaryV2(projectFolder, days, withText, byDay);
+            files += days.size + 1;
+            directories += 1;
+        }
+    } else {
+        if (taskCount) {
+            await writeJson(path.join(projectFolder, '.pisi', 'tasks.json'), { version: 1, updatedAt: STAMP, tasks: makeTasks(taskCount, today) });
+            files += 1;
+        }
+        if (diaryDays) {
+            await writeDiary(projectFolder, diaryDays, today);
+            files += diaryDays + 1;
+            directories += 1;
+        }
     }
     return {
         notes: total,
         maps: mapCount,
         relationships: relationships.length,
-        tasks: taskCount,
+        tasks: taskModel === 2 ? tasksV2.length : taskCount,
+        taskModel,
         diaryDays,
+        diaries,
         images,
         imageBytes,
         directories,
@@ -275,7 +375,9 @@ if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
         relationships: process.argv[5] === '1',
         tasks: Number(process.argv[6]) || 0,
         diaryDays: Number(process.argv[7]) || 0,
-        images: Number(process.argv[8]) || 0
+        images: Number(process.argv[8]) || 0,
+        taskModel: Number(process.argv[9]) || 1,
+        heavyNoteTasks: Number(process.argv[10]) || 0
     });
     console.log(JSON.stringify({ ...result, notePaths: undefined }, null, 2));
 }

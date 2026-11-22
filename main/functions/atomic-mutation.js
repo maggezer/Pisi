@@ -14,6 +14,34 @@ function getActivePisiAtomicMutation() {
     return pisiAtomicContext.getStore() || null;
 }
 
+// Work that may only happen once the active mutation is committed (an event
+// that tells the renderer what changed); a mutation that rolls back drops it.
+const pisiAtomicCommitCallbacks = new WeakMap();
+
+/** Runs `callback` after the active mutation commits (never when it rolls back); at once outside a mutation. */
+function onPisiAtomicMutationCommit(callback) {
+    if (typeof callback !== 'function') return;
+    const transaction = getActivePisiAtomicMutation();
+    if (!transaction) {
+        callback();
+        return;
+    }
+    if (!pisiAtomicCommitCallbacks.has(transaction)) pisiAtomicCommitCallbacks.set(transaction, []);
+    pisiAtomicCommitCallbacks.get(transaction).push(callback);
+}
+
+function runPisiAtomicCommitCallbacks(transaction) {
+    const callbacks = pisiAtomicCommitCallbacks.get(transaction) || [];
+    pisiAtomicCommitCallbacks.delete(transaction);
+    for (const callback of callbacks) {
+        try {
+            callback();
+        } catch (error) {
+            console.warn('[PISI] Atomic commit sonrası iş başarısız:', error?.message || error);
+        }
+    }
+}
+
 function normalizePisiAtomicProjectKey(projectFolder) {
     const resolved = path.resolve(String(projectFolder || ''));
     return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
@@ -116,6 +144,7 @@ function ensurePisiAtomicRecovery(projectFolder) {
 
 function finishPisiAtomicMutation(transaction, result) {
     if (result?.ok === false) {
+        pisiAtomicCommitCallbacks.delete(transaction);
         const rollback = core.rollbackAtomicMutation(transaction);
         if (!rollback.ok) {
             recoveredPisiAtomicProjects.delete(normalizePisiAtomicProjectKey(transaction.projectRoot));
@@ -142,6 +171,7 @@ function finishPisiAtomicMutation(transaction, result) {
 
     try {
         core.commitAtomicMutation(transaction);
+        runPisiAtomicCommitCallbacks(transaction);
         if (result && typeof result === 'object') {
             return {
                 ...result,
@@ -153,6 +183,7 @@ function finishPisiAtomicMutation(transaction, result) {
         }
         return result;
     } catch (commitError) {
+        pisiAtomicCommitCallbacks.delete(transaction);
         const rollback = core.rollbackAtomicMutation(transaction);
         if (!rollback.ok) {
             recoveredPisiAtomicProjects.delete(normalizePisiAtomicProjectKey(transaction.projectRoot));
@@ -165,6 +196,7 @@ function finishPisiAtomicMutation(transaction, result) {
 }
 
 function failPisiAtomicMutation(transaction, error) {
+    pisiAtomicCommitCallbacks.delete(transaction);
     const rollback = core.rollbackAtomicMutation(transaction);
     if (!rollback.ok) {
         recoveredPisiAtomicProjects.delete(normalizePisiAtomicProjectKey(transaction.projectRoot));
@@ -281,6 +313,7 @@ installPisiAtomicFilesystemHooks();
 const moduleApi = {
     PISI_ATOMIC_MUTATION_VERSION: core.PISI_ATOMIC_MUTATION_VERSION,
     getActivePisiAtomicMutation,
+    onPisiAtomicMutationCommit,
     capturePisiAtomicPathBeforeChange,
     capturePisiAtomicRenameBeforeChange,
     recoverPisiAtomicMutations,

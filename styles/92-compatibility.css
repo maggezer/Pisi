@@ -521,11 +521,6 @@ html[data-pisi-theme='light'] body #right-panel > #right-panel-tabs {
     color: #8bc8ff;
 }
 
-#pisi-tag-menu .pisi-unified-command-option.todo-start .pisi-tag-option-code,
-#pisi-tag-menu .pisi-unified-command-option.todo-done .pisi-tag-option-code {
-    color: #7fd89a;
-}
-
 #pisi-tag-menu .pisi-unified-command-option.user .pisi-tag-option-code,
 #pisi-tag-menu .pisi-unified-command-option.new-user .pisi-tag-option-code {
     color: #9fc8ff;
@@ -595,10 +590,6 @@ body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option.format .pisi-t
 
 /* ===== Source: styles/100-map-task-count-badge.css ===== */
 .map-node-box > .map-node-open {
-    display: none;
-}
-
-.map-node-box[data-node-path] > .pisi-mission-node-badge {
     display: none;
 }
 

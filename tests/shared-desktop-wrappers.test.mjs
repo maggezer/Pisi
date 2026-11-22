@@ -16,10 +16,8 @@ import * as sharedDocumentModel from '../shared/document-model.mjs';
 import * as sharedDocumentNaming from '../shared/document-naming.mjs';
 import * as sharedIds from '../shared/ids.mjs';
 import * as sharedTaskModel from '../shared/task-model.mjs';
-import * as sharedTaskViews from '../shared/task-views.mjs';
 import * as sharedWikiLinkCore from '../shared/wiki-link-core.mjs';
 import * as rendererDateParser from '../renderer/productivity/pisi-date-parser.mjs';
-import * as rendererTodoUtils from '../renderer/tags/pisi-todo-utils.mjs';
 import * as rendererWikiLinkCore from '../renderer/editor/pisi-wiki-link-core.mjs';
 import * as mainWikiLinkCore from '../main/functions/wiki-link-core.js';
 
@@ -64,22 +62,6 @@ test('renderer ve main sarmalayıcıları shared fonksiyonlarının kendisini d�
     ]) {
         assert.equal(mainWikiLinkCore[name], rendererWikiLinkCore[name], name);
     }
-
-    const desktopOnly = [
-        'PISI_TODO_SORT_OPTIONS',
-        'PISI_TODO_STATUS_FILTER_OPTIONS',
-        'getPisiTodoSortOption',
-        'getPisiTodoStatusFilterOption',
-        'extractPisiTodoMetadataFromBlock'
-    ];
-    const shared = { ...sharedTaskModel, ...sharedTaskViews };
-    assertSameBindings(
-        rendererTodoUtils,
-        shared,
-        Object.keys(rendererTodoUtils).filter((name) => !desktopOnly.includes(name)),
-        'pisi-todo-utils.mjs'
-    );
-    for (const name of desktopOnly) assert.notEqual(rendererTodoUtils[name], undefined, name);
 });
 
 test('main registry adlandırma ve kimlik kurallarını shared üzerinden sunar', () => {

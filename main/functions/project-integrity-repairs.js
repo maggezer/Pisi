@@ -1,6 +1,7 @@
 import { modules } from '../module-registry.js';
 import * as shared from './project-integrity-shared.js';
 import * as documents from './project-integrity-documents.js';
+import * as taskRepair from './task-repair.js';
 
 import * as path from 'node:path';
 const documentStore = modules['main.documentStore'];
@@ -31,6 +32,16 @@ function normalizeMapOperationalState(projectFolder, payload) {
     const current = mapOperationalStore.readPisiOperationalMapState(filePath);
     if (!current.ok) return current;
     return mapOperationalStore.writePisiOperationalMapState(filePath, current.state, current.mapInfo);
+}
+
+/**
+ * One repair of the plan: a safe one, or a task repair the user started
+ * (task-repair.js; 'review', run only when named). `openPaths` are the
+ * documents open in the editor (GV9).
+ */
+function applyRepair(projectFolder, repair, { openPaths = [] } = {}) {
+    if (taskRepair.isPisiTaskRepairAction(repair.action)) return taskRepair.applyPisiTaskRepair(projectFolder, repair, { openPaths });
+    return applySafeRepair(projectFolder, repair);
 }
 
 function applySafeRepair(projectFolder, repair) {
@@ -93,4 +104,4 @@ function rebuildDerivedState(projectFolder, auditAfter) {
     };
 }
 
-export { normalizeDocumentMetadata, ensureDocumentSidecar, normalizeMapOperationalState, applySafeRepair, rebuildDerivedState };
+export { normalizeDocumentMetadata, ensureDocumentSidecar, normalizeMapOperationalState, applySafeRepair, applyRepair, rebuildDerivedState };

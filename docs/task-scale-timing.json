@@ -1,0 +1,82 @@
+{
+    "measuredAt": "2026-11-22T04:05:10.048Z",
+    "platform": "linux-x64",
+    "node": "v22.23.5",
+    "cpus": 4,
+    "size": {
+        "notes": 2000,
+        "perMap": 250,
+        "tasks": 5000,
+        "diaryDays": 60,
+        "heavyNoteTasks": 200,
+        "tasksInStore": 5200,
+        "diariesGenerated": 669
+    },
+    "projectOpenMs": 1346,
+    "panelFirstDrawMs": 74,
+    "backgroundReadUntilQuietMs": 2836,
+    "plainNoteOpen": {
+        "blocks": 2,
+        "ms": 70,
+        "editorShownMs": 70,
+        "redrawAllBlocksMs": 1
+    },
+    "heavyNoteOpen": {
+        "blocks": 203,
+        "ms": 513,
+        "editorShownMs": 513,
+        "redrawAllBlocksMs": 20
+    },
+    "tagIndexReadUntilQuietMs": 12743,
+    "completeDueToday": {
+        "ok": true,
+        "ms": 188,
+        "writtenDiaries": [],
+        "createdDiaries": [],
+        "nodeReads": 0,
+        "nodeWrites": 0,
+        "taskStoreWrites": 1
+    },
+    "completeClosedNote": {
+        "ok": true,
+        "ms": 124,
+        "writtenDiaries": ["2026-11-22"],
+        "createdDiaries": [],
+        "nodeReads": 2,
+        "nodeWrites": 2,
+        "taskStoreWrites": 1
+    },
+    "completeOpenNote": {
+        "ok": true,
+        "ms": 74,
+        "writtenDiaries": [],
+        "createdDiaries": [],
+        "nodeReads": 0,
+        "nodeWrites": 0,
+        "taskStoreWrites": 1
+    },
+    "completeDaily": {
+        "ok": true,
+        "ms": 108,
+        "writtenDiaries": ["2026-11-23"],
+        "createdDiaries": [],
+        "nodeReads": 2,
+        "nodeWrites": 2,
+        "taskStoreWrites": 1
+    },
+    "diariesCreatedByCompletions": 0,
+    "completeMain": {
+        "ok": true,
+        "readTasksJsonMs": 15,
+        "commandMs": 20
+    },
+    "tasksJson": {
+        "bytes": 3825275,
+        "tasks": 5200,
+        "completions": 1501,
+        "repeatingTasks": 500,
+        "bytesPerTask": 736
+    },
+    "diaries": 669,
+    "integrityMs": 4454
+}

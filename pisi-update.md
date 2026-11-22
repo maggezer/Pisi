@@ -1,5 +1,43 @@
 # PISI Güncelleme Takip Dosyası
 
+## 22-11-2026 — Görev bütünlüğü onarımları, büyük proje ölçümü ve temizlik (G7)
+
+Görev işi (`docs/task-plan.md` G7). Kapanan bulgular: GK1, GK13, GK15.
+
+- Ayarlar → Proje bütünlüğü raporunda görev bulgularının her biri bir "Onar" düğmesi ve kendi onayıyla onarılır
+  (`main/functions/task-repair.js`, "İncele" sınıfı; "Güvenli onarımları uygula" bunları çalıştırmaz):
+  kaydı olmayan blok (görev çöp kutusundaysa o nota geri gelir, değilse blok kalkar), notunda bloğu olmayan görev
+  (blok notun sonuna eklenir), bloğu başka bir notta duran görev (yeri o not olur), notu olmayan görev (bugünün
+  günlüğüne bağlanır), iki notta bloğu olan görev (görevin notu bloğu tutar, öbür bloklar yeni kopya görev olur),
+  bağımlılık döngüsü ve olmayan göreve bağımlılık (bağımlılık kalkar; yalnız `tasks.json`), kurala uymayan günlük
+  bölümü (`tasks.json`'dan yeniden üretilir). Onarım `integrity.repair.v1` ile tek atomik mutation'dır ve görev
+  servisinin yolundan yazar; editörde açık not ya da günlük yazılmaz, değişikliği editör yapıp kaydeder (GV9), rapor
+  sonra yeniden denetlenir.
+- Görev olayı (`pisi:tasks-changed`) artık mutation commit edildikten sonra gönderilir; geri alınan bir mutation
+  (ör. görev başlıkları yazıldıktan sonra başarısız olan yeniden adlandırma) olay göndermez
+  (`onPisiAtomicMutationCommit`, `main/functions/atomic-mutation.js`).
+- Büyük proje ölçümü: `scripts/generate-project-fixture.mjs` `taskModel: 2` (sürüm 2 görevler, notlarda görev
+  blokları, her görev gününün günlüğü ve bölümü) ve `heavyNoteTasks` seçeneklerini aldı; varsayılan sürüm 1 kalır
+  (telefon G8'e kadar ona dayanır). `scripts/electron-tasks-scale-e2e.mjs` 2.000 not ve 5.200 görevle ölçer; sonuç
+  `docs/task-scale-timing.json`'dadır (bu makinede: açılış 1,3 sn, panelin ilk çizimi 74 ms, 200 görev bloklu notun
+  açılışı 0,5 sn, tamamlama 74–188 ms, ana süreç komutu 20 ms, `tasks.json` 3,8 MB, 669 günlük). Bir tamamlama
+  hiçbir notu okumaz ya da yazmaz; yalnız günleri değişen günlükler yazılır.
+- Ölçümde 200 görev bloklu notun açılışı 2,1 sn çıktı; nedeni çeviri gözlemcisinin (`preload.js`
+  `pisiApplyToRoot`) DOM'a eklenen her düğüm için belge genelinde logo görsellerini aramasıydı. Arama artık eklenen
+  alt ağaçla sınırlı; açılış 0,5 sn.
+- Arayüz İngilizceyken arayüz metniyle aynı başlıklı görev (ör. "Görev ekle") panel kartında çevriliyordu ("Add
+  task"): çeviri dışı listesi eski `.pisi-mission-*` sınıflarını gösteriyordu. Panel kartlarının başlığı, etiketi ve
+  not adı ile çalışma alanı görünümlerindeki görev düğmeleri kullanıcı içeriği olarak işaretlendi.
+- Temizlik: `renderer/tags/pisi-todo-utils.mjs` kalktı (testler `shared/` modüllerini kullanır); eski görev
+  paneline, To-do çalışma alanına, üçüncü sürüm takvimine ve vurgu stillerine ait yaklaşık 1.700 satır kullanılmayan
+  CSS ve kullanılmayan `isPisiTaskWorkspaceOpen` bağlaması silindi; Inbox metinleri locale'lerden çıktı; bu dosyaları
+  regex ile okuyan testler silindi ya da daraltıldı (`todo-dedicated-workspace`, `calendar-task-indicators`,
+  `map-node-task-count-badge`, `todo-quick-add-modal`, `project-integrity-contract`, `theme-preferences`,
+  `right-panel-top-polish`). Eski günlüklerdeki yönetilen bölüm bloğunu koruyan kod ve stiller kalır.
+- Testler: `tests/task-repair.test.mjs`, `tests/task-service-events.test.mjs`,
+  `tests/project-fixture-generator-v2.test.mjs`; Electron E2E `scripts/electron-tasks-integrity-e2e.mjs` ve
+  `scripts/electron-tasks-scale-e2e.mjs` (ikisi de `test:e2e` listesinde), panel E2E'sinde İngilizce başlık adımı.
+
 ## 22-11-2026 — Görevlerde etiket ve not bağlantısı (G6)
 
 Görev işi (`docs/task-plan.md` G6). Başlık G2'de düz metne geçince kaybolan iki yetenek kayıt üzerinden geri geldi.

@@ -58,6 +58,27 @@ Review repairs have a plausible mechanical fix but can change user-visible meani
 
 They are reported but are not included in **Apply safe repairs**.
 
+Task findings carry review repairs the user starts one at a time from the finding's **Onar / Repair** button,
+each after its own confirmation (`docs/task-plan.md` G7, `main/functions/task-repair.js`):
+
+| Finding                       | Repair                                                                                                       |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `task-block-orphan`           | The id is in the Trash: the task comes back and lives in that note. Otherwise the block is taken out.        |
+| `task-homeless`               | The task's block goes to the end of its note.                                                                |
+| `task-block-misplaced`        | The note (or diary) of the block becomes the task's place; the homeless finding of that task gets no repair. |
+| `task-note-missing`           | The task lives in today's diary (created when needed).                                                       |
+| `task-duplicate-reference`    | The task's note keeps the block; the block in each other note becomes a new copy task living there.          |
+| `task-dependency-cycle`       | The dependency that closes the loop goes (`tasks.json` only).                                                |
+| `task-dependency-missing`     | The dependency on the missing task goes (`tasks.json` only).                                                 |
+| `diary-task-section-mismatch` | The section is made again from `tasks.json` (GV15).                                                          |
+
+`integrity.repair.v1` runs a review repair only when its id is named in `repairIds`; without ids it runs the safe
+repairs only. Task repairs write the way the task service does (one fresh read of `tasks.json`, the notes and
+diaries the change needs, a `pisi:tasks-changed` event after the mutation commits). A note or diary that is open in
+the editor is not written: the command takes `openPaths` and hands the change back in `deferred`; the editor makes it,
+saves it and the panel audits again. Every repair checks that its finding still holds; one that no longer does changes
+nothing.
+
 ### Manual
 
 Manual issues contain identity or semantic ambiguity and must never be auto-fixed. Examples include duplicate identities, missing semantic endpoints, second parents, hierarchy cycles, damaged authority stores, damaged Trash payloads and invalid recovery journals.
@@ -76,10 +97,10 @@ It does not reconstruct tasks, semantic relationships or property definitions fr
 Project Integrity registers versioned contracts with the main domain dispatcher:
 
 - `integrity.audit.v1` — query, read-only
-- `integrity.repair.v1` — atomic command
+- `integrity.repair.v1` — atomic command (`{ projectFolder, repairIds, openPaths }`; returns `deferred` for open documents)
 - `integrity.rebuild-derived.v1` — atomic command
 
-The Settings UI reaches these contracts through the narrow `window.pisiProject.auditIntegrity` preload surface and the `project:audit-integrity` IPC adapter. The adapter only normalizes the request shape and dispatches one of the three explicit contracts; it does not contain a separate repair/storage implementation.
+The Settings UI reaches these contracts through the narrow `window.pisiProject.auditIntegrity` preload surface and the `project:audit-integrity` IPC adapter; a task repair goes through `window.pisiDomain.command('integrity.repair.v1', …)` so that it can name the open documents. The adapter only normalizes the request shape and dispatches one of the three explicit contracts; it does not contain a separate repair/storage implementation.
 
 Unknown actions resolve to the audit action rather than dynamically dispatching arbitrary commands.
 

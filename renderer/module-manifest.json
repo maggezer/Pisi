@@ -923,7 +923,7 @@
     {
         "module": "tasks.workspace",
         "path": "renderer/tasks/pisi-task-workspace.mjs",
-        "bindings": ["pisiTaskWorkspaceState", "openPisiTaskWorkspace", "closePisiTaskWorkspace", "isPisiTaskWorkspaceOpen", "renderPisiTaskWorkspaceTab"]
+        "bindings": ["pisiTaskWorkspaceState", "openPisiTaskWorkspace", "closePisiTaskWorkspace", "renderPisiTaskWorkspaceTab"]
     },
     {
         "module": "tasks.detail",
