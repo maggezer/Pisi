@@ -280,8 +280,12 @@ export async function startDesktop({ projectPath, userDataPath, env = {} }) {
             await evaluate(`(() => {
                 const editor = document.getElementById('center-node-editor-content');
                 editor.focus();
+                // The last block the user can write in: a diary's last block is its task section
+                // (contenteditable=false, generated from tasks.json; docs/task-plan.md G3), which
+                // never takes typed text.
+                const blocks = [...editor.children].filter((block) => block.getAttribute('contenteditable') !== 'false');
                 const range = document.createRange();
-                range.selectNodeContents(editor.lastElementChild || editor);
+                range.selectNodeContents(blocks.at(-1) || editor);
                 range.collapse(false);
                 const selection = window.getSelection();
                 selection.removeAllRanges();

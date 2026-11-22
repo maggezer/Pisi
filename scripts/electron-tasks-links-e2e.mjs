@@ -245,7 +245,11 @@ try {
     {
         const point = await run(`(() => {
             const field = ${EDITOR}.querySelector('[data-pisi-task-title="${task.id}"]');
-            const text = field.firstChild;
+            field.scrollIntoView({ block: 'center' });
+            const walker = document.createTreeWalker(field, NodeFilter.SHOW_TEXT);
+            let text = null;
+            while (walker.nextNode()) if (walker.currentNode.nodeValue.includes('[[Hedef]]')) text = walker.currentNode;
+            if (!text) return { missing: field.textContent };
             const start = text.nodeValue.indexOf('[[Hedef]]') + 3;
             const range = document.createRange();
             range.setStart(text, start);
@@ -253,10 +257,33 @@ try {
             const rect = range.getBoundingClientRect();
             return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
         })()`);
+        assert(!point.missing, 'the title has the link text', point);
+        // What the click lands on, for the failure message (Windows CI has failed here before).
+        const probe = () =>
+            run(`(async () => {
+                const caret = document.caretRangeFromPoint(${point.x}, ${point.y});
+                const index = await window.ensurePisiSearchIndex?.();
+                const documents = index?.documents instanceof Map ? Array.from(index.documents.values()) : [];
+                return {
+                    point: ${json(point)},
+                    viewport: [innerWidth, innerHeight, devicePixelRatio],
+                    platform: navigator.userAgentData?.platform || navigator.platform,
+                    hit: document.elementFromPoint(${point.x}, ${point.y})?.outerHTML.slice(0, 160) || null,
+                    caret: caret ? { text: caret.startContainer.nodeValue, offset: caret.startOffset } : null,
+                    hedef: documents.filter((item) => item.title === 'Hedef').map((item) => ({ id: item.metadata?.id, path: item.path })),
+                    active: window.activeCenterNode?.path || null,
+                    target: ${json(target.path)},
+                    chooser: Boolean(document.querySelector('.pisi-wiki-chooser')),
+                    toasts: Array.from(document.querySelectorAll('.pisi-toast, .pisi-notification, [role="alert"], [role="status"]')).map((item) => item.textContent).slice(-3),
+                    errors: window.__pisiLinkErrors
+                };
+            })()`);
         for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) {
             await app.cdp.request('Input.dispatchMouseEvent', { type, x: point.x, y: point.y, button: 'left', clickCount: 1, modifiers: 2 });
         }
-        await waitUntil('Hedef opened by Ctrl+click', () => run(`window.activeCenterNode?.path === ${json(target.path)}`));
+        await waitUntil('Hedef opened by Ctrl+click', () => run(`window.activeCenterNode?.path === ${json(target.path)}`)).catch(async (error) => {
+            throw new Error(error.message + '\n' + JSON.stringify(await probe(), null, 2));
+        });
     }
 
     // ---- 6. The links panel of Hedef counts the task as a backlink.
@@ -285,7 +312,10 @@ try {
         })`);
         assert(shown.tags === '#acil' && shown.link === 'Hedef', 'the card draws tags and the link', shown);
         await run(`${card}.querySelector('.pisi-task-card-link').click()`);
-        await waitUntil('Hedef opened from the card', () => run(`window.activeCenterNode?.path === ${json(target.path)}`));
+        await waitUntil('Hedef opened from the card', () => run(`window.activeCenterNode?.path === ${json(target.path)}`)).catch(async (error) => {
+            const state = await run(`({ active: window.activeCenterNode?.path || null, chooser: Boolean(document.querySelector('.pisi-wiki-chooser')) })`);
+            throw new Error(error.message + '\n' + JSON.stringify({ ...state, target: target.path }));
+        });
     }
     await assertIntegrityClean(app, 'link surfaces');
 
