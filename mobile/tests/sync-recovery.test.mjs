@@ -46,7 +46,7 @@ describe('senkronun kurtarılması', () => {
         editBlock(desktop, NOTE, 'Bir', 'Bir (yedekten sonra)');
         desktop.write('Yeni.node', nodeDoc('node_bbbbbbbb-0000-4000-8000-000000000002', 'Yeni', [['n1', 'Yedekten sonra açılan not']]));
         expect((await desktop.sync()).ok).toBe(true);
-        await phone.project.tasks.upsert({ id: 'task_after_backup', title: 'Yedekten sonra telefondan', status: 'todo' });
+        await phone.project.tasks.create({ id: 'task_after_backup', title: 'Yedekten sonra telefondan' }, { diaryDate: '2026-11-14' });
         expect((await phone.service.sync('test')).ok).toBe(true);
         expect((await desktop.sync()).ok).toBe(true);
         // While the server is gone the phone also writes something only it has.
@@ -105,14 +105,14 @@ describe('senkronun kurtarılması', () => {
     });
 
     /**
-     * The server goes back to a backup taken before the phone's last task; the desktop, whose cursor is at the
-     * backup, sees nothing and sends `notes` new notes. The phone's cursor is above the backup, so it cannot see
+     * The server goes back to a backup taken before the phone's last task (tasks.json and the diary of its day);
+     * the desktop, whose cursor is at the backup, sees nothing and sends `notes` new notes. The phone's cursor is above the backup, so it cannot see
      * the rollback; its own task is lost on the server.
      */
     async function hiddenRollback(notes) {
         const { server, desktop, phone } = await pairedPair();
         const backup = server.snapshot();
-        await phone.project.tasks.upsert({ id: 'task_lost', title: 'Geri sarmada kaybolan görev', status: 'todo' });
+        await phone.project.tasks.create({ id: 'task_lost', title: 'Geri sarmada kaybolan görev' }, { diaryDate: '2026-11-14' });
         expect((await phone.service.sync('test')).ok).toBe(true);
         expect((await phone.service.sync('test')).ok).toBe(true);
         const phoneCursor = (await phone.service.store.load()).cursor;
@@ -143,9 +143,10 @@ describe('senkronun kurtarılması', () => {
 
     it('yalnız gönderen tur: head imlece eşit olsa da imleçteki değişiklik denetlenir', async () => {
         // The desktop sends exactly as many changes as the phone's cursor was above the backup: the head is the cursor again.
-        const run = await hiddenRollback(1);
+        // The phone's task is two changes: tasks.json and the diary of its day, which it joins (docs/task-plan.md §3.2.2).
+        const run = await hiddenRollback(2);
         expect(run.server.spaces.get(run.desktop.spaceId).head).toBe(run.phoneCursor);
-        await run.phone.project.tasks.upsert({ id: 'task_after', title: 'Geri sarmadan sonra', status: 'todo' });
+        await run.phone.project.tasks.create({ id: 'task_after', title: 'Geri sarmadan sonra' }, { diaryDate: '2026-11-14' });
         const commits = run.server.commits().length;
         expect(await run.phone.service.sync('test')).toMatchObject({ ok: false, code: 'SERVER_ROLLBACK' });
         expect(run.server.commits().length).toBe(commits);

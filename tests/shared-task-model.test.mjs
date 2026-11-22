@@ -7,10 +7,7 @@ import {
     PISI_TODO_REPEAT_OPTIONS,
     PISI_TODO_STATUS_OPTIONS,
     formatPisiTodoTag,
-    getNextPisiTodoDate,
-    getPisiTodayIsoDate,
     getPisiTodoPriorityOption,
-    getPisiTodoRepeatOption,
     getPisiTodoStatusOption,
     normalizePisiFirstClassDependencies,
     normalizePisiFirstClassTaskIso,
@@ -25,7 +22,6 @@ import {
 
 // Friday 13 November 2026, local time.
 const NOW = new Date(2026, 10, 13, 9, 30);
-const day = (date) => (date ? getPisiTodayIsoDate(date) : null);
 
 function recordOptions(overrides = {}) {
     const calls = { uuid: 0 };
@@ -61,8 +57,6 @@ test('canonical değerler: öncelik 1-5, beş durum, yedi tekrar', () => {
     assert.equal(getPisiTodoPriorityOption(6), null);
     assert.equal(getPisiTodoStatusOption(' DOING ').value, 'doing');
     assert.equal(getPisiTodoStatusOption('done').value, 'todo');
-    assert.equal(getPisiTodoRepeatOption('Weekly').value, 'weekly');
-    assert.equal(getPisiTodoRepeatOption('yearly').value, 'none');
 });
 
 test('todo etiketi: todo.<öncelik>.<GG-AA-YYYY|none> yazılır, gösterim önekleri atılır', () => {
@@ -85,34 +79,6 @@ test('todo etiketi: todo.<öncelik>.<GG-AA-YYYY|none> yazılır, gösterim önek
     assert.equal(parsePisiTaskPriority('', 'x'), 3);
     assert.equal(parsePisiTaskDueDateFromTag('todo.4.13-11-2026'), '2026-11-13');
     assert.equal(parsePisiTaskDueDateFromTag('todo.4.none'), null);
-});
-
-test('tekrar eden görevin sonraki tarihi', () => {
-    const friday = new Date(2026, 10, 13);
-
-    assert.equal(day(getNextPisiTodoDate(friday, 'daily', NOW)), '2026-11-14');
-    assert.equal(day(getNextPisiTodoDate(friday, 'weekdays', NOW)), '2026-11-16');
-    assert.equal(day(getNextPisiTodoDate(new Date(2026, 10, 14), 'weekdays', NOW)), '2026-11-16');
-    assert.equal(day(getNextPisiTodoDate(friday, 'weekly', NOW)), '2026-11-20');
-    assert.equal(day(getNextPisiTodoDate(friday, 'biweekly', NOW)), '2026-11-27');
-    // Monthly keeps the day of the month and clamps to the last day of a shorter month.
-    assert.equal(day(getNextPisiTodoDate(new Date(2026, 0, 31), 'monthly', NOW)), '2026-02-28');
-    assert.equal(day(getNextPisiTodoDate(new Date(2026, 11, 15), 'monthly', NOW)), '2027-01-15');
-});
-
-test('tamamlandıktan sonra tekrar bugünden sayılır; tarihsiz görev bugünü temel alır', () => {
-    const old = new Date(2026, 10, 1);
-
-    assert.equal(day(getNextPisiTodoDate(old, 'after-completion', NOW, 3)), '2026-11-16');
-    assert.equal(day(getNextPisiTodoDate(old, 'after-completion', NOW)), '2026-11-14');
-    assert.equal(day(getNextPisiTodoDate(old, 'after-completion', NOW, 0)), '2026-11-14');
-    assert.equal(day(getNextPisiTodoDate(null, 'daily', NOW)), '2026-11-14');
-
-    assert.equal(getNextPisiTodoDate(old, 'none', NOW), null);
-    assert.equal(getNextPisiTodoDate(old, 'yearly', NOW), null);
-
-    const next = getNextPisiTodoDate(new Date(2026, 10, 13, 17, 45), 'daily', NOW);
-    assert.equal(next.getHours() + next.getMinutes(), 0);
 });
 
 test('tarih alanları: yalnız gerçek tarihler, saat yalnız izin verilen alanda', () => {

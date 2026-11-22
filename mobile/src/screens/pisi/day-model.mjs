@@ -1,42 +1,24 @@
 // What the Pisi tab shows for one day, worked out from the stored tasks and
-// the diary days. Pure: no DOM and no storage. Which day a task belongs to
-// and what "overdue" means come from shared/task-views.mjs, the rules the
-// desktop uses; the Turkish date parser is the desktop's too.
+// the diary days. Pure: no DOM and no storage. The day's tasks are its diary
+// section (docs/task-plan.md §3.2.2): living in that day's diary, due that day
+// or completed that day, each with its state on that day; today adds the open
+// tasks that are overdue. These rules come from shared/task-diary.mjs, the
+// desktop's (GV13); the Turkish date parser is the desktop's too.
 
 import { PISI_TURKISH_MONTHS, parsePisiTurkishDateExpression } from '../../../../shared/date-parser.mjs';
-import { getPisiTodayIsoDate } from '../../../../shared/task-model.mjs';
-import { getPisiTaskCalendarIsoDate, getPisiTodoDateBucket } from '../../../../shared/task-views.mjs';
+import { PISI_TASK_REPEATS, normalizePisiTaskDay } from '../../../../shared/task-model.mjs';
+import { getPisiTaskCalendarSummary, getPisiTaskStateOnDay, listPisiDiaryTaskIds, listPisiOverdueTasks } from '../../../../shared/task-diary.mjs';
 import { isoToDate, shiftIsoDate } from '../../ui/dates.mjs';
 
 export const PISI_WHEEL_RADIUS = 45;
 const MONTH_NAMES = Object.keys(PISI_TURKISH_MONTHS);
 
-/** `HH:mm` of a task that is planned for a time of day, else null. */
+/** `HH:mm` of a task that is due at a time of day, else null. */
 export function getTaskTime(task) {
-    const match = /T(\d{2}:\d{2})/.exec(String(task?.scheduledAt || ''));
-    return match ? match[1] : null;
+    return task?.dueDate && /^\d{2}:\d{2}$/.test(String(task.dueTime || '')) ? task.dueTime : null;
 }
 
-/** The note a task came from: its stored title, else the file name without the extension. */
-export function getTaskSourceTitle(task) {
-    const title = String(task?.source?.nodeTitle || '').trim();
-    if (title) return title;
-    const path = String(task?.source?.nodePath || '');
-    return (
-        path
-            .split('/')
-            .at(-1)
-            .replace(/\.node$/i, '') || null
-    );
-}
-
-/** The local day a done task was completed on, or null. */
-function getCompletedDay(task) {
-    const completed = new Date(task.completedAt || '');
-    return Number.isNaN(completed.getTime()) ? null : getPisiTodayIsoDate(completed);
-}
-
-// Planned times first, in order; then the higher priority (5 is the highest); then the user's own order.
+// Times of day first, in order; then the higher priority (5 is the highest); then the user's own order.
 export function byTimeThenPriority(a, b) {
     const timeA = getTaskTime(a.task);
     const timeB = getTaskTime(b.task);
@@ -50,38 +32,39 @@ export function byTimeThenPriority(a, b) {
 
 /**
  * The task groups of the selected day:
- * - `overdue`: open tasks of earlier days, filled only when the selected day is today;
- * - `day`: open tasks of the selected day;
- * - `done`: finished tasks of the selected day, and tasks finished on it.
- * Every entry is `{ task, day }`, `day` being the task's calendar day.
+ * - `overdue`: open tasks due before today, filled only when the selected day is today;
+ * - `day`: the open tasks of the day's section (due that day, or living in
+ *   that day's diary with another day or none, shown with their own day);
+ * - `done`: the tasks done on that day, the last one first.
+ * Every entry is `{ task, day, state }`: `day` the task's own day,
+ * `state` its state on the selected day (getPisiTaskStateOnDay; `locked` on a
+ * past completion of a repeating task that can no longer be taken back).
  */
 export function groupDayTasks(tasks, { selectedDate, today }) {
     const groups = { overdue: [], day: [], done: [] };
-    const now = isoToDate(today);
-    for (const task of tasks) {
-        const day = getPisiTaskCalendarIsoDate(task);
-        const entry = { task, day };
-        if (task.status === 'done') {
-            if (day === selectedDate || getCompletedDay(task) === selectedDate) groups.done.push(entry);
-        } else if (day === selectedDate) {
-            groups.day.push(entry);
-        } else if (selectedDate === today && day && getPisiTodoDateBucket(isoToDate(day), now) === 'overdue') {
-            groups.overdue.push(entry);
-        }
+    const byId = new Map(tasks.map((task) => [task.id, task]));
+    for (const id of listPisiDiaryTaskIds(selectedDate, tasks)) {
+        const task = byId.get(id);
+        const state = getPisiTaskStateOnDay(task, selectedDate);
+        if (!state) continue;
+        const entry = { task, day: normalizePisiTaskDay(task.dueDate), state };
+        if (state.state === 'done' || task.status === 'done') groups.done.push(entry);
+        else groups.day.push(entry);
     }
-    groups.overdue.sort((a, b) => (a.day === b.day ? byTimeThenPriority(a, b) : a.day < b.day ? -1 : 1));
-    groups.day.sort(byTimeThenPriority);
-    groups.done.sort((a, b) => String(b.task.completedAt || '').localeCompare(String(a.task.completedAt || '')));
+    if (selectedDate === today) {
+        for (const task of listPisiOverdueTasks(tasks, today)) groups.overdue.push({ task, day: task.dueDate, state: { state: 'open', status: task.status } });
+    }
+    // The day's own tasks first, then those living in its diary with another day; each by time and priority.
+    const own = (entry) => (entry.day === selectedDate ? 0 : 1);
+    groups.day.sort((a, b) => own(a) - own(b) || byTimeThenPriority(a, b));
+    groups.done.sort((a, b) => String(b.state.at || '').localeCompare(String(a.state.at || '')));
     return groups;
 }
 
-/** Days that get a dot on the date wheel and in the date picker: open tasks, and a diary file. */
+/** Days that get a dot on the date wheel and in the date picker: open tasks on that day (the calendar's rule), and a diary file. */
 export function getDayMarks(tasks, diaryDates) {
     const taskDays = new Set();
-    for (const task of tasks) {
-        const day = task.status === 'done' ? null : getPisiTaskCalendarIsoDate(task);
-        if (day) taskDays.add(day);
-    }
+    for (const [day, entry] of getPisiTaskCalendarSummary(tasks)) if (entry.open > 0) taskDays.add(day);
     return { tasks: taskDays, diary: new Set(diaryDates) };
 }
 
@@ -98,8 +81,9 @@ export function getWheelDays(anchor, radius = PISI_WHEEL_RADIUS) {
  * a repeat ("her gün") still apply. Without a selected day (the Tasks tab) a
  * line that names no day stays undated, unless it gives a time of day: that
  * is today.
- * Returns null for an empty line, else `{ payload, day, time, deadline, repeat }`;
- * `day` is null for an undated task.
+ * Returns null for an empty line, else `{ payload, day, time, repeat }`:
+ * `payload` holds the version 2 fields of the new task (§3.1; the day is
+ * `dueDate`, the time `dueTime`) and `day` is null for an undated task.
  */
 export function parseTaskDraft(text, { selectedDate = null, now }) {
     const title = String(text ?? '')
@@ -112,20 +96,23 @@ export function parseTaskDraft(text, { selectedDate = null, now }) {
         const dated = parsePisiTurkishDateExpression(`${title} ${day.getDate()} ${MONTH_NAMES[day.getMonth()]} ${day.getFullYear()}`, now);
         if (selectedDate || String(dated.scheduledAt || dated.deadline || '').length > 10) parsed = dated;
     }
-    const stamp = parsed.scheduledAt || parsed.deadline || selectedDate || null;
+    const stamp = String(parsed.scheduledAt || parsed.deadline || selectedDate || '');
+    const day = normalizePisiTaskDay(stamp.slice(0, 10));
+    const time = day && /^T\d{2}:\d{2}/.test(stamp.slice(10)) ? stamp.slice(11, 16) : null;
+    const repeat = PISI_TASK_REPEATS.has(parsed.repeat) ? parsed.repeat : 'none';
+    const reminderAt = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(String(parsed.reminderAt || '')) ? parsed.reminderAt.slice(0, 16) : null;
     return {
         payload: {
             title,
-            scheduledAt: parsed.scheduledAt,
-            deadline: parsed.deadline,
-            reminderAt: parsed.reminderAt,
-            repeat: parsed.repeat,
-            completionOffsetDays: parsed.completionOffsetDays
+            dueDate: day,
+            dueTime: time,
+            reminderAt,
+            repeat,
+            completionOffsetDays: repeat === 'after-completion' ? (parsed.completionOffsetDays ?? 1) : null
         },
-        day: stamp ? stamp.slice(0, 10) : null,
-        time: stamp && stamp.length > 10 ? stamp.slice(11, 16) : null,
-        deadline: !parsed.scheduledAt && Boolean(parsed.deadline),
-        repeat: parsed.repeat
+        day,
+        time,
+        repeat
     };
 }
 

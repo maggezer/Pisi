@@ -19,7 +19,7 @@ test('Görevler "Bugün" ile açılır; çiplerde sayı vardır ve görünümler
     await openTasks(page);
     await expect(page.locator('.pisi-header-title')).toHaveText('Görevler');
     await expect(chip(page, 'today')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('.pisi-chip')).toHaveText(['Bugün3', 'Yaklaşan1', 'Gecikmiş1', 'Gelen kutusu1', 'Tamamlanan0']);
+    await expect(page.locator('.pisi-chip')).toHaveText(['Bugün3', 'Yaklaşan1', 'Gecikmiş1', 'Tarihsiz1', 'Tamamlanan0']);
     await expect(titles(page)).toHaveText(['Sabah yürüyüşü', 'TÜBİTAK raporunun yöntem bölümünü gözden geçir', 'Market alışverişi']);
     expect(await smallTargets(page)).toEqual([]);
     expect(await overflowsSideways(page)).toBe(false);
@@ -31,9 +31,9 @@ test('Görevler "Bugün" ile açılır; çiplerde sayı vardır ve görünümler
     await expect(page.locator('.pisi-task-meta-item')).toHaveText(['17 Kas', '14:00', 'Düşük', 'Her hafta']);
     await chip(page, 'overdue').tap();
     await expect(titles(page)).toHaveText(['Kira ödemesi']);
-    await chip(page, 'inbox').tap();
+    await chip(page, 'undated').tap();
     await expect(titles(page)).toHaveText(['Okuma listesini düzenle']);
-    await shot(page, '22-tasks-inbox');
+    await shot(page, '22-tasks-undated');
     await chip(page, 'done').tap();
     await expect(page.locator('[data-tasks="empty"]')).toHaveText('Tamamlanan görev yok.');
     await shot(page, '23-tasks-empty');
@@ -98,18 +98,23 @@ test('hızlı ekle: okunan alanlar çip olur, öncelik çipten seçilir; görev 
     await expect(parseChips(page)).toHaveText(['Bugün', 'Öncelik 3']);
     await input(page).press('Enter');
     await input(page).fill('Kitap listesi');
-    await expect(parseChips(page)).toHaveText(['Gelen kutusu', 'Öncelik 3']);
+    await expect(parseChips(page)).toHaveText(['Tarihsiz', 'Öncelik 3']);
     await input(page).press('Enter');
-    await expect(page.locator('.pisi-chip')).toHaveText(['Bugün1', 'Yaklaşan2', 'Gecikmiş0', 'Gelen kutusu1', 'Tamamlanan0']);
+    await expect(page.locator('.pisi-chip')).toHaveText(['Bugün1', 'Yaklaşan2', 'Gecikmiş0', 'Tarihsiz1', 'Tamamlanan0']);
     await expect(titles(page)).toHaveText(['bugün süt al']);
 
+    // Everything added here lives in today's diary (docs/task-plan.md G8); a line without a day gives an undated task.
     const tasks = await storedTasks(page);
-    expect(tasks.map((task) => [task.title, task.scheduledAt, task.dueDate, task.priority, task.repeat, task.todoTag])).toEqual([
-        ['her pazartesi 14:00 haftalık rapor', '2026-11-16T14:00', '2026-11-16', 4, 'weekly', 'todo.4.16-11-2026'],
-        ['yarın 9.30 diş hekimi', '2026-11-15T09:30', '2026-11-15', 3, 'none', 'todo.3.15-11-2026'],
-        ['bugün süt al', TODAY, TODAY, 3, 'none', 'todo.3.14-11-2026'],
-        ['Kitap listesi', null, null, 3, 'none', 'todo.3.none']
+    expect(tasks.map((task) => [task.title, task.dueDate, task.dueTime, task.priority, task.repeat, task.diaryDate])).toEqual([
+        ['her pazartesi 14:00 haftalık rapor', '2026-11-16', '14:00', 4, 'weekly', TODAY],
+        ['yarın 9.30 diş hekimi', '2026-11-15', '09:30', 3, 'none', TODAY],
+        ['bugün süt al', TODAY, null, 3, 'none', TODAY],
+        ['Kitap listesi', null, null, 3, 'none', TODAY]
     ]);
+    // Today's diary holds the section with the four ids; the days they are due got their diaries too (§3.2.2).
+    const diary = await readProjectJson(page, `diary/${TODAY}.node`);
+    for (const task of tasks) expect(diary.content).toContain(`data-pisi-task-ref="${task.id}"`);
+    expect((await readProjectJson(page, 'diary/2026-11-16.node')).content).toContain(tasks[0].id);
 
     await page.reload();
     await openFromMenu(page, 'tasks');
@@ -157,11 +162,10 @@ test('görev detayı: alanlar düzenlenir, yalnız değişen yazılır ve yenide
         status: 'doing',
         priority: 5,
         dueDate: TODAY,
-        scheduledAt: `${TODAY}T17:15`,
+        dueTime: '17:15',
         reminderAt: '2026-11-14T16:30',
         reminderMode: 'due-morning',
-        repeat: 'monthly',
-        todoTag: 'todo.5.14-11-2026'
+        repeat: 'monthly'
     });
 
     // The date: another day moves the task to "Yaklaşan" and keeps its time.
@@ -171,17 +175,18 @@ test('görev detayı: alanlar düzenlenir, yalnız değişen yazılır ve yenide
     await shot(page, '29-task-date');
     await picker.locator('[data-date="2026-11-19"]').tap();
     await expect(value('date')).toHaveText('Perşembe, 19 Kasım');
-    await expect.poll(async () => (await storedTask(page, 'Market ve manav')).scheduledAt).toBe('2026-11-19T17:15');
+    await expect.poll(async () => (await storedTask(page, 'Market ve manav')).dueDate).toBe('2026-11-19');
+    expect((await storedTask(page, 'Market ve manav')).dueTime).toBe('17:15');
     await back(page);
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(titles(page)).toHaveText(['Sabah yürüyüşü', 'TÜBİTAK raporunun yöntem bölümünü gözden geçir']);
-    await expect(page.locator('.pisi-chip')).toHaveText(['Bugün2', 'Yaklaşan2', 'Gecikmiş1', 'Gelen kutusu1', 'Tamamlanan0']);
+    await expect(page.locator('.pisi-chip')).toHaveText(['Bugün2', 'Yaklaşan2', 'Gecikmiş1', 'Tarihsiz1', 'Tamamlanan0']);
 
     // Only that one record changed.
     const after = await storedTasks(page);
     const changed = after.filter((task, index) => JSON.stringify(task) !== JSON.stringify(before[index]));
     expect(changed.map((task) => task.title)).toEqual(['Market ve manav']);
-    expect((await readProjectJson(page, '.pisi/tasks.json')).version).toBe(1);
+    expect((await readProjectJson(page, '.pisi/tasks.json')).version).toBe(2);
 
     await page.reload();
     await openFromMenu(page, 'tasks');
@@ -191,38 +196,48 @@ test('görev detayı: alanlar düzenlenir, yalnız değişen yazılır ve yenide
     await expect(detail.locator('[data-task-input="time"]')).toHaveValue('17:15');
     await expect(value('repeat')).toHaveText('Her ay');
 
-    // Removing the date sends it to the inbox.
+    // Removing the date makes it undated; the time goes with the day.
     await detail.locator('[data-task-field="date"]').tap();
     await picker.getByRole('button', { name: 'Tarihi kaldır' }).tap();
     await expect(value('date')).toHaveText('Tarihsiz');
     await expect(detail.locator('[data-task-input="time"]')).toBeDisabled();
-    await expect.poll(async () => (await storedTask(page, 'Market ve manav')).todoTag).toBe('todo.5.none');
+    await expect.poll(async () => (await storedTask(page, 'Market ve manav')).dueDate).toBe(null);
+    expect((await storedTask(page, 'Market ve manav')).dueTime).toBe(null);
 });
 
-test('tamamlama ve tekrar: onay kutusu ve "Tamamlandı" durumu sonraki tekrarı ekler, geri al kaldırır', async ({ page }) => {
+test('tamamlama ve tekrar: onay kutusu tamamlar; "Tamamlandı" tekrarı yeni kayıt açmadan ertesi güne ilerletir; geri al geri getirir', async ({ page }) => {
     await openTasks(page);
     await page.getByRole('checkbox', { name: 'Tamamla: Market alışverişi' }).tap();
     await expect(page.getByRole('status')).toContainText('Görev tamamlandı.');
-    await expect(page.locator('.pisi-chip')).toHaveText(['Bugün2', 'Yaklaşan1', 'Gecikmiş1', 'Gelen kutusu1', 'Tamamlanan1']);
+    await expect(page.locator('.pisi-chip')).toHaveText(['Bugün2', 'Yaklaşan1', 'Gecikmiş1', 'Tarihsiz1', 'Tamamlanan1']);
     await page.getByRole('status').getByRole('button', { name: 'Geri al' }).tap();
     await expect(chip(page, 'today')).toHaveText('Bugün3');
 
+    // A repeating task (docs/task-plan.md §3.2.3): the completion is recorded and the same task is due tomorrow.
     await page.locator('.pisi-task-body', { hasText: 'Sabah yürüyüşü' }).tap();
     const detail = page.getByRole('dialog', { name: 'Görev' });
     await detail.locator('[data-task-field="status"]').tap();
     await page.getByRole('radio', { name: 'Tamamlandı' }).tap();
-    await expect.poll(async () => (await storedTasks(page)).length).toBe(7);
-    const walks = (await storedTasks(page)).filter((task) => task.title === 'Sabah yürüyüşü');
-    expect(walks.map((task) => [task.status, task.dueDate, task.scheduledAt, task.repeat])).toEqual([
-        ['done', TODAY, `${TODAY}T07:30`, 'daily'],
-        ['todo', '2026-11-15', '2026-11-15', 'daily']
-    ]);
+    const walk = async () => storedTask(page, 'Sabah yürüyüşü');
+    await expect.poll(async () => (await walk()).dueDate).toBe('2026-11-15');
+    expect((await storedTasks(page)).length).toBe(6);
+    expect(await walk()).toMatchObject({ status: 'todo', dueTime: '07:30', repeat: 'daily', completions: [{ date: TODAY, dueDate: TODAY }] });
+    await expect(detail.locator('[data-task-field="date"] .pisi-row-value')).toHaveText('Pazar, 15 Kasım');
+    await expect(detail.locator('[data-task-field="status"] .pisi-row-value')).toHaveText('Yapılacak');
     await back(page);
+    await expect(page.locator('.pisi-chip')).toHaveText(['Bugün2', 'Yaklaşan2', 'Gecikmiş1', 'Tarihsiz1', 'Tamamlanan0']);
+    await page.getByRole('status').getByRole('button', { name: 'Geri al' }).tap();
+    await expect.poll(async () => (await walk()).dueDate).toBe(TODAY);
+    expect((await walk()).completions).toEqual([]);
+
+    // A task that does not repeat is listed under "Tamamlanan" and opens again from there.
+    await page.getByRole('checkbox', { name: 'Tamamla: Market alışverişi' }).tap();
     await chip(page, 'done').tap();
-    await expect(titles(page)).toHaveText(['Sabah yürüyüşü']);
+    await expect(titles(page)).toHaveText(['Market alışverişi']);
     await shot(page, '30-tasks-done');
-    await page.getByRole('checkbox', { name: 'Yeniden aç: Sabah yürüyüşü' }).tap();
+    await page.getByRole('checkbox', { name: 'Yeniden aç: Market alışverişi' }).tap();
     await expect(page.locator('[data-tasks="empty"]')).toBeVisible();
+    await expect.poll(async () => (await storedTask(page, 'Market alışverişi')).status).toBe('todo');
 });
 
 test('İngilizcede Görevler ve görev detayı çevrilir', async ({ page }) => {
@@ -233,7 +248,7 @@ test('İngilizcede Görevler ve görev detayı çevrilir', async ({ page }) => {
     await page.getByRole('radio', { name: 'English' }).tap();
     await back(page);
     await openFromMenu(page, 'tasks');
-    await expect(page.locator('.pisi-chip-label')).toHaveText(['Today', 'Upcoming', 'Overdue', 'Inbox', 'Completed']);
+    await expect(page.locator('.pisi-chip-label')).toHaveText(['Today', 'Upcoming', 'Overdue', 'Undated', 'Completed']);
     await page.getByRole('textbox', { name: 'Add task' }).fill('yarın 14:00 report');
     await expect(parseChips(page)).toHaveText(['Tomorrow', '14:00', 'Priority 3']);
     await page.locator('.pisi-task-body', { hasText: 'Market alışverişi' }).tap();
@@ -245,7 +260,9 @@ test('İngilizcede Görevler ve görev detayı çevrilir', async ({ page }) => {
         'Time',
         'Repeat',
         'Reminder',
-        'Reminder time'
+        'Reminder time',
+        'Place'
     ]);
+    await expect(detail.locator('[data-task-field="place"] .pisi-row-value')).toHaveText('Diary · Saturday, 14 November');
     await shot(page, '31-task-detail-english');
 });

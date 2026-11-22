@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app/app.mjs';
 import { PISI_NOTE_SAVE_DELAY_MS } from '../src/screens/notes/note.mjs';
+import { makePisiTaskBlockHtml } from '../../shared/task-blocks.mjs';
+import { makePisiDiaryTaskSectionHtml } from '../../shared/task-diary.mjs';
 import { NOW, TODAY, createMemoryProject, noteFile, paragraph, storeJson } from './data-helpers.mjs';
 import { createFakePlatform, createFakeStorage, createFakeSystemTheme } from './helpers.mjs';
 
@@ -15,8 +17,10 @@ const IMAGE =
 const FILE =
     '<div class="pisi-editor-block pisi-file-block" data-pisi-block-id="blk_file" data-pisi-block-type="file" data-pisi-file-name="Rapor.pdf" contenteditable="false"><span class="pisi-file-name">Rapor.pdf</span></div>';
 const QUOTE = '<blockquote class="pisi-editor-block" data-pisi-block-id="blk_q" data-pisi-block-type="quote">Söz uçar</blockquote>';
-const TASK =
-    '<div class="pisi-editor-block" data-pisi-block-id="blk_task"><span class="pisi-todo-source" data-pisi-todo-for="todo.2.none">Raporu gönder</span> <span class="pisi-user-tag" data-pisi-tag="todo.2.none" data-pisi-todo-status="todo" contenteditable="false">todo.2.none</span></div>';
+// A version 2 task block holds only the task id (docs/task-plan.md §3.2.1); an old todo-tag block is an ordinary card.
+const TASK = makePisiTaskBlockHtml({ blockId: 'blk_task', taskId: 'task_source_1' });
+const OLD_TASK =
+    '<div class="pisi-editor-block" data-pisi-block-id="blk_old"><span class="pisi-todo-source" data-pisi-todo-for="todo.2.none">Eski görev</span> <span class="pisi-user-tag" data-pisi-tag="todo.2.none" data-pisi-todo-status="todo" contenteditable="false">todo.2.none</span></div>';
 const LINK = '<a class="pisi-wiki-link" data-pisi-node-id="node_hedef" data-pisi-node-title="Hedef" contenteditable="false">Hedef</a>';
 const HEADING = '<h2 class="pisi-editor-block" data-pisi-block-id="blk_h" data-pisi-block-type="heading2" data-pisi-section-level="2">Kararlar</h2>';
 const BULLET = '<div class="pisi-editor-block" data-pisi-block-id="blk_m" data-pisi-block-type="bullet">Madde</div>';
@@ -29,29 +33,35 @@ const CONTENT = [
     FILE,
     QUOTE,
     TASK,
+    OLD_TASK,
     HEADING,
     BULLET,
     '\n<!-- yorum -->'
 ].join('');
-const TASKS = [
-    {
-        id: 'task_source_1',
-        title: 'Raporu gönder',
-        status: 'todo',
-        priority: 2,
-        dueDate: null,
-        scheduledAt: null,
-        deadline: null,
-        reminderAt: null,
-        reminderMode: 'none',
-        repeat: 'none',
-        manualOrder: 1,
-        todoTag: 'todo.2.none',
-        source: { nodePath: 'Toplantı.node', blockId: 'blk_task', mapPath: null, nodeTitle: 'Toplantı', mapTitle: '' }
-    }
-];
+const taskRecord = (fields) => ({
+    tags: [],
+    status: 'todo',
+    priority: 2,
+    dueDate: null,
+    dueTime: null,
+    repeat: 'none',
+    completionOffsetDays: null,
+    reminderMode: 'none',
+    reminderAt: null,
+    dependencies: [],
+    manualOrder: 1,
+    noteId: 'node_t',
+    diaryDate: null,
+    completions: [],
+    createdAt: '2026-11-01T08:00:00.000Z',
+    updatedAt: '2026-11-01T08:00:00.000Z',
+    completedAt: null,
+    completedOn: null,
+    ...fields
+});
+const TASKS = [taskRecord({ id: 'task_source_1', title: 'Raporu gönder' })];
 const FILES = {
-    '.pisi/tasks.json': storeJson({ version: 1, updatedAt: null, tasks: TASKS }),
+    '.pisi/tasks.json': storeJson({ version: 2, updatedAt: null, tasks: TASKS }),
     'Toplantı.node': noteFile({ id: 'node_t', title: 'Toplantı', content: CONTENT, extra: { properties: { durum: { id: 'durum', value: 'açık' } } } }),
     'Hedef.node': noteFile({ id: 'node_hedef', title: 'Hedef', content: paragraph('blk_h1', 'Hedef notu') }),
     'Boş.node': noteFile({ id: 'node_b', title: 'Boş', content: '' })
@@ -136,8 +146,11 @@ describe('Not ekranı: görünüm', () => {
             ['sheet', 'Tablo · Masaüstünde düzenlenir'],
             ['image', 'Görsel · Masaüstünde düzenlenir'],
             ['file', 'Dosya · Masaüstünde düzenlenir'],
-            ['quote', 'Alıntı · Masaüstünde düzenlenir']
+            ['quote', 'Alıntı · Masaüstünde düzenlenir'],
+            ['task', 'Görev · Masaüstünde düzenlenir']
         ]);
+        // The old todo-tag block is not a task any more (§3.2.1); its text is shown on the card.
+        expect($('[data-protected="task"] .pisi-note-protected-text').textContent).toContain('Eski görev');
         expect($('[data-protected="file"] .pisi-note-protected-text').textContent).toBe('Rapor.pdf');
         expect($('[data-protected="quote"] .pisi-note-protected-text').textContent).toBe('Söz uçar');
         // Ekranın kendi işaretleri dosyaya ait değil; açmak hiçbir şey yazmaz (V4).
@@ -184,6 +197,18 @@ describe('Not ekranı: görünüm', () => {
 
         $('.pisi-note-task [data-task-open]').click();
         expect($('[role="dialog"] [data-task-field="status"] .pisi-row-value').textContent).toBe('Tamamlandı');
+    });
+
+    it('kaydı olmayan blok "Görev bulunamadı", okunamayan tasks.json "Görevler okunamadı" gösterir; blok notta kalır', async () => {
+        const files = { ...FILES, '.pisi/tasks.json': storeJson({ version: 2, updatedAt: null, tasks: [] }) };
+        const { driver } = await start({ files });
+        expect($('.pisi-note-task [data-task-state]').textContent).toBe('Görev bulunamadı');
+        await afterSave();
+        expect(driver.snapshot()['Toplantı.node']).toBe(FILES['Toplantı.node']);
+
+        app.destroy();
+        await start({ files: { ...FILES, '.pisi/tasks.json': '{bozuk' } });
+        expect($('.pisi-note-task [data-task-state]').textContent).toBe('Görevler okunamadı');
     });
 
     it('wiki-link’e dokununca hedef not açılır; hedefi olmayan link bildirilir', async () => {
@@ -338,9 +363,10 @@ describe('Not ekranı: düzenleme ve kayıt', () => {
             'İtalik',
             'Başlık',
             'Madde listesi',
-            'Numaralı liste'
+            'Numaralı liste',
+            'Göreve çevir'
         ]);
-        expect(all('.pisi-note-tool svg')).toHaveLength(5);
+        expect(all('.pisi-note-tool svg')).toHaveLength(6);
 
         tool('heading').click();
         expect(blocks()[0].dataset.type).toBe('heading1');
@@ -443,7 +469,7 @@ describe('Not ekranı: düzenleme ve kayıt', () => {
         expect(stored(driver).content).toContain(BULLET.replace('Madde', 'Madde 2'));
     });
 
-    it('günlük notu: masaüstünün görev bölümü ve başlığı düzenlenmez; yazılan Pisi sekmesindeki günlükle aynı dosyadır', async () => {
+    it('günlük notu: eski yönetilen bölüm ve başlık düzenlenmez, kart olarak durur; yazılan Pisi sekmesindeki günlükle aynı dosyadır', async () => {
         const managed =
             '<!--PISI_DIARY_MANAGED_START-->\n<div class="pisi-diary-managed-block" data-pisi-task-id="task_source_1">\n    <span class="pisi-diary-task-text">Raporu gönder</span>\n</div>\n<!--PISI_DIARY_MANAGED_END-->';
         const content =
@@ -457,7 +483,8 @@ describe('Not ekranı: düzenleme ve kayıt', () => {
         expect(blockTexts()).toEqual(['paragraph:Sabah', 'heading3:Görevler']);
         expect(blocks()[1].getAttribute('contenteditable')).toBe(null);
         expect($('.pisi-note-divider')).not.toBe(null);
-        expect($('.pisi-note-task .pisi-task-title').textContent).toBe('Raporu gönder');
+        expect($('[data-protected="task"] .pisi-note-protected-text').textContent.trim()).toBe('Raporu gönder');
+        expect($('.pisi-note-task')).toBe(null);
 
         type(blocks()[0], 'Sabah yürüdüm');
         await afterSave();
@@ -465,5 +492,62 @@ describe('Not ekranı: düzenleme ve kayıt', () => {
         app.router.selectTab('pisi');
         await settle();
         expect($('[data-screen="pisi"] textarea').value).toBe('Sabah yürüdüm');
+    });
+
+    it('günlüğün görev bölümü o günün kuralıyla kayıttan çizilir; onay kutusu yalnız tasks.json’ı yazar, metin düzenlenince bölüm bayt bayt kalır (§3.2.2)', async () => {
+        const ids = ['task_diary_1', 'task_diary_2'];
+        const tasks = [
+            taskRecord({ id: ids[0], title: 'Günlükteki görev', noteId: null, diaryDate: TODAY, dueDate: TODAY }),
+            taskRecord({ id: ids[1], title: 'Nottan gelen bugünlük', dueDate: TODAY, createdAt: '2026-11-02T08:00:00.000Z' })
+        ];
+        const section = makePisiDiaryTaskSectionHtml(TODAY, ids);
+        const content = paragraph('blk_d', 'Sabah') + section;
+        const key = `diary/${TODAY}.node`;
+        const files = {
+            ...FILES,
+            '.pisi/tasks.json': storeJson({ version: 2, updatedAt: null, tasks }),
+            [key]: noteFile({ id: 'node_d', title: '14-11-2026', content, pisi: { parentMap: 'diary', diaryDate: TODAY } })
+        };
+        const { driver } = await start({ files, note: { path: key, title: '14-11-2026' } });
+        expect($('.pisi-note-task-heading').textContent).toBe('Görevler');
+        expect(all('.pisi-note-task .pisi-task-title').map((title) => title.textContent)).toEqual(['Günlükteki görev', 'Nottan gelen bugünlük']);
+        // A diary's tasks are added on the Pisi tab: there is no task button here.
+        caretIn(blocks()[0], 0);
+        expect(tool('task')).toBe(null);
+
+        $(`.pisi-note-task [data-task-toggle="${ids[0]}"]`).click();
+        await settle();
+        expect(JSON.parse(driver.snapshot()['.pisi/tasks.json']).tasks[0]).toMatchObject({ status: 'done', completedOn: TODAY });
+        expect($(`.pisi-note-task [data-task="${ids[0]}"]`).classList.contains('pisi-task-done')).toBe(true);
+        expect(stored(driver, key).content).toBe(content);
+
+        type(blocks()[0], 'Sabah yürüdüm');
+        await afterSave();
+        expect(stored(driver, key).content).toBe(paragraph('blk_d', 'Sabah yürüdüm') + section);
+    });
+
+    it('"Göreve çevir": önce tasks.json’a görev yazılır, sonra blok paragrafın yerine geçer ve not kaydedilir; boş satırda görev penceresi açılır', async () => {
+        const { driver } = await start();
+        caretIn(blocks()[0], 0);
+        tool('task').click();
+        await settle();
+        const created = JSON.parse(driver.snapshot()['.pisi/tasks.json']).tasks.at(-1);
+        expect(created).toMatchObject({ title: 'Gündem', noteId: 'node_t', diaryDate: null, dueDate: null });
+        expect(all('.pisi-note-task .pisi-task-title').map((title) => title.textContent)).toEqual(['Gündem', 'Raporu gönder']);
+        expect(blockTexts()[0]).toBe('paragraph:Bak: Hedef ve kalın');
+        await afterSave();
+        const blockId = /data-pisi-block-id="(blk_[^"]+)" data-pisi-block-type="task" data-pisi-task-id="task_0/.exec(stored(driver).content)[1];
+        expect(stored(driver).content).toBe(CONTENT.replace(paragraph('blk_a', 'Gündem'), makePisiTaskBlockHtml({ blockId, taskId: created.id })));
+        // No diary is touched: the task has no day.
+        expect(Object.keys(driver.snapshot()).filter((path) => path.startsWith('diary/'))).toEqual([]);
+
+        // An empty note: the task has no title yet and its sheet opens to name it.
+        app.router.openNote({ path: 'Boş.node', title: 'Boş' });
+        await settle();
+        caretIn(blocks()[0], 0);
+        tool('task').click();
+        await settle();
+        expect($('[role="dialog"] .pisi-sheet-title').textContent).toBe('Görev');
+        expect(JSON.parse(driver.snapshot()['.pisi/tasks.json']).tasks.at(-1)).toMatchObject({ title: '', noteId: 'node_b' });
     });
 });

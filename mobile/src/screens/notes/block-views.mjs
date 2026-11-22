@@ -1,8 +1,11 @@
 // The blocks of a note that mobile shows but does not edit (docs/mobile-plan.md
 // M7, rule V8): a card that names the kind of block and says it is edited on
 // the desktop, with what can be shown of it: its text, its image, its file
-// name. A task block is a task row whose state comes from tasks.json. None of
-// this is ever written back; the block's HTML stays as it was read.
+// name. A version 2 task block (docs/task-plan.md §3.2.1) is a task row and a
+// diary's task section (§3.2.2) the rows of its day, both drawn from
+// tasks.json. None of this is ever written back; the block's HTML stays as it
+// was read. An old task block (todo tag) and the old managed diary section are
+// cards like any other block.
 
 import { htmlToText } from '../../../../shared/note-blocks.mjs';
 import { parseInlineHtml } from '../../data/note-inline.mjs';
@@ -39,8 +42,8 @@ function renderText(segment, document) {
  * The element for a protected segment, or null when it shows nothing (white
  * space and comments between blocks).
  * - `loadAsset(reference)` resolves with a URL for an image of the note's sidecar, or null;
- * - `addTask(host, segment)` registers a task block: the screen fills `host` with the task's row
- *   and returns false when tasks.json has no such task;
+ * - `addTask(host, segment)` registers a task block or a diary's task section: the screen fills
+ *   `host` from tasks.json and keeps it up to date;
  * - `assets` (attachment-views.mjs) downloads an image or file the phone does not hold yet (S6).
  */
 export function renderProtectedBlock(segment, { t, locale = 'tr-TR', document, loadAsset, addTask, assets = null }) {
@@ -56,11 +59,12 @@ export function renderProtectedBlock(segment, { t, locale = 'tr-TR', document, l
             htmlToText(segment.inner).trim()
         );
     }
-    if (type === 'task' || type === 'diary-managed') {
-        const host = h('div', { class: 'pisi-note-task', dataset: { protected: 'task' } });
-        if (addTask(host, segment)) return host;
-        return renderCard({ t, type: 'task', body: renderText({ ...segment, blockType: 'task' }, document) });
+    if ((type === 'task' && segment.taskId) || type === 'diary-tasks') {
+        const host = h('div', { class: 'pisi-note-task', dataset: { protected: type } });
+        addTask(host, segment);
+        return host;
     }
+    if (type === 'task' || type === 'diary-managed') return renderCard({ t, type: 'task', body: renderText({ ...segment, blockType: 'task' }, document) });
     if (type === 'image' || type === 'canvas') {
         const frame = h('div', { class: 'pisi-note-image' });
         const alt = /\salt="([^"]*)"/.exec(segment.inner)?.[1] || getBlockLabel(t, type);

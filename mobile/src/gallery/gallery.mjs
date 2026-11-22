@@ -72,7 +72,7 @@ const FILTERS = [
     ['today', 'Bugün', 3],
     ['upcoming', 'Yaklaşan', 12],
     ['overdue', 'Gecikmiş', 1],
-    ['inbox', 'Gelen kutusu', 4],
+    ['undated', 'Tarihsiz', 4],
     ['done', 'Tamamlanan', 27]
 ];
 const DATE_LABELS = {
@@ -374,7 +374,21 @@ export function mountGallery({ root, systemTheme }) {
                                 { kind: 'priority', level: 4, text: PRIORITIES[3] },
                                 { kind: 'repeat', text: 'Her ay' }
                             ]),
-                            fullTaskRow('row-3', 'Kedi maması al', [{ kind: 'priority', level: 2, text: PRIORITIES[1] }])
+                            fullTaskRow('row-3', 'Kedi maması al', [{ kind: 'priority', level: 2, text: PRIORITIES[1] }]),
+                            // A past completion of a repeating task that can no longer be taken back (docs/task-plan.md §3.2.3).
+                            renderTaskRow({
+                                id: 'row-4',
+                                title: 'Sabah yürüyüşü',
+                                done: true,
+                                locked: true,
+                                meta: [
+                                    { kind: 'time', text: '07:30' },
+                                    { kind: 'repeat', text: 'Her gün' }
+                                ],
+                                checkLabel: 'Kilitli: Sabah yürüyüşü daha sonra yeniden tamamlandı',
+                                onToggle: () => {},
+                                onOpen: () => {}
+                            })
                         ].map((row) => h('li', { class: 'pisi-task-item' }, row))
                     ),
                     taskAddSample(),

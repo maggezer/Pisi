@@ -219,7 +219,7 @@ describe('telefonda veri varken ilk eşleşme', () => {
         const phone = createPhone(server);
         await phone.project.open();
         await phone.service.init();
-        await phone.project.tasks.upsert({ id: 'task_phone_1', title: 'Telefon görevi', status: 'todo' });
+        await phone.project.tasks.create({ id: 'task_phone_1', title: 'Telefon görevi' }, { diaryDate: '2026-11-14' });
         await phone.project.diary.setText(TODAY, 'Telefonda yazdım.');
         return phone;
     }

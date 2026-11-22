@@ -4,15 +4,17 @@ import { modules } from '../module-registry.js';
 import * as shared from './project-integrity-shared.js';
 import { findPisiTaskDependencyCycle, getPisiTaskLocation, readPisiTask, readPisiTaskStore } from '../../shared/task-model.mjs';
 import { listPisiTaskBlocks } from '../../shared/task-blocks.mjs';
-import { readPisiDiaryTaskSection } from '../../shared/task-diary.mjs';
+import { listPisiDiaryTaskIds, readPisiDiaryTaskSection } from '../../shared/task-diary.mjs';
 import { getPisiDiaryNodeFileName, normalizePisiDiaryIsoDate, PISI_DIARY_FOLDER } from '../../shared/diary-rules.mjs';
 
 // Project Integrity for tasks (docs/task-plan.md G2 step 5, GV14). The audit
 // is the one task operation that reads every note: the user starts it and it
 // writes nothing. A finding a task repair can fix carries it (G7,
-// task-repair.js); those repairs are 'review': the user starts each one. A
-// task without a place (a version 1 record, written by the phone until G8)
-// is not a finding (§3.1).
+// task-repair.js); those repairs are 'review': the user starts each one. Since
+// G8 the phone writes version 2 records and diary sections too: a task
+// without a place (an old version 1 record) is a finding whose repair puts it
+// in today's diary (§3.1), and a diary section must be exactly the one the day
+// rule gives (GV15).
 
 const STORE_PATH = '.pisi/tasks.json';
 // Version 2 fields a record may hold only in their valid form.
@@ -215,7 +217,7 @@ function auditTaskBlocks(projectFolder, context, inventory, byId) {
             continue;
         }
         const location = getPisiTaskLocation(task);
-        if (location && (location.kind !== 'note' || docs[0].metadata?.id !== location.noteId)) {
+        if (!location || location.kind !== 'note' || docs[0].metadata?.id !== location.noteId) {
             movedHere.add(taskId);
             taskIssue(
                 context,
@@ -234,6 +236,19 @@ function auditTaskBlocks(projectFolder, context, inventory, byId) {
         }
     }
     for (const task of byId.values()) {
+        if (!getPisiTaskLocation(task)) {
+            // A version 1 record: no note and no diary. Its block, if a note has one, gives the move repair above.
+            if (movedHere.has(task.id)) continue;
+            taskIssue(
+                context,
+                'task-place-missing',
+                'warning',
+                'Görevin yeri yok: ne bir notta ne bir günün günlüğünde.',
+                { entityId: task.id },
+                { action: 'task-place-in-today-diary', description: 'Görevi bugünün günlüğüne bağla.', payload: { taskId: task.id, noteId: null } }
+            );
+            continue;
+        }
         if (!task.noteId) continue;
         const note = inventory.nodeById.get(task.noteId);
         if (!note) {
@@ -274,13 +289,13 @@ function auditTaskBlocks(projectFolder, context, inventory, byId) {
 
 /**
  * A diary's task section (GV15): one section, the diary's last block, with
- * the block id of its day and only ids of tasks that exist. Until the phone
- * writes sections too (G8), a section is not checked against the full day
- * rule: the phone (task records version 1) completes and moves tasks without
- * rewriting sections, and the desktop brings a section back to the rule the
- * next time a task of that day changes or the diary is saved.
+ * the block id of its day and exactly the ids the day rule gives for
+ * tasks.json (shared/task-diary.mjs), in its order. A diary without a section
+ * is right only when the day has no task. Both platforms write sections by
+ * that rule (desktop since G2, the phone since G8).
  */
 function auditDiarySections(projectFolder, context, inventory, byId) {
+    const tasks = [...byId.values()];
     for (const doc of inventory.docs) {
         if (doc.type !== 'node' || !doc.metadata) continue;
         const day = getDiaryDateOfDoc(projectFolder, doc);
@@ -290,9 +305,14 @@ function auditDiarySections(projectFolder, context, inventory, byId) {
             taskIssue(context, 'diary-task-section-mismatch', 'warning', 'Günlüğün içeriği izlenemiyor; görev bölümü denetlenemedi.', { path: doc.storedPath });
             continue;
         }
-        if (!section.count) continue;
-        const unknown = section.taskIds.filter((id) => !byId.has(id));
-        const fits = section.count === 1 && section.last && section.blockId === `blk_diary-tasks-${day}` && !unknown.length;
+        const expected = listPisiDiaryTaskIds(day, tasks);
+        if (!section.count && !expected.length) continue;
+        const fits =
+            section.count === 1 &&
+            section.last &&
+            section.blockId === `blk_diary-tasks-${day}` &&
+            section.taskIds.length === expected.length &&
+            section.taskIds.every((id, index) => id === expected[index]);
         if (!fits) {
             taskIssue(
                 context,

@@ -24,9 +24,9 @@ test('ilk açılışta boş proje kurulur; örnek proje yüklenir ve yeniden ba�
     await page.locator('[data-developer="load-sample"]').tap();
     await expect(page.getByRole('status')).toContainText('Örnek proje yüklendi: 6 görev, 3 not eklendi.');
     await expect(count(page, 'tasks')).toHaveText('6');
-    // Three notes and the day's diary, counted on its own line.
+    // Three notes and three diaries, counted on their own line: today's, and the days the dated sample tasks live in (§3.2.2).
     await expect(count(page, 'notes')).toHaveText('3');
-    await expect(count(page, 'diary')).toHaveText('1');
+    await expect(count(page, 'diary')).toHaveText('3');
     await shot(page, '08-settings-project');
     await page.getByRole('status').waitFor({ state: 'detached', timeout: 10_000 });
     await page.locator('[data-about="version"]').scrollIntoViewIfNeeded();
@@ -37,7 +37,7 @@ test('ilk açılışta boş proje kurulur; örnek proje yüklenir ve yeniden ba�
     await openFromMenu(page, 'settings');
     await expect(count(page, 'tasks')).toHaveText('6');
     await expect(count(page, 'notes')).toHaveText('3');
-    await expect(count(page, 'diary')).toHaveText('1');
+    await expect(count(page, 'diary')).toHaveText('3');
     await expect(count(page, 'maps')).toHaveText('0');
 
     const files = await projectFiles(page);
@@ -49,14 +49,17 @@ test('ilk açılışta boş proje kurulur; örnek proje yüklenir ve yeniden ba�
         'Pisi Mobil.node',
         'Toplantı Notları.node',
         'diary/.pisi-diary',
-        'diary/2026-11-14.node'
+        'diary/2026-11-12.node',
+        'diary/2026-11-14.node',
+        'diary/2026-11-17.node'
     ]);
     // Atomic writes leave no temporary file behind, and tasks.json is the desktop's format.
     expect(paths.filter((path) => path.endsWith('.tmp'))).toEqual([]);
     const store = JSON.parse(files.find((file) => file.path === '.pisi/tasks.json').content);
-    expect(store.version).toBe(1);
+    expect(store.version).toBe(2);
     expect(store.tasks.map((task) => task.title)).toContain('TÜBİTAK raporunun yöntem bölümünü gözden geçir');
-    expect(store.tasks.every((task) => /^task_[0-9a-f-]{36}$/.test(task.id) && /^todo\.[1-5]\./.test(task.todoTag))).toBe(true);
+    // Version 2 records (docs/task-plan.md §3.1): a place each, no todo tag.
+    expect(store.tasks.every((task) => /^task_[0-9a-f-]{36}$/.test(task.id) && task.diaryDate && task.noteId === null && !('todoTag' in task))).toBe(true);
 
     // Loading the sample again adds nothing.
     await page.locator('[data-developer="load-sample"]').tap();

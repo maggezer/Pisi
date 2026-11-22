@@ -14,10 +14,11 @@ import { expect, test } from '@playwright/test';
 import { generatePisiProjectFixture } from '../../scripts/generate-project-fixture.mjs';
 import { back, drag, measureFrames, open, openFromMenu, readProjectFolder, seedProjectFiles, shot, TODAY } from './helpers.mjs';
 
-const SIZE = { notes: 2000, perMap: 250, tasks: 5000, diaryDays: 60 };
+// Version 2 tasks (docs/task-plan.md §3.1, G8): every day a task is on has its diary and task section.
+const SIZE = { notes: 2000, perMap: 250, tasks: 5000, diaryDays: 60, taskModel: 2 };
 const QUERIES = ['Not 01234', 'toplantı', 'etiket7', 'ISIK', 'çalışma takvim'];
 
-test('büyük proje (2.000 not, 5.000 görev): Pisi ekranı, not listesi kaydırma ve arama süreleri ölçülür', async ({ page }, info) => {
+test('büyük proje (2.000 not, 5.000 sürüm 2 görev): Pisi ekranı, not listesi kaydırma ve arama süreleri ölçülür', async ({ page }, info) => {
     test.slow();
     const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-mobile-large-'));
     let files;
@@ -40,8 +41,10 @@ test('büyük proje (2.000 not, 5.000 görev): Pisi ekranı, not listesi kaydır
         new MutationObserver(mark).observe(document, { childList: true, subtree: true });
     });
     await page.reload();
-    // Twelve tasks fall on the day; the Pisi tab reads tasks.json and the day's diary before the project is walked (M5).
-    await expect(page.locator('[data-group="day"] .pisi-task-title')).toHaveCount(12);
+    // The day's section: twelve tasks due today and the 500 daily tasks (every tenth) whose next occurrence is today; above it
+    // the overdue open tasks (§3.2.2). The Pisi tab reads tasks.json and the day's diary before the project is walked (M5).
+    await expect(page.locator('[data-group="day"] .pisi-task-title')).toHaveCount(511);
+    await expect(page.locator('[data-group="overdue"] .pisi-task-title')).toHaveCount(1776);
     await expect(page.locator('[data-diary="text"]')).toHaveValue(/^2026-11-14 günlüğü/);
     const startup = await page.evaluate(() => window.pisiStartup);
     await shot(page, '94-large-pisi');
@@ -51,7 +54,8 @@ test('büyük proje (2.000 not, 5.000 görev): Pisi ekranı, not listesi kaydır
     const count = (id) => page.locator(`[data-project="${id}"] .pisi-row-value`);
     await expect(count('notes')).toHaveText('2000', { timeout: 60_000 });
     await expect(count('tasks')).toHaveText('5000');
-    await expect(count('diary')).toHaveText('60');
+    // The 60 diary days with text and the diary of every other day a task is on.
+    await expect(count('diary')).toHaveText('668');
     await expect(count('maps')).toHaveText('8');
     await expect(count('integrity')).toHaveText('Sorun yok');
     const indexedMs = await page.evaluate(() => performance.now());
@@ -109,6 +113,7 @@ test('büyük proje (2.000 not, 5.000 görev): Pisi ekranı, not listesi kaydır
         notes: SIZE.notes,
         tasks: SIZE.tasks,
         diaryDays: SIZE.diaryDays,
+        taskModel: SIZE.taskModel,
         pisiScreenMs: Math.round(startup.screen),
         pisiFirstTaskMs: Math.round(startup.tasks),
         projectCountedByMs: Math.round(indexedMs),

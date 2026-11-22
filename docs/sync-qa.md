@@ -171,7 +171,7 @@ Telefonda yapın, sonra masaüstünde en çok bir dakika bekleyin.
 - [x] Bir notun bir paragrafını değiştirin ve geri tuşuyla çıkın: masaüstünde aynı paragraf değişir, notun başka hiçbir yeri değişmez.
 - [x] Notlar sekmesinde yeni bir not oluşturun (sağ alttaki düğme), içine bir satır yazın: masaüstünün Gezgin'inde görünür ve açılır.
 - [x] Masaüstünde açılmış bir görevi telefonda tamamlayın: masaüstünde tamamlanmış görünür.
-- [ ] Quick Add ile yazılmış (kaynağı bir not olan) bir görevi telefonda tamamlayın. Masaüstünde görev panelini açıp kapatın, görevin kaynak notunu açıp bir harf yazıp silin ve kaydedin: görev panelinde görev **tamamlanmış kalır**. (Notun içindeki görev işaretinin eski durumda görünmesi bilinen bir sınırdır, `pisi-error.md` §5d; madde yalnız görev panelindeki durumu sorar.)
+- [ ] Quick Add ile yazılmış (kaynağı bir not olan) bir görevi telefonda tamamlayın. Masaüstünde görev panelini açıp kapatın, görevin kaynak notunu açıp bir harf yazıp silin ve kaydedin: görev panelinde görev **tamamlanmış kalır**. (G2'den beri not görevin durumunu taşımaz; nottaki görev bloğu da tamamlanmış görünür.)
       Bu biraz sıkıntılı görev içinde yazma değişikliği aktarılmıyor.
 - [ ] Her gün tekrar eden bir görevi telefonda tamamlayın: masaüstünde yarınki tekrarı **bir kez** görünür.
 

@@ -124,63 +124,6 @@ varsayılan adı da "Yeni Node". Main süreçten gelen bazı hata metinleri de
 geçişinde ele alınmalı; dosya adı değişikliği mevcut projeleri etkilemez,
 yalnız yeni dosyaların adını değiştirir.
 
-## 5d. Mobilde değişen görev, kaynağı olan not bloğuna yansımıyor
-
-G2'den (21-11-2026) beri not görev bilgisi taşımaz; masaüstü görev bloğunu `tasks.json`'dan
-çizer, bu yüzden telefonun değişikliği masaüstünde görünür. Kalan kısım (telefonda not görevinin
-bütün alanlarıyla düzenlenmesi) `docs/task-plan.md` G8'dedir. Aşağıdaki metin G2 öncesini anlatır.
-
-**[Orta · mobil · bilinçli sınır]** Pisi Mobil görev durumunu yalnız
-`.pisi/tasks.json` içinde değiştirir; mobilin düzenleyemediği not bloklarına
-dokunmaz (`docs/mobile-plan.md` V8). Kaynağı bir not bloğu olan görev (Quick Add
-ile Inbox'a ya da bir nota yazılmış görev) mobilde tamamlanınca nottaki görev
-işareti eski durumunda kalır.
-
-- Kesin olan: masaüstünde not açıldığında blok hâlâ "todo" görünür.
-- Kod incelemesiyle görülen, uçtan uca denenmemiş risk: masaüstünde kullanıcı
-  görev panelinde bir değişiklik yaptığında çalışan projection eşitlemesi
-  (`renderer/tags/pisi-source-of-truth.mjs`, `sync-index`) görevi nottaki
-  işaretten yeniden normalize eder ve mobilde verilen "tamamlandı" durumunu
-  geri alabilir.
-- Tekrar eden görevde mobil sonraki tekrarı kaynak bloğu olmayan yeni bir kayıt
-  olarak ekler; masaüstü ise nottaki bloğu kopyalar. Aynı görev iki cihazda da
-  tamamlanırsa sonraki tekrar iki kez oluşabilir.
-    - 16-11-2026 (S1): mobil artık sonraki tekrarın kimliğini önceki görev
-      kimliği ve yeni tarihten türetir (`formatPisiRecurrenceTaskId`,
-      `shared/ids.mjs`); iki telefon ya da telefon + ileride aynı kuralı
-      kullanan bir istemci aynı kaydı üretir ve senkron birleştirmesi tek kayıt
-      bırakır. Masaüstünün blok kopyası hâlâ rastgele blok kimliği alır ve görev
-      kimliği o bloktan türer; masaüstü tarafı S3'te (Electron E2E ile) bu kurala
-      bağlanacak. O zamana kadar masaüstü + telefon çiftinde risk sürer.
-    - 17-11-2026 (S3): masaüstü de sonraki tekrarın kimliğini aynı kuralla verir
-      (`renderer/tags/pisi-todo-second-release.mjs`; Electron E2E
-      `scripts/electron-sync-client-e2e.mjs`). Tekrarın iki kez oluşma riski kapandı.
-- 17-11-2026 (S3), SV13: E2E iki geri dönüş yolu buldu ve ikisi de düzeltildi.
-    - Quick Add'in yazdığı görev bloğu `data-pisi-task-id` taşımıyordu; not masaüstünde
-      düzenlenince editör ona yeni rastgele kimlik veriyor, yansıtma eski canonical görevi
-      siliyor ve uzaktan gelen durum kayboluyordu. Editör artık canonical görevi kaynağından
-      (not, blok, etiket) bulur (`renderer/tags/pisi-task-store.mjs`).
-    - Bir senkron turu `tasks.json`'daki durumu değiştirince masaüstü bunu cihaz durumunda bir
-      koruma olarak tutar; nottaki eski işaretten gelen yansıtma yazması canonical durumu geri
-      çevirmez (`main/functions/sync-client-desktop.js`, `task-store.js`). Görev paneli açılıp
-      kapanınca ve kaynak not düzenlenip kaydedilince durum korunur.
-    - Kalan bilinçli sınır: nottaki işaret eski durumda görünmeye devam eder (masaüstü
-      canonical durumu nota geri yazmaz). Koruma sürerken eski duruma notun işaretinden dönmek
-      için işaret iki kez değiştirilmeli ya da görev panelinden değiştirilmelidir.
-
-Bu yüzden Görevler sekmesinin görev detayı (M6) kaynağı not bloğu olan
-görevlerde yalnız durumu değiştirir; başlık, öncelik, tarih, saat, tekrar ve
-hatırlatma salt okunurdur ("Masaüstünde nottan düzenlenir"). Kaynağı olmayan
-görevlerde bütün alanlar düzenlenir. Durum değişikliği için yukarıdaki risk
-sürer.
-
-Kalıcı çözüm mobilin görev bloğu işaretini güvenle güncelleyebilmesini ya da
-masaüstünün canonical durumu nota geri yansıtmasını gerektirir; aktarım planıyla
-birlikte ele alınmalıdır.
-
-Plan: `docs/task-plan.md` G2 ve G8. Not görev bilgisi taşımayacağı için yansıtılacak
-bir işaret kalmaz; mobil not görevlerinin bütün alanlarını düzenler.
-
 ## 5f. Mobilde bazı masaüstü paragrafları salt okunur kart olarak görünüyor
 
 **[Düşük · mobil · doğrulandı, çözülmedi]**
@@ -219,32 +162,25 @@ denetlendi. Çözüm önerisi: testlerde logger'ın süreç
 yakalayıcılarını kurmaması (ör. bir ortam bayrağı) ya da bu dosyaların test
 sayısını denetleyen bir koruma.
 
-## 5h. Görev sistemi: kalan bulgular (G8)
+## 5h. Görev sistemi: kalan bulgular
 
-**[Orta · tasks · kısmen çözüldü (G2–G7)]** 21-11-2026 incelemesinin bulguları
+**[Orta · tasks · kısmen çözüldü (G2–G8)]** 21-11-2026 incelemesinin bulguları
 [`docs/task-plan.md`](docs/task-plan.md) Ek A'dadır. G2'de (`tasks.json` sürüm 2, görev servisi)
 GB1–GB9, GB12, GK4, GK5, GK11, GK12 ve GK14, G3'te (editörde görev bloğu) GB14 ve GK2, G4'te (görev paneli, çalışma
 alanı, Quick Add) GK6, GK7 ve GK8, G5'te (takvim, harita, arama, gezinme, dışa/içe aktarma, not kopyası, not
 geçmişi) GB11, GK3, GK9 ve GK10 kapandı; G6'da etiketler (`tags`) ve başlıktaki not bağlantıları kayıt üzerinden geri geldi;
-G7'de (bütünlük, onarım, ölçüm, temizlik) GK1, GK13 ve GK15 kapandı; not ve günlük artık yalnız görev kimliğini taşır, bütün görev yazmaları
-ana süreçteki görev servisinden geçer, hiçbir görev işlemi projeyi taramaz ve bütün yüzeyler görevi kayıttan çizer.
+G7'de (bütünlük, onarım, ölçüm, temizlik) GK1, GK13 ve GK15, G8'de (mobil sürüm 2) GB5'in mobil tarafı ve §5d kapandı; not ve günlük
+artık yalnız görev kimliğini taşır, bütün görev yazmaları masaüstünde ana süreçteki görev servisinden, telefonda `TaskRepo`'dan geçer,
+hiçbir görev işlemi projeyi taramaz ve bütün yüzeyler görevi kayıttan çizer.
 Kalanlar (parantez içi kapatacak faz):
 
-- **GB5 (mobil tarafı):** Telefon sürüm 1 kurallarıyla çalışıyor: `tasks.json`'u `version: 1` diye
-  yazıyor, değiştirdiği kayda eski alanları (`todoTag`, `scheduledAt`) ekliyor, tekrar eden görevi
-  tamamlayınca yeni kayıt açıyor ve günlüğün görev bölümünü yazmıyor. Notta sürüm 2 görev bloğu
-  salt okunur "Görev · Masaüstünde düzenlenir" kartı olarak görünür. Masaüstü bunları okur ve
-  korur; Project Integrity günlük bölümünü G8'e kadar yalnız yapı ve bilinmeyen kimlik için
-  denetler. Telefonun takvimi G5'te masaüstüyle aynı gün kuralına geçti; Pisi ve Görevler sekmeleri
-  görevin gününü hâlâ `scheduledAt → dueDate → deadline` sırasıyla okur, bu yüzden telefonda
-  `scheduledAt`'ı `dueDate`'ten farklı olan eski bir kayıt takvimde ve gün görünümünde farklı günde
-  görünebilir. (G8)
 - Arama dizini, kurulduktan sonra "Yeni not" düğmesiyle oluşan notu görmüyor (dosya sistemi
   yenilemesi bastırıldığı için dizine delta gelmiyor; G4 E2E'sinde doğrulandı). Görev tarafı G5'te
   kapandı: görev kaydı notunu Explorer ağacından da bulur. Notun kendisi (başlığı, içeriği) dizin
   yeniden kurulana kadar aranamıyor. (arama, faz dışı)
 - Telefon görev etiketlerini göstermiyor ve düzenleyemiyor; başlıktaki `[[Not]]` bağlantısı telefonda düz
-  metin olarak görünür. Telefon kaydı yazarken `tags` alanını korur. (G8)
+  metin olarak görünür. Telefon kaydı yazarken `tags` alanını korur. G8'in maddelerinde yoktu; ayrı bir
+  mobil işidir. (mobil, faz dışı)
 - Bir not açılınca etiket dizini (`renderer/tags/pisi-tag-index.mjs`) bütün notları ve günlükleri ana süreçten
   tek tek okur; 2.000 notlu projede bu ~12 sn sürer ve arka planda çalışır (G7 ölçümünde görüldü,
   `scripts/electron-tasks-scale-e2e.mjs` `tagIndexReadUntilQuietMs`). Görevlerle ilgisi yok: görevler `tasks.json`'dan

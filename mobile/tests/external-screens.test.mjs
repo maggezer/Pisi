@@ -41,7 +41,7 @@ const FILES = {
     'B.node': NOTE_B,
     'diary/.pisi-diary': '',
     [DAY]: dayFile('Sabah'),
-    '.pisi/tasks.json': tasksFile([task('task_1', 'Süt al')]),
+    '.pisi/tasks.json': tasksFile([task('task_milk', 'Süt al')]),
     'Kroki.map': mapFile([layout('node_k1', 0, 0), layout('node_k2', 400, 0)]),
     [`${SIDECAR}/K1.node`]: noteFile({ id: 'node_k1', title: 'K1' }),
     [`${SIDECAR}/K2.node`]: noteFile({ id: 'node_k2', title: 'K2' }),
@@ -204,7 +204,10 @@ describe('Pisi sekmesi, görevler ve takvim dış değişikliği alır (S4)', ()
         expect(textarea.value).toBe('Sabah');
 
         await external.put(DAY, dayFile('Sabah, masaüstünden'));
-        await external.put('.pisi/tasks.json', tasksFile([task('task_1', 'Süt al'), task('task_2', 'Ekmek al')]));
+        await external.put(
+            '.pisi/tasks.json',
+            tasksFile([task('task_milk', 'Süt al', { manualOrder: 1 }), task('task_bread', 'Ekmek al', { manualOrder: 2 })])
+        );
         await settle();
         expect($('[data-diary="text"]')).toBe(textarea);
         expect(textarea.value).toBe('Sabah, masaüstünden');

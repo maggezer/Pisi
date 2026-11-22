@@ -69,8 +69,8 @@ describe('uygulama ve proje', () => {
         root.querySelector('[data-developer="load-sample"]').click();
         await expect.poll(snackbar).toBe('Örnek proje yüklendi: 6 görev, 3 not eklendi.');
 
-        // Three notes and one diary day; the diary is counted on its own line.
-        expect([count('tasks'), count('notes'), count('diary')]).toEqual(['6', '3', '1']);
+        // Three notes; the sample tasks live in today's diary, and the two dated other days create their days' diaries (docs/task-plan.md §3.2.2).
+        expect([count('tasks'), count('notes'), count('diary')]).toEqual(['6', '3', '3']);
         expect(JSON.parse(driver.snapshot()['.pisi/tasks.json']).tasks).toHaveLength(6);
     });
 
@@ -98,7 +98,7 @@ describe('uygulama ve proje', () => {
             return flush();
         };
 
-        void project.tasks.upsert({ title: 'Duraklamadan önce' });
+        void project.tasks.create({ title: 'Duraklamadan önce' }, { diaryDate: '2026-11-14' });
         platform.pause();
         await app.lifecycle.flush();
         expect(JSON.parse(driver.snapshot()['.pisi/tasks.json']).tasks.map((task) => task.title)).toEqual(['Duraklamadan önce']);

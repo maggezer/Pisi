@@ -361,9 +361,11 @@ damgaları (`createdAt`, `updatedAt`, `completedAt`, `completedOn`).
 Alan kuralları `shared/task-model.mjs`'tedir (masaüstü ve mobil aynı kodu
 çalıştırır). Masaüstü sürüm 1 ve 2'yi okur, 2 yazar; bilinmeyen alanlar ve üst
 düzey anahtarlar korunur. Sürüm 1'den kalan alanlar (`source`, `todoTag`,
-`scheduledAt`, `deadline`) okunmaz ve silinmez; böyle bir kaydın yeri yoktur ve
-G8'e kadar bulgu sayılmaz. Okunamayan `tasks.json` ezilmez; görevler salt
-okunurdur.
+`scheduledAt`, `deadline`) okunmaz ve silinmez. Böyle bir kaydın yeri yoktur;
+Project Integrity onu "yeri olmayan görev" (`task-place-missing`) olarak gösterir
+ve bugünün günlüğüne bağlamayı önerir (G8). Pisi Mobil de G8'den beri sürüm 2
+yazar ve görevin günleri değişince günlük bölümünü aynı kuralla yazar.
+Okunamayan `tasks.json` ezilmez; görevler salt okunurdur.
 
 Etiketler ve not bağlantıları (`docs/task-plan.md` G6) da yalnız bu kayıttadır:
 
@@ -482,7 +484,7 @@ hiçbiri okurken ya da gezinirken dosya yazmaz:
   `dueDate`'e ve yerel güne göredir.
 - Arama her görev için tek bir kayıt üretir
   (`renderer/search/pisi-search-task-records.mjs`): nottaki, günlükteki ve yeri
-  olmayan (telefonun sürüm 1 kaydı) görevler. Notlar görev için okunmaz; eski
+  olmayan (eski sürüm 1 kaydı) görevler. Notlar görev için okunmaz; eski
   `todo.` işareti sıradan etikettir. Sonuç görevin yerini açar; yeri olmayan ya
   da notu bulunmayan görevde (ya da Shift+Enter ile) görev ayrıntısı açılır.
 - Gezinme kesindir: etiket ve arama sonucu notu yoluyla, bloğu kimliğiyle açar

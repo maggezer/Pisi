@@ -1,298 +1,308 @@
+// TaskRepo, version 2 (docs/task-plan.md §3.1–§3.3, G8): records follow
+// shared/task-model.mjs, every task has a place, and the diary section of
+// each day a change touches is written in the same writer job (GV5, GV15).
+
 import { describe, expect, it } from 'vitest';
-import { NOW, TODAY, createMemoryProject, storeJson } from './data-helpers.mjs';
-import { formatPisiRecurrenceTaskId } from '../../shared/ids.mjs';
+import { PISI_DIARY_EMPTY_CONTENT } from '../../shared/diary-rules.mjs';
+import { makePisiDiaryTaskSectionHtml } from '../../shared/task-diary.mjs';
+import { NOW, TODAY, createMemoryProject, noteFile, paragraph, storeJson } from './data-helpers.mjs';
 
 const KEY = '.pisi/tasks.json';
+const diaryKey = (day) => `diary/${day}.node`;
+const ID = 'task_11111111-1111-4111-8111-111111111111';
+const OTHER = 'task_22222222-2222-4222-8222-222222222222';
 
 function storedTask(overrides = {}) {
     return {
-        id: 'task_11111111-1111-4111-8111-111111111111',
+        id: ID,
         title: 'Raporu gönder',
+        tags: [],
         status: 'todo',
         priority: 2,
         dueDate: TODAY,
-        scheduledAt: `${TODAY}T10:00`,
-        deadline: null,
-        reminderAt: null,
-        reminderMode: 'none',
-        durationMinutes: 0,
-        actualMinutes: 0,
+        dueTime: '10:00',
         repeat: 'none',
         completionOffsetDays: null,
+        reminderMode: 'none',
+        reminderAt: null,
         dependencies: [],
         manualOrder: 100,
-        todoTag: 'todo.2.14-11-2026',
-        source: { nodePath: 'Inbox.node', blockId: 'blk_1', mapPath: null, nodeTitle: 'Inbox', mapTitle: '' },
+        noteId: 'node_00000000-0000-4000-8000-0000000000aa',
+        diaryDate: null,
+        durationMinutes: 0,
+        actualMinutes: 0,
+        completions: [],
         createdAt: '2026-11-01T08:00:00.000Z',
         updatedAt: '2026-11-01T08:00:00.000Z',
         completedAt: null,
+        completedOn: null,
         ...overrides
     };
 }
 
-const store = (tasks, extra = {}) => storeJson({ version: 1, updatedAt: '2026-11-01T08:00:00.000Z', tasks, ...extra });
+const store = (tasks, extra = {}) => storeJson({ version: 2, updatedAt: '2026-11-01T08:00:00.000Z', tasks, ...extra });
 const read = (driver) => JSON.parse(driver.snapshot()[KEY]);
+const readDiary = (driver, day) => JSON.parse(driver.snapshot()[diaryKey(day)]);
+const renamed = (driver) => driver.calls.filter(([name]) => name === 'rename').map(([, , target]) => target);
+const diaryFile = (day, content) => noteFile({ id: `node_diary-${day}`, title: day, content, pisi: { parentMap: 'diary', diaryDate: day } });
 
-describe('TaskRepo', () => {
-    it('ilk görevle tasks.json dosyasını masaüstü biçiminde oluşturur', async () => {
+/** A project whose clock the test moves. */
+function projectAt(files, start = NOW) {
+    const clock = { now: new Date(start) };
+    const made = createMemoryProject(files, { now: () => new Date(clock.now) });
+    return { ...made, clock };
+}
+
+describe('TaskRepo sürüm 2', () => {
+    it('günlükte oluşturulan görev o günün günlüğünde durur, o gün bitişlidir; günlük yoksa masaüstü biçiminde oluşur', async () => {
         const { project, driver } = createMemoryProject();
-        const result = await project.tasks.upsert({ title: '  Süt   al ', priority: 4, dueDate: TODAY, scheduledAt: `${TODAY}T18:00` });
+        const result = await project.tasks.create({ title: '  Süt   al ', priority: 4, dueTime: '18:00' }, { diaryDate: TODAY });
 
-        expect(result).toMatchObject({ ok: true, created: true, changed: true });
-        expect(driver.snapshot()[KEY]).toBe(
-            storeJson({
-                version: 1,
+        expect(result).toMatchObject({ ok: true, created: true, days: { days: [TODAY], created: [TODAY], written: [] } });
+        const stored = read(driver);
+        expect(Object.keys(stored)).toEqual(['version', 'updatedAt', 'tasks']);
+        expect(stored.version).toBe(2);
+        expect(stored.tasks).toEqual([
+            {
+                id: 'task_00000000-0000-4000-8000-000000000001',
+                title: 'Süt al',
+                tags: [],
+                status: 'todo',
+                priority: 4,
+                dueDate: TODAY,
+                dueTime: '18:00',
+                repeat: 'none',
+                completionOffsetDays: null,
+                reminderMode: 'none',
+                reminderAt: null,
+                dependencies: [],
+                manualOrder: NOW.getTime(),
+                noteId: null,
+                diaryDate: TODAY,
+                durationMinutes: 0,
+                actualMinutes: 0,
+                completions: [],
+                createdAt: NOW.toISOString(),
                 updatedAt: NOW.toISOString(),
-                tasks: [
-                    {
-                        id: 'task_00000000-0000-4000-8000-000000000001',
-                        title: 'Süt al',
-                        status: 'todo',
-                        priority: 4,
-                        dueDate: TODAY,
-                        scheduledAt: `${TODAY}T18:00`,
-                        deadline: null,
-                        reminderAt: null,
-                        reminderMode: 'none',
-                        durationMinutes: 0,
-                        actualMinutes: 0,
-                        repeat: 'none',
-                        completionOffsetDays: null,
-                        dependencies: [],
-                        manualOrder: NOW.getTime(),
-                        todoTag: 'todo.4.14-11-2026',
-                        source: { nodePath: null, blockId: null, mapPath: null, nodeTitle: '', mapTitle: '' },
-                        createdAt: NOW.toISOString(),
-                        updatedAt: NOW.toISOString(),
-                        completedAt: null
-                    }
-                ]
-            })
-        );
+                completedAt: null,
+                completedOn: null
+            }
+        ]);
+        // The diary the desktop would make: its empty content and the section with the task's id only (§3.2.2).
+        const diary = readDiary(driver, TODAY);
+        expect(diary.pisi).toMatchObject({ type: 'node', parentMap: 'diary', diaryDate: TODAY, title: '14-11-2026' });
+        expect(diary.content).toBe(PISI_DIARY_EMPTY_CONTENT + makePisiDiaryTaskSectionHtml(TODAY, [stored.tasks[0].id]));
+        expect(diary.content).not.toContain('Süt');
+        expect(driver.snapshot()['diary/.pisi-diary']).toBeDefined();
+        expect(await driver.stat(`diary/${diary.pisi.sidecar}`)).toMatchObject({ type: 'directory' });
     });
 
-    it('tarihsiz görev tarihsiz etiket alır; yalnız saat verilirse bitiş günü ondan gelir; boş başlık kaydedilmez', async () => {
+    it('notta oluşturulan tarihsiz görev hiçbir günlüğe dokunmaz; yer verilmeyen ya da geçersiz alanlı görev yazılmaz', async () => {
         const { project, driver } = createMemoryProject();
-        const undated = await project.tasks.upsert({ title: 'Okuma listesi' });
-        const scheduled = await project.tasks.upsert({ title: 'Toplantı', priority: 1, scheduledAt: '2026-11-20T14:00' });
-        const empty = await project.tasks.upsert({ title: '   ' });
+        const inNote = await project.tasks.create({ title: 'Nottaki görev', dueDate: null }, { noteId: 'node_00000000-0000-4000-8000-0000000000aa' });
+        expect(inNote.task).toMatchObject({ noteId: 'node_00000000-0000-4000-8000-0000000000aa', diaryDate: null, dueDate: null });
+        expect(inNote.days).toEqual({ days: [], written: [], created: [], skipped: [] });
 
-        expect([undated.task.todoTag, undated.task.dueDate]).toEqual(['todo.3.none', null]);
-        expect([scheduled.task.todoTag, scheduled.task.dueDate]).toEqual(['todo.1.20-11-2026', '2026-11-20']);
-        expect(empty).toEqual({ ok: false, error: 'empty-title' });
-        expect(read(driver).tasks).toHaveLength(2);
+        expect(await project.tasks.create({ title: 'Yersiz' })).toEqual({ ok: false, error: 'target-required' });
+        const invalid = await project.tasks.create({ title: 'Kötü', priority: 9 }, { diaryDate: TODAY });
+        expect(invalid).toMatchObject({ ok: false, errors: [{ field: 'priority', code: 'invalid' }] });
+        expect(read(driver).tasks).toHaveLength(1);
+        expect(Object.keys(driver.snapshot()).filter((key) => key.startsWith('diary/'))).toEqual([]);
     });
 
-    it('yalnız ilgili kaydı değiştirir; bilinmeyen alanları ve diğer kayıtları korur (V3, V5)', async () => {
-        const other = storedTask({ id: 'task_22222222-2222-4222-8222-222222222222', title: 'Diğer', futureField: [1, 2] });
-        const { project, driver } = createMemoryProject({ [KEY]: store([storedTask({ futureField: { keep: true } }), other], { futureSetting: 'kalsın' }) });
+    it('yalnız ilgili kaydı değiştirir; bilinmeyen alanları, sürüm 1 alanlarını ve diğer kayıtları korur (GV12, V5)', async () => {
+        const other = storedTask({ id: OTHER, title: 'Diğer', futureField: [1, 2] });
+        const legacy = { ...storedTask({ futureField: { keep: true } }), todoTag: 'todo.2.14-11-2026', source: { nodePath: 'Eski.node' } };
+        const { project, driver } = createMemoryProject({ [KEY]: storeJson({ version: 1, updatedAt: 'x', tasks: [legacy, other], futureSetting: 'kalsın' }) });
 
-        const result = await project.tasks.upsert({ id: storedTask().id, title: 'Raporu bugün gönder', priority: 1 });
+        await project.tasks.update(ID, { title: 'Raporu bugün gönder', priority: 1 });
         const after = read(driver);
 
         expect(Object.keys(after)).toEqual(['version', 'updatedAt', 'tasks', 'futureSetting']);
-        expect(after.futureSetting).toBe('kalsın');
+        expect([after.version, after.futureSetting]).toEqual([2, 'kalsın']);
         expect(after.tasks[1]).toEqual(other);
-        expect(after.tasks[0]).toEqual({
-            ...storedTask({ futureField: { keep: true } }),
-            title: 'Raporu bugün gönder',
-            priority: 1,
-            updatedAt: NOW.toISOString()
-        });
-        // The task lives in a note block, so its tag stays the block's tag.
-        expect(result.task.todoTag).toBe('todo.2.14-11-2026');
+        expect(after.tasks[0]).toEqual({ ...legacy, title: 'Raporu bugün gönder', priority: 1, updatedAt: NOW.toISOString() });
     });
 
     it('yazmadan hemen önce dosyayı yeniden okur: araya giren kayıt kaybolmaz (V5)', async () => {
         const { project, driver } = createMemoryProject({ [KEY]: store([storedTask()]) });
         await project.tasks.list();
         // Another writer (the desktop, a transfer) adds a task after mobile read the list.
-        const outside = storedTask({ id: 'task_33333333-3333-4333-8333-333333333333', title: 'Dışarıdan' });
-        await driver.writeText(KEY, store([storedTask(), outside]));
+        await driver.writeText(KEY, store([storedTask(), storedTask({ id: OTHER, title: 'Dışarıdan' })]));
 
-        await project.tasks.setStatus(storedTask().id, 'doing');
+        await project.tasks.update(ID, { status: 'doing' });
         expect(read(driver).tasks.map((task) => [task.title, task.status])).toEqual([
             ['Raporu gönder', 'doing'],
             ['Dışarıdan', 'todo']
         ]);
     });
 
-    it('değişiklik getirmeyen işlem dosyayı yazmaz (V4)', async () => {
+    it('değişiklik getirmeyen işlem ve bilinmeyen kimlik dosya yazmaz (V4)', async () => {
         const text = store([storedTask()]);
         const { project, driver } = createMemoryProject({ [KEY]: text });
-        const same = await project.tasks.upsert({ id: storedTask().id, title: 'Raporu gönder', priority: 2 });
-        const status = await project.tasks.setStatus(storedTask().id, 'todo');
-        const missing = await project.tasks.setStatus('task_yok-yok', 'done');
-
-        expect([same.changed, status.changed, missing]).toEqual([false, false, { ok: false, notFound: true, skip: true }]);
+        expect(await project.tasks.update(ID, { title: 'Raporu gönder', priority: 2 })).toMatchObject({ ok: true, changed: false });
+        expect(await project.tasks.update('task_yok-yok', { status: 'done' })).toEqual({ ok: false, notFound: true });
+        expect(await project.tasks.reopen(ID)).toMatchObject({ ok: true, changed: false });
         expect(driver.snapshot()[KEY]).toBe(text);
         expect(driver.count('rename')).toBe(0);
     });
 
-    it('tamamlanan görev completedAt alır, yeniden açılınca temizlenir', async () => {
-        const { project, driver } = createMemoryProject({ [KEY]: store([storedTask()]) });
-        const done = await project.tasks.complete(storedTask().id);
-        expect([done.task.status, done.task.completedAt, done.next]).toEqual(['done', NOW.toISOString(), null]);
-        expect((await project.tasks.complete(storedTask().id)).changed).toBe(false);
+    it('alan değişikliği (başlık, durum, öncelik, saat, hatırlatma) hiçbir not ya da günlük dosyası yazmaz (GV5)', async () => {
+        const section = makePisiDiaryTaskSectionHtml(TODAY, [ID]);
+        const { project, driver } = createMemoryProject({
+            [KEY]: store([storedTask()]),
+            [diaryKey(TODAY)]: diaryFile(TODAY, `${paragraph('blk_a', 'Gün')}${section}`)
+        });
+        await project.tasks.update(ID, {
+            title: 'Yeni',
+            status: 'doing',
+            priority: 5,
+            dueTime: '11:30',
+            reminderMode: 'day-before',
+            reminderAt: `${TODAY}T08:00`
+        });
+        expect(renamed(driver)).toEqual([KEY]);
+    });
 
-        const reopened = await project.tasks.setStatus(storedTask().id, 'todo');
-        expect([reopened.task.status, reopened.task.completedAt]).toEqual(['todo', null]);
-        expect(read(driver).tasks).toHaveLength(1);
+    it('bitiş günü değişince eski günün bölümünden çıkar, yeni günün günlüğü oluşur; öbür bloklar bayt bayt kalır', async () => {
+        const before = `${paragraph('blk_a', 'Sabah yazısı')}${makePisiDiaryTaskSectionHtml(TODAY, [ID, OTHER])}`;
+        const files = {
+            [KEY]: store([storedTask(), storedTask({ id: OTHER, title: 'Kalan', createdAt: '2026-11-02T08:00:00.000Z' })]),
+            [diaryKey(TODAY)]: diaryFile(TODAY, before)
+        };
+        const { project, driver } = createMemoryProject(files);
+        const result = await project.tasks.update(ID, { dueDate: '2026-11-20' });
+
+        expect(result.days).toEqual({ days: [TODAY, '2026-11-20'], written: [TODAY], created: ['2026-11-20'], skipped: [] });
+        expect(readDiary(driver, TODAY).content).toBe(`${paragraph('blk_a', 'Sabah yazısı')}${makePisiDiaryTaskSectionHtml(TODAY, [OTHER])}`);
+        expect(readDiary(driver, TODAY).pisi.updatedAt).toBe(NOW.toISOString());
+        expect(readDiary(driver, '2026-11-20').content).toBe(PISI_DIARY_EMPTY_CONTENT + makePisiDiaryTaskSectionHtml('2026-11-20', [ID]));
+        // The time of day stays with the task; taking the day away takes the time too.
+        expect(result.task.dueTime).toBe('10:00');
+        expect((await project.tasks.update(ID, { dueDate: null })).task).toMatchObject({ dueDate: null, dueTime: null });
+    });
+
+    it('son görevi çıkan günün bölümü kalkar; silinmiş günlük yeniden oluşturulmaz (§3.3)', async () => {
+        const files = {
+            [KEY]: store([storedTask()]),
+            [diaryKey(TODAY)]: diaryFile(TODAY, `${paragraph('blk_a', 'Not')}${makePisiDiaryTaskSectionHtml(TODAY, [ID])}`)
+        };
+        const { project, driver } = createMemoryProject(files);
+        await project.tasks.update(ID, { dueDate: '2026-11-13' });
+        expect(readDiary(driver, TODAY).content).toBe(paragraph('blk_a', 'Not'));
+        // 13-11 was joined, so it was created; moving back to 14-11 rewrites 14-11 and empties 13-11 without deleting it.
+        await project.tasks.update(ID, { dueDate: TODAY });
+        expect(readDiary(driver, '2026-11-13').content).toBe(PISI_DIARY_EMPTY_CONTENT);
+        expect(readDiary(driver, TODAY).content).toBe(`${paragraph('blk_a', 'Not')}${makePisiDiaryTaskSectionHtml(TODAY, [ID])}`);
+    });
+
+    it('tekrarsız görev tamamlanınca done olur; geç tamamlanırsa tamamlandığı günün günlüğüne de girer; geri açılır', async () => {
+        const { project, driver, clock } = projectAt({ [KEY]: store([storedTask({ dueDate: '2026-11-12', dueTime: null })]) });
+        const done = await project.tasks.complete(ID);
+        expect(done.task).toMatchObject({ status: 'done', completedAt: NOW.toISOString(), completedOn: TODAY });
+        expect(done.completion).toEqual({ date: TODAY, dueDate: '2026-11-12', at: NOW.toISOString(), status: 'todo' });
+        expect(done.days).toMatchObject({ days: [TODAY], created: [TODAY] });
+        expect(readDiary(driver, TODAY).content).toContain(`data-pisi-task-ref="${ID}"`);
+        expect((await project.tasks.complete(ID)).changed).toBe(false);
+
+        clock.now = new Date(2026, 10, 14, 10, 0);
+        const reopened = await project.tasks.reopen(ID, done.completion);
+        expect(reopened.task).toMatchObject({ status: 'todo', completedAt: null, completedOn: null });
+        expect(readDiary(driver, TODAY).content).toBe(PISI_DIARY_EMPTY_CONTENT);
     });
 
     it.each([
-        ['daily', '14-11-2026', '2026-11-15'],
-        ['weekdays', '13-11-2026', '2026-11-16'],
-        ['weekly', '13-11-2026', '2026-11-20'],
-        ['biweekly', '14-11-2026', '2026-11-28'],
-        ['monthly', '31-01-2027', '2027-02-28'],
-        ['after-completion', '01-11-2026', '2026-11-17']
-    ])('tekrar eden görev (%s) tamamlanınca sonraki tarihle yeni kayıt eklenir', async (repeat, tagDate, nextIso) => {
-        const recurring = storedTask({
-            repeat,
-            todoTag: `todo.2.${tagDate}`,
-            completionOffsetDays: repeat === 'after-completion' ? 3 : null,
-            durationMinutes: 25
-        });
-        const { project, driver } = createMemoryProject({ [KEY]: store([recurring]) });
-
-        const result = await project.tasks.complete(recurring.id);
-        const [done, next] = read(driver).tasks;
-        const [year, month, day] = nextIso.split('-');
-
-        expect(done).toMatchObject({ id: recurring.id, status: 'done', completedAt: NOW.toISOString(), source: recurring.source });
-        expect(next).toEqual(result.next);
-        expect(next).toMatchObject({
-            title: 'Raporu gönder',
-            status: 'todo',
-            priority: 2,
-            repeat,
-            dueDate: nextIso,
-            scheduledAt: nextIso,
-            todoTag: `todo.2.${day}-${month}-${year}`,
-            durationMinutes: 25,
-            manualOrder: 101,
-            completedAt: null,
-            // The next occurrence is not tied to a note block (mobile does not create task blocks).
-            source: { nodePath: null, blockId: null, mapPath: null, nodeTitle: '', mapTitle: '' }
-        });
-        // Derived from the completed task and the next date: another device completing it creates the same id.
-        expect(next.id).toBe(formatPisiRecurrenceTaskId(recurring.id, nextIso));
-        expect(next.id).not.toBe(recurring.id);
+        ['daily', '2026-11-14', '2026-11-15'],
+        ['weekdays', '2026-11-13', '2026-11-16'],
+        ['weekly', '2026-11-13', '2026-11-20'],
+        ['biweekly', '2026-11-14', '2026-11-28'],
+        ['monthly', '2026-10-31', '2026-11-30'],
+        ['after-completion', '2026-11-01', '2026-11-17']
+    ])('tekrar eden görev (%s) yeni kayıt açmaz: tamamlama completions’a yazılır, görev sonraki tekrara ilerler', async (repeat, due, next) => {
+        const task = storedTask({ repeat, dueDate: due, completionOffsetDays: repeat === 'after-completion' ? 3 : null });
+        const { project, driver } = createMemoryProject({ [KEY]: store([task]) });
+        const result = await project.tasks.complete(ID);
+        const stored = read(driver).tasks;
+        expect(stored).toHaveLength(1);
+        expect(stored[0]).toMatchObject({ status: 'todo', dueDate: next, completions: [{ date: TODAY, dueDate: due, at: NOW.toISOString() }] });
+        expect(result.completion).toMatchObject({ date: TODAY, dueDate: due });
     });
 
-    it('aynı tekrar iki cihazda tamamlanınca sonraki tekrar aynı kimliği alır; kimlik doluysa yenisi verilir', async () => {
-        const recurring = storedTask({ repeat: 'daily', todoTag: 'todo.2.14-11-2026' });
-        const phone = createMemoryProject({ [KEY]: store([recurring]) });
-        const tablet = createMemoryProject({ [KEY]: store([recurring]) });
-        const fromPhone = await phone.project.tasks.complete(recurring.id);
-        const fromTablet = await tablet.project.tasks.complete(recurring.id);
-        expect(fromPhone.next.id).toBe(fromTablet.next.id);
-        expect(fromPhone.next.id).toMatch(/^task_r_[0-9a-f]{16}$/);
+    it('§3.2.3: günlük tekrar 21-11’de tamamlanır, 22-11’e ilerler; en son tamamlama geri alınır, öncekiler kilitli; geciken tekrar atlanır', async () => {
+        const daily = storedTask({ id: ID, title: 'Spor', repeat: 'daily', dueDate: '2026-11-21', dueTime: '07:30', noteId: null, diaryDate: '2026-11-21' });
+        const files = { [KEY]: store([daily]), [diaryKey('2026-11-21')]: diaryFile('2026-11-21', makePisiDiaryTaskSectionHtml('2026-11-21', [ID])) };
+        const { project, driver, clock } = projectAt(files, new Date(2026, 10, 21, 7, 52));
+        const refs = (day) => (driver.snapshot()[diaryKey(day)] ? readDiary(driver, day).content.match(/data-pisi-task-ref="[^"]+"/g)?.length || 0 : null);
 
-        // Reopened and completed again while the derived record is still there: the new record gets a fresh id.
-        await phone.project.tasks.setStatus(recurring.id, 'todo');
-        const again = await phone.project.tasks.complete(recurring.id);
-        expect(again.next.id).toMatch(/^task_[0-9a-f-]{36}$/);
-        expect(new Set(read(phone.driver).tasks.map((task) => task.id)).size).toBe(3);
+        // 1–2: done on 21-11; the task moves to 22-11; the 22-11 diary is created with the row.
+        const first = await project.tasks.complete(ID);
+        expect(first.task).toMatchObject({ status: 'todo', dueDate: '2026-11-22', completions: [{ date: '2026-11-21', dueDate: '2026-11-21' }] });
+        expect([refs('2026-11-21'), refs('2026-11-22')]).toEqual([1, 1]);
+
+        // 3: the latest completion is taken back: the task is due 21-11 again and leaves 22-11; the 22-11 diary stays.
+        clock.now = new Date(2026, 10, 21, 8, 0);
+        const undone = await project.tasks.reopen(ID, first.completion);
+        expect(undone.task).toMatchObject({ dueDate: '2026-11-21', completions: [] });
+        expect([refs('2026-11-21'), refs('2026-11-22')]).toEqual([1, 0]);
+
+        // 4: completed on 21-11 and 22-11: the 21-11 completion is locked.
+        await project.tasks.complete(ID);
+        clock.now = new Date(2026, 10, 22, 7, 40);
+        await project.tasks.complete(ID);
+        const earlier = read(driver).tasks[0].completions[0];
+        expect(await project.tasks.reopen(ID, earlier)).toEqual({ ok: false, error: 'locked' });
+
+        // 5: 23-11 is not done; on 25-11 the task is overdue and completing it skips the missed days.
+        clock.now = new Date(2026, 10, 25, 9, 0);
+        const late = await project.tasks.complete(ID);
+        expect(late.task.dueDate).toBe('2026-11-26');
+        expect(late.task.completions.at(-1)).toMatchObject({ date: '2026-11-25', dueDate: '2026-11-23' });
+        expect([refs('2026-11-23'), refs('2026-11-25'), refs('2026-11-26')]).toEqual([0, 1, 1]);
     });
 
-    it('undoComplete: görevi eski durumuna döndürür; başka kayda dokunmaz', async () => {
-        const other = storedTask({ id: 'task_22222222-2222-4222-8222-222222222222', title: 'Başka görev' });
-        const doing = storedTask({ status: 'doing' });
-        const { project, driver } = createMemoryProject({ [KEY]: store([doing, other], { extra: 'korunur' }) });
-        await project.tasks.complete(doing.id);
-
-        const undone = await project.tasks.undoComplete(doing.id, { status: 'doing' });
-        expect(undone).toMatchObject({ ok: true, changed: true, removedNext: false });
-        const stored = read(driver);
-        expect(stored.tasks[0]).toMatchObject({ ...doing, updatedAt: NOW.toISOString(), completedAt: null });
-        expect(stored.tasks[1]).toEqual(other);
-        expect(stored.extra).toBe('korunur');
-
-        // Nothing to undo: nothing is written (V4).
-        const writes = driver.count('writeText');
-        expect(await project.tasks.undoComplete(doing.id, { status: 'doing' })).toMatchObject({ ok: true, changed: false });
-        expect(await project.tasks.undoComplete('task_yok')).toMatchObject({ ok: false, notFound: true });
-        expect(driver.count('writeText')).toBe(writes);
+    it('bozuk tasks.json ezilmez, salt okunur sayılır; günlük bölümü yazılmaz (V7, GV11)', async () => {
+        const { project, driver } = createMemoryProject({ [KEY]: '{"version": 2, "tasks": [' });
+        expect(await project.tasks.list()).toMatchObject({ ok: false, corrupt: true, readOnly: true, tasks: [] });
+        await expect(project.tasks.create({ title: 'Yeni' }, { diaryDate: TODAY })).rejects.toMatchObject({ code: 'READ_ONLY' });
+        expect(driver.snapshot()[KEY]).toBe('{"version": 2, "tasks": [');
+        expect(driver.snapshot()[diaryKey(TODAY)]).toBeUndefined();
+        expect(project.getIntegrity().readOnlyFiles).toEqual([KEY]);
     });
 
-    it('undoComplete: tekrar eden görevin az önce eklenen tekrarını geri alır; değişmiş tekrarı bırakır', async () => {
-        const recurring = storedTask({ repeat: 'daily', todoTag: 'todo.2.14-11-2026' });
-        const first = createMemoryProject({ [KEY]: store([recurring]) });
-        const done = await first.project.tasks.complete(recurring.id);
-        expect(read(first.driver).tasks).toHaveLength(2);
-        expect(await first.project.tasks.undoComplete(recurring.id, { status: 'todo', next: done.next })).toMatchObject({ changed: true, removedNext: true });
-        expect(read(first.driver).tasks.map((task) => [task.id, task.status])).toEqual([[recurring.id, 'todo']]);
-
-        // The next occurrence was edited in the meantime (here: on the desktop). It is someone's data now and stays.
-        const second = createMemoryProject({ [KEY]: store([recurring]) });
-        const again = await second.project.tasks.complete(recurring.id);
-        await second.project.tasks.upsert({ id: again.next.id, title: 'Değişti' });
-        expect(await second.project.tasks.undoComplete(recurring.id, { status: 'todo', next: again.next })).toMatchObject({
-            changed: true,
-            removedNext: false
-        });
-        expect(read(second.driver).tasks.map((task) => [task.title, task.status])).toEqual([
-            ['Raporu gönder', 'todo'],
-            ['Değişti', 'todo']
-        ]);
+    it('okunamayan günlük ezilmez: tasks.json yazılır, o günün bölümü atlanır', async () => {
+        const { project, driver } = createMemoryProject({ [KEY]: store([]), [diaryKey(TODAY)]: '{"pisi": ' });
+        const result = await project.tasks.create({ title: 'Yeni' }, { diaryDate: TODAY });
+        expect(result.days.skipped).toEqual([TODAY]);
+        expect(driver.snapshot()[diaryKey(TODAY)]).toBe('{"pisi": ');
+        expect(read(driver).tasks).toHaveLength(1);
     });
 
-    it('bozuk tasks.json ezilmez, salt okunur sayılır (V7)', async () => {
-        for (const broken of ['{ "tasks": [', '', '[]', '{"version":1,"tasks":{}}']) {
-            const { project, driver } = createMemoryProject({ [KEY]: broken });
-            const listed = await project.tasks.list();
-            expect(listed).toMatchObject({ ok: false, corrupt: true, readOnly: true, tasks: [] });
-            await expect(project.tasks.upsert({ title: 'Yeni' })).rejects.toMatchObject({ code: 'READ_ONLY' });
-            await expect(project.tasks.setStatus('task_abcd', 'done')).rejects.toMatchObject({ code: 'READ_ONLY' });
-            expect(driver.snapshot()[KEY]).toBe(broken);
-            expect(project.getIntegrity()).toEqual({ healthy: false, readOnlyFiles: [KEY] });
-        }
+    it('yeri olmayan eski kayıt tamamlanır ve düzenlenir; yeri yine yoktur (§3.1)', async () => {
+        const legacy = { id: ID, title: 'Eski görev', status: 'todo', priority: 3, todoTag: 'todo.3.none', source: { nodePath: null } };
+        const { project, driver } = createMemoryProject({ [KEY]: storeJson({ version: 1, tasks: [legacy] }) });
+        expect((await project.tasks.update(ID, { title: 'Eski görev (telefon)' })).ok).toBe(true);
+        const done = await project.tasks.complete(ID);
+        expect(done.task).toMatchObject({ status: 'done', noteId: null, diaryDate: null, todoTag: 'todo.3.none' });
+        expect(read(driver).tasks[0].source).toEqual({ nodePath: null });
     });
+});
 
-    it('update: alanları değiştirir, tarihi kaldırır ve todo etiketini tarihle öncelikten yeniden kurar', async () => {
-        const task = storedTask({ source: { nodePath: null, blockId: null, mapPath: null, nodeTitle: '', mapTitle: '' }, mobilde: 'bilinmez' });
-        const other = storedTask({ id: 'task_22222222-2222-4222-8222-222222222222', title: 'Öteki' });
-        const { project, driver } = createMemoryProject({ [KEY]: store([task, other], { ek: true }) });
+describe('DiaryRepo ve görev bölümü', () => {
+    it('günlük metni yazılırken görev bölümü bayt bayt kalır; yeni günlük o günün bölümüyle oluşur (GV15)', async () => {
+        const task = storedTask({ noteId: null, diaryDate: '2026-11-15', dueDate: '2026-11-15' });
+        const section = makePisiDiaryTaskSectionHtml(TODAY, [ID]);
+        const files = { [KEY]: store([storedTask(), { ...task, id: OTHER }]), [diaryKey(TODAY)]: diaryFile(TODAY, `${paragraph('blk_a', 'Bir')}${section}`) };
+        const { project, driver } = createMemoryProject(files);
 
-        const moved = await project.tasks.update(task.id, { dueDate: '2026-11-20', scheduledAt: '2026-11-20T10:00', priority: 5, reminderMode: 'day-before' });
-        expect(moved).toMatchObject({ ok: true, created: false, changed: true });
-        expect(read(driver).tasks[0]).toMatchObject({
-            dueDate: '2026-11-20',
-            scheduledAt: '2026-11-20T10:00',
-            priority: 5,
-            reminderMode: 'day-before',
-            todoTag: 'todo.5.20-11-2026',
-            title: 'Raporu gönder',
-            mobilde: 'bilinmez',
-            createdAt: '2026-11-01T08:00:00.000Z'
-        });
+        await project.diary.setText(TODAY, 'Bir\n\nİki');
+        const content = readDiary(driver, TODAY).content;
+        expect(content.endsWith(section)).toBe(true);
+        expect((await project.diary.read(TODAY)).text).toBe('Bir\n\nİki');
 
-        await project.tasks.update(task.id, { dueDate: '', scheduledAt: '', deadline: '' });
-        expect(read(driver).tasks[0]).toMatchObject({ dueDate: null, scheduledAt: null, deadline: null, todoTag: 'todo.5.none' });
-        expect(read(driver).tasks[1]).toEqual(other);
-        expect(read(driver).ek).toBe(true);
-    });
-
-    it('update: değişiklik yoksa ya da görev yoksa dosyayı yazmaz, yeni görev oluşturmaz (V4)', async () => {
-        const { project, driver } = createMemoryProject({ [KEY]: store([storedTask()]) });
-        const text = driver.snapshot()[KEY];
-        expect(await project.tasks.update(storedTask().id, { priority: 2, title: 'Raporu gönder' })).toMatchObject({ ok: true, changed: false });
-        expect(await project.tasks.update('task_99999999-9999-4999-8999-999999999999', { title: 'Yok' })).toMatchObject({ ok: false, notFound: true });
-        expect(driver.snapshot()[KEY]).toBe(text);
-        expect(driver.count('writeText')).toBe(0);
-    });
-
-    it('update: not bloğundan gelen görevin todo etiketi bloktaki haliyle kalır', async () => {
-        const { project, driver } = createMemoryProject({ [KEY]: store([storedTask()]) });
-        await project.tasks.update(storedTask().id, { status: 'waiting' });
-        expect(read(driver).tasks[0]).toMatchObject({ status: 'waiting', todoTag: 'todo.2.14-11-2026', priority: 2 });
-    });
-
-    it('kaynak yolu proje dışına çıkan görevi reddeder', async () => {
-        const { project, driver } = createMemoryProject();
-        await expect(project.tasks.upsert({ title: 'Kaçak', source: { nodePath: '../dışarı.node' } })).rejects.toMatchObject({ code: 'INVALID_KEY' });
-        expect(driver.snapshot()).toEqual({});
+        // 15-11 has no diary yet, but a task of that day: the diary is written with its text and then the section.
+        await project.diary.setText('2026-11-15', 'Yarın');
+        const created = readDiary(driver, '2026-11-15').content;
+        expect(created.endsWith(makePisiDiaryTaskSectionHtml('2026-11-15', [OTHER]))).toBe(true);
+        expect((await project.diary.read('2026-11-15')).text).toBe('Yarın');
     });
 });

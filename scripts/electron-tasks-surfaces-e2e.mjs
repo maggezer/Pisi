@@ -4,7 +4,19 @@ import path from 'node:path';
 import { getPisiTaskCalendarSummary, listPisiDiaryTaskIds, readPisiDiaryTaskSection } from '../shared/task-diary.mjs';
 import { listPisiNoteTaskIds } from '../shared/task-blocks.mjs';
 import { getPisiTodayIsoDate, readPisiTask } from '../shared/task-model.mjs';
-import { assert, assertIntegrityClean, countNodeIo, createPisiTasksE2E, diaryPath, readJson, storedTask, storedTasks, tasksPath } from './e2e-tasks-app.mjs';
+import {
+    assert,
+    assertIntegrityClean,
+    countNodeIo,
+    createPisiTasksE2E,
+    diaryPath,
+    integrityIssues,
+    readJson,
+    setKnownIntegrityFindings,
+    storedTask,
+    storedTasks,
+    tasksPath
+} from './e2e-tasks-app.mjs';
 
 // The other surfaces that show tasks (docs/task-plan.md G5, Ek B S10 and S16),
 // in the real app over CDP:
@@ -93,7 +105,7 @@ async function waitStoreEvent(probe, label) {
 const noWrites = (io, label) => assert(io.writes.length === 0 && io.taskStoreWrites.length === 0, label + ' writes no file (GV3)', io);
 
 try {
-    // A version 1 record without a place, as the phone writes it before G8 (S10).
+    // A version 1 record without a place, as the phone wrote it before G8 (S10).
     const phoneTaskId = 'task_6a5b4c3d-2e1f-4a0b-9c8d-7e6f5a4b3c2d';
     const now = new Date().toISOString();
     await fs.mkdir(path.join(projectPath, '.pisi'), { recursive: true });
@@ -123,6 +135,18 @@ try {
         ) + '\n'
     );
     app = await pisi.launch(projectPath);
+    // Since G8 an old record without a place is a finding (task-place-missing, §3.1); it was there before the scenario, so it is not new (GV14).
+    setKnownIntegrityFindings([{ code: 'task-place-missing', entityId: phoneTaskId }]);
+    {
+        const issues = await integrityIssues(app);
+        assert(
+            issues.some(
+                (issue) => issue.code === 'task-place-missing' && issue.entityId === phoneTaskId && issue.repair?.action === 'task-place-in-today-diary'
+            ),
+            'the old record without a place is reported with its repair',
+            issues
+        );
+    }
     const today = await run('window.getPisiTaskToday()');
     await run(`window.__pisiSurfaceErrors = [];
         window.addEventListener('error', (event) => window.__pisiSurfaceErrors.push(String(event.message)));

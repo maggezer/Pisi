@@ -169,6 +169,18 @@ test('a task whose note is gone lives in today’s diary, which is created', (t)
     assert.deepEqual(taskFindings(project), []);
 });
 
+test('a version 1 task without a place lives in today’s diary; its old fields stay (§3.1, G8)', (t) => {
+    const { project } = makeProject(t);
+    fs.mkdirSync(path.join(project, '.pisi'), { recursive: true });
+    const legacy = { id: 'task_mobile001', title: 'Telefonda', status: 'todo', priority: 3, dueDate: '2026-11-25', todoTag: 'todo.3.25-11-2026', source: {} };
+    fs.writeFileSync(taskStore.getPisiTaskStorePath(project), JSON.stringify({ version: 1, tasks: [legacy] }));
+    repairFinding(project, 'task-place-missing');
+    const [record] = tasksOf(project);
+    assert.deepEqual([record.noteId, record.diaryDate, record.todoTag], [null, TODAY, 'todo.3.25-11-2026']);
+    assert.deepEqual(readPisiDiaryTaskSection(contentOf(documentStore.getPisiDiaryNodePath(project, TODAY))).taskIds, [legacy.id]);
+    assert.deepEqual(taskFindings(project), []);
+});
+
 test('a double reference keeps the block of the task’s note and makes the other one a copy', (t) => {
     const { project, note, other } = makeProject(t);
     const task = createNoteTask(project, note, 'Çift', { priority: 5, tags: ['iş'] });

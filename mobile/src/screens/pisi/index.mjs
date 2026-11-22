@@ -1,5 +1,7 @@
 // The Pisi tab, the start screen: the selected day's diary and tasks, the
-// date wheel in the corner and the menu button (docs/mobile-plan.md M5).
+// date wheel in the corner and the menu button (docs/mobile-plan.md M5). The
+// tasks are the day's diary section and, today, the overdue ones, shown as
+// soon as the app opens without another tap (docs/task-plan.md §1.3, G8).
 //
 // Unlike the other screens it is built once and then updated in place: the
 // diary is typed into directly and the wheel is scrolled, and neither would
@@ -132,6 +134,12 @@ export function createPisiScreen({
         parts.goToday.hidden = selectedDate === today;
     }
 
+    // A task row names the note the task lives in; a task of a diary needs no name there.
+    const placeTitle = (task) => {
+        const place = tasks.getPlace(task);
+        return place?.kind === 'note' ? place.title : null;
+    };
+
     function drawTasks() {
         const { t, locale, selectedDate, today } = context;
         parts.groups.replaceChildren(
@@ -144,7 +152,8 @@ export function createPisiScreen({
                 loaded: tasks.isLoaded(),
                 readOnly: tasks.isReadOnly(),
                 completedOpen: state.completedOpen,
-                onToggle: (id) => void tasks.toggle(id),
+                getPlaceTitle: placeTitle,
+                onToggle: (id, day) => void tasks.toggle(id, { day }),
                 onOpen: onOpenTask,
                 onToggleCompleted() {
                     state.completedOpen = !state.completedOpen;
@@ -167,7 +176,7 @@ export function createPisiScreen({
         if (!draft) return [];
         const day = draft.day === today ? t('pisi.today') : formatShortDay(draft.day, locale, today);
         return [
-            { kind: 'date', icon: 'calendar', text: draft.deadline ? t('pisi.chipDeadline', { date: day }) : day },
+            { kind: 'date', icon: 'calendar', text: day },
             draft.time ? { kind: 'time', icon: 'clock', text: draft.time } : null,
             draft.repeat !== 'none' ? { kind: 'repeat', icon: 'repeat', text: t(`repeat.${draft.repeat}`) } : null
         ].filter(Boolean);
@@ -357,7 +366,8 @@ export function createPisiScreen({
     async function addTask(text) {
         const draft = parseTaskDraft(text, { selectedDate: context.selectedDate, now: now() });
         if (!draft) return;
-        const result = await tasks.add(draft.payload);
+        // The task lives in the selected day's diary (docs/task-plan.md §1.4); it is due on the day the line names, else that day.
+        const result = await tasks.add(draft.payload, { diaryDate: context.selectedDate });
         if (destroyed || !result?.ok) return;
         if (draft.day !== context.selectedDate) {
             snackbar.show({ message: context.t('pisi.taskAddedOn', { date: formatShortDay(draft.day, context.locale, context.today) }) });
@@ -371,6 +381,8 @@ export function createPisiScreen({
     });
     const stopTasks = tasks.subscribe(() => {
         if (destroyed) return;
+        // A task joining a day creates that day's diary (docs/task-plan.md §3.2.2): the wheel marks it.
+        if (state.opened) void reloadDiaryDates();
         if (!context || !element.isConnected) {
             tasksDirty = true;
             return;

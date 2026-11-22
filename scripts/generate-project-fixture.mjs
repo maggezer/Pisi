@@ -28,7 +28,8 @@ import { groupPisiTasksByDay, replacePisiDiaryTaskSection } from '../shared/task
 // mobile app write them with (shared/task-model.mjs, shared/diary-rules.mjs);
 // the mobile large-project test (mobile/e2e/large-project.spec.mjs) uses them.
 // With `taskModel: 2` the n tasks are version 2 records (docs/task-plan.md
-// §3.1; the default stays version 1 for the mobile app until G8): every
+// §3.1; the mobile large-project test uses it since G8, the default stays
+// version 1 for the older desktop and sync measurements): every
 // fourth lives in its due day's diary, the others in a note, whose content
 // carries their task blocks (§3.2.1); every tenth repeats daily and was done on
 // the days before `today`. Every day a task is on gets its diary with the task

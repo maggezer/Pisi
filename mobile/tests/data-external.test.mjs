@@ -8,7 +8,7 @@ import { createOpenDocuments } from '../src/data/open-documents.mjs';
 import { createMemoryProject, json, noteFile, paragraph, storeJson } from './data-helpers.mjs';
 
 const NOTE = noteFile({ id: 'node_a', title: 'Gezi', content: paragraph('blk_1', 'Bir') + paragraph('blk_2', 'İki') });
-const TASKS = storeJson({ version: 1, updatedAt: null, futureTop: 'kalır', tasks: [{ id: 'task_1', title: 'Yaz', status: 'todo', priority: 3 }] });
+const TASKS = storeJson({ version: 1, updatedAt: null, futureTop: 'kalır', tasks: [{ id: 'task_write', title: 'Yaz', status: 'todo', priority: 3 }] });
 const FILES = { 'Gezi.node': NOTE, 'inv_Gezi__node_a/image/aa.png': 'png', '.pisi/tasks.json': TASKS };
 
 const renames = (driver, key) => driver.calls.filter(([name, , to]) => name === 'rename' && to === key).length;
@@ -52,7 +52,7 @@ describe('ProjectWriter.applyExternal (S4)', () => {
         await settle(project);
         expect(driver.calls.filter(([name]) => name === 'rename').map(([, , to]) => to)).toEqual(['.pisi/tasks.json', 'diary/2026-11-14.node']);
 
-        await project.tasks.setStatus('task_1', 'doing');
+        await project.tasks.update('task_write', { status: 'doing' });
         expect(events.map(([key, info]) => `${key}:${info.source}`)).toEqual(['.pisi/tasks.json:sync', 'diary/2026-11-14.node:sync', '.pisi/tasks.json:local']);
     });
 

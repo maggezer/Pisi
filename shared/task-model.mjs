@@ -42,13 +42,6 @@ export function getPisiTodoStatusOption(value) {
     return PISI_TODO_STATUS_OPTIONS.find((item) => item.value === normalized) || PISI_TODO_STATUS_OPTIONS[0];
 }
 
-export function getPisiTodoRepeatOption(value) {
-    const normalized = String(value || '')
-        .trim()
-        .toLowerCase();
-    return PISI_TODO_REPEAT_OPTIONS.find((item) => item.value === normalized) || PISI_TODO_REPEAT_OPTIONS[0];
-}
-
 export function normalizePisiTodoTagValue(value) {
     return String(value || '')
         .trim()
@@ -104,53 +97,6 @@ export function formatPisiTodoTag(priorityValue, isoDate) {
     const year = String(date.getFullYear());
 
     return `todo.${priority}.${day}-${month}-${year}`;
-}
-
-export function getNextPisiTodoDate(finishDate, repeatValue, now = new Date(), completionOffsetDays = 1) {
-    const repeat = getPisiTodoRepeatOption(repeatValue).value;
-    if (repeat === 'none') return null;
-
-    const base = finishDate instanceof Date && !Number.isNaN(finishDate.getTime()) ? new Date(finishDate) : new Date(now);
-    base.setHours(0, 0, 0, 0);
-
-    if (repeat === 'daily') {
-        base.setDate(base.getDate() + 1);
-        return base;
-    }
-
-    if (repeat === 'weekdays') {
-        do {
-            base.setDate(base.getDate() + 1);
-        } while (base.getDay() === 0 || base.getDay() === 6);
-        return base;
-    }
-
-    if (repeat === 'weekly') {
-        base.setDate(base.getDate() + 7);
-        return base;
-    }
-
-    if (repeat === 'biweekly') {
-        base.setDate(base.getDate() + 14);
-        return base;
-    }
-
-    if (repeat === 'after-completion') {
-        const completionBase = new Date(now);
-        completionBase.setHours(0, 0, 0, 0);
-        completionBase.setDate(completionBase.getDate() + Math.max(1, Number(completionOffsetDays) || 1));
-        return completionBase;
-    }
-
-    if (repeat === 'monthly') {
-        const day = base.getDate();
-        const targetYear = base.getMonth() === 11 ? base.getFullYear() + 1 : base.getFullYear();
-        const targetMonth = (base.getMonth() + 1) % 12;
-        const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
-        return new Date(targetYear, targetMonth, Math.min(day, lastDay));
-    }
-
-    return null;
 }
 
 export const PISI_TASK_STATUSES = new Set(['todo', 'doing', 'waiting', 'blocked', 'done']);
@@ -650,7 +596,7 @@ function stepRepeat(day, repeat) {
         while ([0, 6].includes(new Date(next).getUTCDay())) next += DAY_MS;
         return utcToDay(next);
     }
-    // monthly: the same day of the next month, or its last day (31 Jan -> 28 Feb), as getNextPisiTodoDate.
+    // monthly: the same day of the next month, or its last day (31 Jan -> 28 Feb).
     const year = date.getUTCFullYear() + (date.getUTCMonth() === 11 ? 1 : 0);
     const month = (date.getUTCMonth() + 1) % 12;
     const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();

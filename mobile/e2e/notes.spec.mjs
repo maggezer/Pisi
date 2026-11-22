@@ -15,7 +15,10 @@ async function openNotes(page) {
     await page.getByRole('status').waitFor({ state: 'detached' });
 }
 
-/** Copies the desktop's "Toplantı Notları" (Sheet, Paint, image, file) and its image and drawing into the browser's project store. */
+/**
+ * Copies the desktop's "Toplantı Notları" (Sheet, Paint, image, file, a task block) with its image and drawing, and the
+ * desktop's tasks.json, into the browser's project store.
+ */
 async function seedDesktopNote(page) {
     const name = 'Toplantı Notları.node';
     const note = fs.readFileSync(path.join(fixture, name), 'utf8');
@@ -50,7 +53,7 @@ async function seedDesktopNote(page) {
                     transaction.onerror = () => reject(transaction.error);
                 };
             }),
-        [[name, note], ...assets]
+        [[name, note], ['.pisi/tasks.json', fs.readFileSync(path.join(fixture, '.pisi/tasks.json'), 'utf8')], ...assets]
     );
     return note;
 }
@@ -58,7 +61,8 @@ async function seedDesktopNote(page) {
 test('Notlar: liste, Türkçe arama ve filtre; kart sade ve bloklar arası boşluklu (G7, G8)', async ({ page }) => {
     await openNotes(page);
     await expect(page.locator('.pisi-header-title')).toHaveText('Notlar');
-    await expect(cards(page)).toHaveText(['Işık ve ısı', 'Pisi Mobil', 'Toplantı Notları', '14-11-2026']);
+    // The diaries of the days the sample tasks live in are listed too (docs/task-plan.md §3.2.2).
+    await expect(cards(page)).toHaveText(['Işık ve ısı', 'Pisi Mobil', 'Toplantı Notları', '12-11-2026', '14-11-2026', '17-11-2026']);
     await expect(page.locator('[data-note="Toplantı Notları.node"] .pisi-note-card-preview')).toHaveText(
         'Gündem Mobil veri katmanı, masaüstü uyumluluğu ve örnek proje. Kararlar Her yazma tek kuyruktan geçer.'
     );
@@ -75,7 +79,7 @@ test('Notlar: liste, Türkçe arama ve filtre; kart sade ve bloklar arası boşl
     await shot(page, '31-notes-search');
     await page.locator('[data-action="clear-search"]').tap();
     await page.locator('.pisi-notes-filter [data-value="diary"]').tap();
-    await expect(cards(page)).toHaveText(['14-11-2026']);
+    await expect(cards(page)).toHaveText(['12-11-2026', '14-11-2026', '17-11-2026']);
     await page.locator('.pisi-notes-filter [data-value="notes"]').tap();
     await expect(cards(page)).toHaveCount(3);
 
@@ -187,10 +191,11 @@ test('masaüstü blokları salt okunur kart; görsel sidecar’dan gösterilir; 
         'Tablo · Masaüstünde düzenlenir',
         'Çizim · Masaüstünde düzenlenir',
         'Görsel · Masaüstünde düzenlenir',
-        'Dosya · Masaüstünde düzenlenir',
-        // A version 2 task block holds only the task id; the phone draws it from tasks.json in G8.
-        'Görev · Masaüstünde düzenlenir'
+        'Dosya · Masaüstünde düzenlenir'
     ]);
+    // The version 2 task block holds only the task id (docs/task-plan.md §3.2.1): the phone draws its row from tasks.json (G8).
+    await expect(page.locator('.pisi-note-task .pisi-task-title')).toHaveText(['Sunucu faturasını öde']);
+    await expect(page.locator('.pisi-note-task .pisi-task-meta-item')).toHaveText(['20 Kas', 'Yüksek']);
     const image = page.locator('[data-protected="image"] img');
     await expect(image).toHaveAttribute('src', /^data:image\/png;base64,/);
     expect(await image.evaluate((element) => element.naturalWidth)).toBeGreaterThan(0);

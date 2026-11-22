@@ -94,7 +94,7 @@ describe('eşleştirme ekranı', () => {
                 started = await desktopSide.startPairing();
                 return started.view.uri;
             },
-            { fill: (project) => project.tasks.upsert({ id: 'task_phone_1', title: 'Telefon görevi', status: 'todo' }) }
+            { fill: (project) => project.tasks.create({ id: 'task_phone_1', title: 'Telefon görevi' }, { diaryDate: '2026-11-14' }) }
         );
         await until(() => screen.getStep() === 'initial');
         expect(screen.element.querySelector('[data-action="initial-merge"]').textContent).toBe(t('pair.initialMerge'));

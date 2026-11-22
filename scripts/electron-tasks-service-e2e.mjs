@@ -411,6 +411,20 @@ try {
         assert((await command(app, 'task.complete.v1', { taskId: v1.id }))?.ok, 'S4 complete');
         const stored = await storedTask(projectPath, v1.id);
         assert(stored.status === 'done' && stored.title === 'Masaüstünde düzenlendi' && JSON.stringify(stored.source) === '{}' && !stored.noteId, 'S4', stored);
+
+        // Since G8 the old record is a finding with its repair (§3.1). Its day's section is behind the rule too: the record came
+        // from outside, as the old phone wrote it, without the section. The two repairs bring both to the rule.
+        const issues = await integrityIssues(app, projectPath);
+        const placeless = issues.find((issue) => issue.code === 'task-place-missing' && issue.entityId === v1.id);
+        const section = issues.find((issue) => issue.code === 'diary-task-section-mismatch' && issue.path === `diary/${today}.node`);
+        assert(placeless?.repair?.action === 'task-place-in-today-diary' && section?.repair && issues.length === 2, 'S4: the old record and its day', issues);
+        const repaired = await app.cdp.evaluate(
+            `window.pisiDomain.command('integrity.repair.v1', ${JSON.stringify({ projectFolder: projectPath, repairIds: [placeless.repair.id, section.repair.id] })})`
+        );
+        assert(repaired?.ok && repaired.applied === 2, 'S4: repaired', repaired);
+        const placed = await storedTask(projectPath, v1.id);
+        assert(placed.diaryDate === today && !placed.noteId && placed.todoTag === 'todo.3.none', 'S4: lives in today’s diary, old field kept', placed);
+        await waitUntil('S4: today’s section lists it', async () => (await diaryIds(projectPath, today)).includes(v1.id));
     }
     await assertClean(app, projectPath, 'S4');
 

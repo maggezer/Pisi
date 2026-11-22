@@ -1,27 +1,25 @@
 // The diary: `diary/YYYY-MM-DD.node`, one note per day (shared/diary-rules.mjs).
 // Mobile edits the day's plain text. That text is the note's plain paragraph
-// blocks; everything else in the note (the task section the desktop manages,
-// images, formatted blocks) is left exactly as it is (V8).
+// blocks; everything else in the note (the task section, images, formatted
+// blocks) is left exactly as it is (V8). The task section is written only by
+// the TaskRepo (task-days.mjs); a day this repo creates gets the section of
+// its day from its first byte, as on the desktop (GV15). The managed section
+// of an old desktop diary (between two comments) is kept byte for byte and
+// its blocks are not diary text.
 // A day's file is created when the first character is written, never empty.
 
-import {
-    PISI_DIARY_FOLDER,
-    PISI_DIARY_MARKER_FILE,
-    PISI_DIARY_MARKER_TEXT,
-    getPisiDiaryDateFromFileName,
-    getPisiDiaryNodeKey,
-    makePisiDiaryDocumentData,
-    normalizePisiDiaryIsoDate
-} from '../../../shared/diary-rules.mjs';
-import { formatPisiBlockId, formatPisiDocumentId } from '../../../shared/ids.mjs';
-import { joinKey } from './drivers/keys.mjs';
+import { PISI_DIARY_FOLDER, getPisiDiaryDateFromFileName, getPisiDiaryNodeKey, normalizePisiDiaryIsoDate } from '../../../shared/diary-rules.mjs';
+import { formatPisiBlockId } from '../../../shared/ids.mjs';
+import { createDiaryFile } from './diary-file.mjs';
 import { PisiReadOnlyError, parseJsonText, readJsonFile, serializeDocument } from './json-file.mjs';
+import { makeDiaryContentWithSection, readTaskRecords } from './task-days.mjs';
 import { decodeEntities } from '../../../shared/html-tokens.mjs';
 import { splitNoteBlocks } from '../../../shared/note-blocks.mjs';
 import { applyBlockPatch, makeParagraphBlockHtml, textToBlockHtml } from './note-patch.mjs';
 import { PisiNoteChangedError, textToParagraphs } from './note-repo.mjs';
 
-const MARKER_KEY = joinKey(PISI_DIARY_FOLDER, PISI_DIARY_MARKER_FILE);
+// tasks.json, read for the section of a day created here (task-repo.mjs owns the file).
+const TASK_STORE_KEY = '.pisi/tasks.json';
 const MANAGED_START = 'PISI_DIARY_MANAGED_START';
 
 /** Text of a paragraph that holds only text and line breaks, or null when the block is anything else. */
@@ -114,13 +112,9 @@ export function createDiaryRepo({ driver, writer, now, makeUuid }) {
 
                 if (parsed.status === 'missing') {
                     if (!paragraphs.length) return { ok: true, changed: false, created: false, key, text: '' };
-                    await tx.mkdir(PISI_DIARY_FOLDER);
-                    if (!(await tx.exists(MARKER_KEY))) await tx.write(MARKER_KEY, PISI_DIARY_MARKER_TEXT);
-                    const stamp = now().toISOString();
-                    const data = makePisiDiaryDocumentData({ isoDate: day, id: formatPisiDocumentId('.node', makeUuid()), now: stamp });
-                    data.content = paragraphs.map(newParagraph).join('');
-                    await tx.write(key, serializeDocument(data));
-                    await tx.mkdir(joinKey(PISI_DIARY_FOLDER, data.pisi.sidecar));
+                    // The day's task section comes after the text; an unreadable tasks.json gives none (GV11).
+                    const records = await readTaskRecords(tx, TASK_STORE_KEY);
+                    await createDiaryFile(tx, day, () => makeDiaryContentWithSection(paragraphs.map(newParagraph).join(''), day, records), { now, makeUuid });
                     return { ok: true, changed: true, created: true, key, text: written };
                 }
 

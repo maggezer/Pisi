@@ -12,7 +12,7 @@ import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { deflateSync } from 'node:zlib';
 import { expect, test } from '@playwright/test';
-import { normalizePisiTaskRecord } from '../../shared/task-model.mjs';
+import { normalizePisiTask } from '../../shared/task-model.mjs';
 import { createFakeSyncServer } from '../tests/helpers/fake-sync-server.mjs';
 import { createDesktop, nodeDoc } from '../tests/helpers/sync-devices.mjs';
 import { TODAY, back, open, openFromMenu, projectFiles, screen, shot } from './helpers.mjs';
@@ -54,16 +54,12 @@ function makePng(size = 24) {
 /** A desktop project with a task for today, today's diary and `notes` notes. */
 async function makeDesktop(server, { notes = 3 } = {}) {
     const desktop = await createDesktop(server);
-    desktop.write('.pisi/tasks.json', {
-        version: 1,
-        tasks: [
-            normalizePisiTaskRecord({ id: 'task_desktop_1', title: 'Masaüstü görevi', status: 'todo', priority: 2, dueDate: TODAY, scheduledAt: TODAY }, null, {
-                now: new Date('2026-11-14T06:00:00.000Z'),
-                makeUuid: () => '00000000-0000-4000-8000-000000000001',
-                normalizeStoredPath: (value) => value
-            })
-        ]
-    });
+    // A version 2 record (docs/task-plan.md §3.1) living in today's diary, made by the rule both platforms write with.
+    const task = normalizePisiTask({ id: 'task_desktop_1', title: 'Masaüstü görevi', priority: 2, dueDate: TODAY, diaryDate: TODAY }, null, {
+        now: new Date('2026-11-14T06:00:00.000Z'),
+        makeUuid: () => '00000000-0000-4000-8000-000000000001'
+    }).task;
+    desktop.write('.pisi/tasks.json', { version: 2, tasks: [task] });
     desktop.write('diary/.pisi-diary', 'Pisi diary folder\n');
     desktop.write(DIARY, nodeDoc('node_dddddddd-0000-4000-8000-000000000001', TODAY, [['d1', 'Masaüstü günlüğü']]));
     for (let index = 1; index <= notes; index += 1) {
