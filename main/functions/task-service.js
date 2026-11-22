@@ -254,9 +254,13 @@ function writePisiDiarySections(projectFolder, tasks, days, context, { create = 
     }
 }
 
-/** The days the changed tasks join and leave, and the diaries of those days. */
-function writePisiDiarySectionsForChanges(projectFolder, tasks, pairs, context) {
-    const days = new Set();
+/**
+ * The days the changed tasks join and leave, and the diaries of those days.
+ * `alsoDays` are days whose existing diary is brought up to the rule as well
+ * (no diary is created for them).
+ */
+function writePisiDiarySectionsForChanges(projectFolder, tasks, pairs, context, alsoDays = []) {
+    const days = new Set(alsoDays);
     const create = new Set();
     for (const { before, after } of pairs) {
         const change = getPisiTaskDayChanges(before ? readPisiTask(before) : null, after ? readPisiTask(after) : null);
@@ -729,6 +733,9 @@ function deletePisiTask(projectFolder, payload = {}) {
  * After tasks came back (Trash restore, a note save that brought a trashed id
  * back) or left (a note or diary went to the Trash): writes the diary sections
  * of the days involved. `before`/`after` are the store's records.
+ * `payload.days` adds days whose existing diary is written from the rule too:
+ * a sync turn gives the diaries it wrote, whose section it merged as a stand-in
+ * (docs/task-plan.md G9, GV15).
  */
 function rewritePisiDiarySectionsForTaskChange(projectFolder, beforeTasks, afterTasks, payload = {}) {
     const beforeById = new Map((beforeTasks || []).filter(Boolean).map((task) => [task.id, task]));
@@ -741,7 +748,8 @@ function rewritePisiDiarySectionsForTaskChange(projectFolder, beforeTasks, after
         pairs.push({ before, after });
     }
     const context = makePisiTaskCommandContext(payload);
-    const days = pairs.length ? writePisiDiarySectionsForChanges(projectFolder, [...afterById.values()], pairs, context) : [];
+    const alsoDays = (Array.isArray(payload.days) ? payload.days : []).filter((day) => /^\d{4}-\d{2}-\d{2}$/.test(String(day)));
+    const days = pairs.length || alsoDays.length ? writePisiDiarySectionsForChanges(projectFolder, [...afterById.values()], pairs, context, alsoDays) : [];
     return { ok: true, days, context };
 }
 

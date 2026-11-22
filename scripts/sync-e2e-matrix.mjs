@@ -9,7 +9,8 @@
 // The two pair through their own pairing screens (code and verification number). Every
 // scenario then runs on that pair, in order; after each one, Project Integrity — the
 // desktop's in the app, the same audit in Node on the phone's copy — reports nothing new
-// (scenario 15). The destructive scenarios (revoke, rollback) come last.
+// (scenario 15). Scenarios 18–22 are the task model's (docs/task-plan.md G9). The
+// destructive scenarios (revoke, rollback) come last.
 //
 // `npm run test:sync-server` runs it when PISI_SYNC_MATRIX_E2E=1 (CI: sync-server.yml,
 // under xvfb). Needs MariaDB (PISI_SYNC_TEST_DB_*), PHP, the Electron binary (npm ci)
@@ -37,6 +38,8 @@ import {
     snapshotSpace
 } from './sync-e2e/server-tools.mjs';
 import { checkPisiSyncPath, getPisiSyncFileClass } from '../shared/sync-paths.mjs';
+import { readPisiDiaryTaskSection } from '../shared/task-diary.mjs';
+import { listPisiNoteTaskIds } from '../shared/task-blocks.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const TIME_ZONE = 'Europe/Istanbul';
@@ -52,8 +55,17 @@ const NOTES = {
     deleted: { key: 'Silinecek.node', id: 'node_a2a2a2a2-0000-4000-8000-000000000002', title: 'Silinecek', tag: 'a2a2', blocks: 3 },
     editDelete: { key: 'Sil ve Düzenle.node', id: 'node_a3a3a3a3-0000-4000-8000-000000000003', title: 'Sil ve Düzenle', tag: 'a3a3', blocks: 3 },
     renamed: { key: 'Yeniden Adlandır.node', id: 'node_a4a4a4a4-0000-4000-8000-000000000004', title: 'Yeniden Adlandır', tag: 'a4a4', blocks: 3 },
-    image: { key: 'Görsel Notu.node', id: 'node_a5a5a5a5-0000-4000-8000-000000000005', title: 'Görsel Notu', tag: 'a5a5', blocks: 2 }
+    image: { key: 'Görsel Notu.node', id: 'node_a5a5a5a5-0000-4000-8000-000000000005', title: 'Görsel Notu', tag: 'a5a5', blocks: 2 },
+    tasks: { key: 'Görev Notu.node', id: 'node_a6a6a6a6-0000-4000-8000-000000000006', title: 'Görev Notu', tag: 'a6a6', blocks: 2 }
 };
+const addDays = (day, count) => {
+    const date = new Date(`${day}T12:00:00.000Z`);
+    date.setUTCDate(date.getUTCDate() + count);
+    return date.toISOString().slice(0, 10);
+};
+const tomorrow = addDays(today, 1);
+// The day as the phone's add line reads it (DD-MM-YYYY).
+const typedDay = (day) => day.split('-').reverse().join('-');
 const paragraph = (note, index) => `${note.title} paragraf ${index + 1}: ${'senkron metni '.repeat(12).trim()}`;
 
 function nodeDocument({ id, title, tag, blocks }, createdAt = '2026-11-17T08:00:00.000Z') {
@@ -130,6 +142,24 @@ const conflictCopies = async () => ({
         .filter(isConflictCopy)
         .sort()
 });
+
+/** A task command from the desktop's renderer, which names its open documents (GV9). */
+const desktopTask = (name, payload) => desktop.evaluate(`window.runPisiTaskCommand(${JSON.stringify(name)}, ${JSON.stringify(payload)}, { quiet: true })`);
+const storedTask = async (side, id) => ((await side.readJson('.pisi/tasks.json'))?.tasks || []).find((task) => task.id === id) ?? null;
+const sectionIds = async (side, day) => {
+    const text = await side.read(`diary/${day}.node`).catch(() => null);
+    return text ? readPisiDiaryTaskSection(JSON.parse(text).content)?.taskIds || [] : null;
+};
+/** Both devices' conflict logs. */
+const conflictLog = async () => [
+    ...(((await desktop.evaluate('window.pisiSyncClient.conflicts()')) || {}).conflicts || []),
+    ...(((await phone.syncState()) || {}).conflicts || [])
+];
+/** A day from `from` on with a diary on neither device. */
+async function dayWithoutDiary(from) {
+    for (let day = from; ; day = addDays(day, 1))
+        if (!(await desktop.exists(`diary/${day}.node`)) && (await phone.read(`diary/${day}.node`)) === null) return day;
+}
 
 let desktopBaseline = new Set();
 let phoneBaseline = new Set();
@@ -657,6 +687,165 @@ try {
     });
 
     // ── 11. The desktop revokes the phone: it stops, keeps its files, pairs again. ───────
+
+    // ── 18–22: the task model (docs/task-plan.md G9). ─────────────────────────────────
+    // 18. The phone completes a repeating task while the desktop renames it: both stay, it moves on once.
+    await scenario(18, 'telefon tekrar eden görevi tamamlar, masaüstü başlığını değiştirir', async () => {
+        const id = 'task_matrix_s18_0001';
+        const created = await desktopTask('task.create.v1', {
+            task: { id, title: 'Matris S18 spor', repeat: 'daily', dueDate: today },
+            target: { diaryDate: '2026-11-14' }
+        });
+        assert(created?.ok, '18: görev oluşturulur', created);
+        await desktop.syncOk('18');
+        await phone.syncNow('18: görev telefona');
+        phone.offline = true;
+        await phone.openFromMenu('tasks');
+        await phone.page.locator('[data-view="today"]').tap();
+        await phone.tap(phone.page.getByRole('checkbox', { name: 'Tamamla: Matris S18 spor' }));
+        await phone.until('18: telefonda tamamlandı', async () => (await storedTask(phone, id))?.completions?.length === 1);
+        const renamed = await desktopTask('task.update.v1', { taskId: id, patch: { title: 'Matris S18 spor (masaüstü)' } });
+        assert(renamed?.ok, '18: masaüstünde başlık değişir', renamed);
+        await desktop.syncOk('18');
+        phone.offline = false;
+        await exchange('18');
+        for (const [side, device] of [
+            ['masaüstünde', desktop],
+            ['telefonda', phone]
+        ]) {
+            const task = await storedTask(device, id);
+            assert(
+                task?.title === 'Matris S18 spor (masaüstü)' &&
+                    task.completions.length === 1 &&
+                    task.completions[0].date === today &&
+                    task.dueDate === tomorrow,
+                `18: ${side} başlık ve tamamlama birlikte, görev yarına ilerler`,
+                task
+            );
+            assert((await sectionIds(device, tomorrow))?.includes(id), `18: ${side} yarının bölümünde`, await sectionIds(device, tomorrow));
+        }
+        await phone.home();
+        await assertSameProject('18');
+    });
+
+    // 19. Both devices complete the same occurrence: one completion (the first), one move on.
+    await scenario(19, 'iki cihaz aynı tekrarı tamamlar', async () => {
+        const id = 'task_matrix_s19_0001';
+        const created = await desktopTask('task.create.v1', {
+            task: { id, title: 'Matris S19 okuma', repeat: 'daily', dueDate: today },
+            target: { diaryDate: '2026-11-14' }
+        });
+        assert(created?.ok, '19: görev oluşturulur', created);
+        await desktop.syncOk('19');
+        await phone.syncNow('19: görev telefona');
+        phone.offline = true;
+        await phone.openFromMenu('tasks');
+        await phone.page.locator('[data-view="today"]').tap();
+        await phone.tap(phone.page.getByRole('checkbox', { name: 'Tamamla: Matris S19 okuma' }));
+        const onPhone = await phone.until('19: telefonda tamamlandı', async () => (await storedTask(phone, id))?.completions?.[0]);
+        const completed = await desktopTask('task.complete.v1', { taskId: id });
+        assert(completed?.ok, '19: masaüstünde tamamlanır', completed);
+        const onDesktop = (await storedTask(desktop, id)).completions[0];
+        await desktop.syncOk('19');
+        phone.offline = false;
+        await exchange('19');
+        const first = onPhone.at < onDesktop.at ? onPhone : onDesktop;
+        for (const [side, device] of [
+            ['masaüstünde', desktop],
+            ['telefonda', phone]
+        ]) {
+            const task = await storedTask(device, id);
+            assert(task?.completions.length === 1 && task.dueDate === tomorrow, `19: ${side} tek tamamlama, tek ilerleme`, task);
+            assert(task.completions[0].at === first.at, `19: ${side} önce tamamlanan kalır`, { task, first });
+        }
+        const logged = (await conflictLog()).filter((entry) => entry.recordId === id && entry.field === 'completions' && entry.kind === 'completion');
+        assert(logged.length === 1, '19: öbür tamamlama çakışma günlüğünde', await conflictLog());
+        await phone.home();
+        await assertSameProject('19');
+    });
+
+    // 20. The desktop deletes a task block while the phone, offline, completes the same task: the delete wins.
+    await scenario(20, 'masaüstü görev bloğunu siler, çevrimdışı telefon aynı görevi düzenler', async () => {
+        const id = 'task_matrix_s20_0001';
+        const notePath = desktop.abs(NOTES.tasks.key);
+        const created = await desktopTask('task.create.v1', {
+            task: { id, title: 'Matris S20 görevi', dueDate: null },
+            target: { noteId: NOTES.tasks.id, notePath }
+        });
+        assert(created?.ok, '20: görev notta oluşturulur', created);
+        assert(listPisiNoteTaskIds(JSON.parse(await desktop.read(NOTES.tasks.key)).content).includes(id), '20: notta görev bloğu');
+        await desktop.syncOk('20');
+        await phone.syncNow('20: görev telefona');
+        phone.offline = true;
+        await phone.openFromMenu('tasks');
+        await phone.page.locator('[data-view="undated"]').tap();
+        await phone.tap(phone.page.getByRole('checkbox', { name: 'Tamamla: Matris S20 görevi' }));
+        await phone.until('20: telefonda tamamlandı', async () => (await storedTask(phone, id))?.status === 'done');
+        const deleted = await desktopTask('task.delete.v1', { taskId: id, notePath });
+        assert(deleted?.ok, '20: masaüstünde silinir', deleted);
+        await desktop.syncOk('20');
+        phone.offline = false;
+        await exchange('20');
+        for (const [side, device] of [
+            ['masaüstünde', desktop],
+            ['telefonda', phone]
+        ]) {
+            assert((await storedTask(device, id)) === null, `20: ${side} görev silinmiş kalır`);
+            assert(!listPisiNoteTaskIds(JSON.parse(await device.read(NOTES.tasks.key)).content).includes(id), `20: ${side} notta blok yok`);
+            assert(!(await sectionIds(device, today))?.includes(id), `20: ${side} bugünün bölümünde yok`, await sectionIds(device, today));
+        }
+        const logged = (await conflictLog()).filter((entry) => entry.recordId === id && entry.kind === 'deleted-changed');
+        assert(logged.length === 1 && logged[0].lost?.status === 'done', '20: kaybeden değer çakışma günlüğünde', await conflictLog());
+        await phone.home();
+        await assertSameProject('20');
+    });
+
+    // 21. Both devices add a task, offline, to a day neither has a diary of: one diary, two rows.
+    await scenario(21, 'iki cihaz aynı güne çevrimdışı görev ekler', async () => {
+        const day = await dayWithoutDiary(addDays(today, 5));
+        phone.offline = true;
+        await phone.home();
+        const add = phone.page.getByRole('textbox', { name: 'Görev ekle' });
+        await add.fill(`Matris S21 telefon ${typedDay(day)}`);
+        await add.press('Enter');
+        const phoneTask = await phone.until('21: telefonda görev', async () =>
+            ((await phone.readJson('.pisi/tasks.json')).tasks || []).find((task) => task.title.startsWith('Matris S21 telefon'))
+        );
+        assert(phoneTask.dueDate === day, '21: telefondaki görev o güne', phoneTask);
+        await phone.until('21: telefonda o günün günlüğü', async () => (await sectionIds(phone, day))?.includes(phoneTask.id));
+        const created = await desktopTask('task.create.v1', { task: { title: 'Matris S21 masaüstü', dueDate: day }, target: { diaryDate: today } });
+        assert(created?.ok && (await sectionIds(desktop, day))?.includes(created.task.id), '21: masaüstünde o günün günlüğü', created);
+        const desktopDiaryId = (await desktop.readJson(`diary/${day}.node`)).pisi.id;
+        await desktop.syncOk('21');
+        phone.offline = false;
+        await exchange('21');
+        for (const [side, device] of [
+            ['masaüstünde', desktop],
+            ['telefonda', phone]
+        ]) {
+            const ids = await sectionIds(device, day);
+            assert(ids?.length === 2 && ids.includes(phoneTask.id) && ids.includes(created.task.id), `21: ${side} tek günlükte iki satır`, ids);
+            assert((await device.readJson(`diary/${day}.node`)).pisi.id === desktopDiaryId, `21: ${side} günlüğün kimliği tek`);
+        }
+        const stray = [...(await desktop.files((key) => /Günlük çakışması|çakışma/.test(key))).keys()].filter((key) => key.includes(typedDay(day)));
+        assert(stray.length === 0, '21: günlük çakışma kopyası oluşmaz', stray);
+        await assertSameProject('21');
+    });
+
+    // 22. A future task made on the phone creates that day's diary with the same bytes on both devices.
+    await scenario(22, 'telefonda ileri tarihli görev o günün günlüğünü iki cihazda aynı baytlarla oluşturur', async () => {
+        const day = await dayWithoutDiary(addDays(today, 8));
+        await phone.home();
+        const add = phone.page.getByRole('textbox', { name: 'Görev ekle' });
+        await add.fill(`Matris S22 telefon ${typedDay(day)}`);
+        await add.press('Enter');
+        const written = await phone.until('22: telefonda o günün günlüğü', () => phone.read(`diary/${day}.node`));
+        await exchange('22');
+        assert((await desktop.read(`diary/${day}.node`)) === written, '22: masaüstündeki günlük telefonun baytlarıyla aynı');
+        assert((await sectionIds(desktop, day))?.length === 1, '22: bölümde görev', await sectionIds(desktop, day));
+        await assertSameProject('22');
+    });
+
     // ── 16. The server's rate limit answers with a Retry-After longer than the client waits inline. ──
     await scenario(16, 'sunucu hız sınırı: masaüstü Retry-After sonrası kendiliğinden yeniden dener', async () => {
         const retryAfter = 31;

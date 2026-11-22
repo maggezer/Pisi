@@ -10,7 +10,9 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { splitNoteBlocks } from '../shared/note-blocks.mjs';
-import { replacePisiDiaryTaskSection } from '../shared/task-diary.mjs';
+import { listPisiDiaryTaskIds, readPisiDiaryTaskSection, replacePisiDiaryTaskSection } from '../shared/task-diary.mjs';
+import { listPisiNoteTaskIds } from '../shared/task-blocks.mjs';
+import { completePisiTask, readPisiTask } from '../shared/task-model.mjs';
 import { makePisiSyncConflictCopy } from '../shared/sync-conflict.mjs';
 import { mergePisiSyncAuthority } from '../shared/sync-merge-authority.mjs';
 import { mergePisiSyncMap, serializePisiSyncJson } from '../shared/sync-merge-json.mjs';
@@ -73,7 +75,9 @@ for (const name of [
     'structured-nodes',
     'property-schema-store',
     'property-schema-mutations',
-    'project-integrity'
+    'project-integrity',
+    // The diary sections the desktop writes after a turn (G9) go through its internal-write marking.
+    'electron-ipc'
 ]) {
     require(`../main/functions/${name}.js`);
 }
@@ -159,11 +163,14 @@ test('birleşik dosyalar ve çakışma kopyaları masaüstü denetiminde yeni bu
     // 3. A note with task blocks: its conflict copy keeps the text, not the tasks.
     const planCopy = writeConflictCopy(root, 'Proje Planı.node', withBlockText(readJson(root, 'Proje Planı.node'), 0, 'Plan (telefon)'));
     assert.doesNotMatch(planCopy.document.content, /pisi-todo-source|data-pisi-todo-status|pisi-user-tag/);
+    assert.ok(listPisiNoteTaskIds(readJson(root, 'Proje Planı.node').content).length > 0, 'asıl notta görev blokları var');
+    assert.deepEqual(listPisiNoteTaskIds(planCopy.document.content), [], 'kopyada görev bloğu yok (G9)');
 
     // 4. A diary day with the desktop's task section: its copy is a normal note at the root.
     const diaryKey = 'diary/2026-11-14.node';
     const diaryCopy = writeConflictCopy(root, diaryKey, withBlockText(readJson(root, diaryKey), 0, 'Telefonda yazılan gün'));
     assert.equal(diaryCopy.path, 'Günlük çakışması 14-11-2026 (Pixel 7).node');
+    assert.equal(readPisiDiaryTaskSection(diaryCopy.document.content).count, 0, 'kopyada görev bölümü yok (G9)');
 
     // 5. A diary day both devices created: one file, both texts.
     const template = readJson(root, 'diary/2026-11-12.node');
@@ -205,6 +212,43 @@ test('birleşik dosyalar ve çakışma kopyaları masaüstü denetiminde yeni bu
     assert.deepEqual(tasksMerge.conflicts, []);
     assert.deepEqual([tasksMerge.value.tasks[0].status, tasksMerge.value.tasks[0].title], ['done', 'Raporu gönder (güncel)']);
     writeJson(root, '.pisi/tasks.json', tasksMerge.value);
+
+    // 6b. (G9) Both devices complete the same occurrence of the daily "Egzersiz" and a day's section
+    // differs on both sides: one completion, one move on; the desktop writes the sections from the rule.
+    const service = modules['main.taskService'];
+    const merged = readJson(root, '.pisi/tasks.json');
+    const index = merged.tasks.findIndex((record) => record.title === 'Egzersiz');
+    const completeAt = (minute) => {
+        const copy = structuredClone(merged);
+        copy.tasks[index] = completePisiTask(copy.tasks[index], { now: new Date(2026, 10, 16, 13, minute) }).task;
+        copy.updatedAt = copy.tasks[index].updatedAt;
+        return copy;
+    };
+    const twice = mergePisiSyncAuthority('.pisi/tasks.json', merged, completeAt(10), completeAt(20));
+    const exercise = twice.value.tasks[index];
+    assert.equal(exercise.completions.length, 1, 'tek tamamlama');
+    assert.equal(exercise.dueDate, '2026-11-17', 'tek ilerleme');
+    assert.deepEqual(
+        twice.conflicts.map((conflict) => [conflict.field, conflict.kind]),
+        [['completions', 'completion']]
+    );
+    writeJson(root, '.pisi/tasks.json', twice.value);
+    const dayKey = 'diary/2026-11-14.node';
+    const before14 = readJson(root, dayKey);
+    const stand = (ids) => ({ ...before14, content: replacePisiDiaryTaskSection(before14.content, '2026-11-14', ids) });
+    const sectionMerge = mergePisiSyncNode({ base: before14, local: stand([merged.tasks[3].id]), remote: stand([merged.tasks[4].id]), diary: true });
+    assert.equal(sectionMerge.status, 'merged', 'bölüm farkı çakışma değildir');
+    writeJson(root, dayKey, sectionMerge.value);
+    const rewritten = service.rewritePisiDiarySectionsForTaskChange(root, merged.tasks, twice.value.tasks, { days: ['2026-11-14'] });
+    assert.deepEqual(rewritten.days, ['2026-11-14', '2026-11-16', '2026-11-17']);
+    const rule = (day) => listPisiDiaryTaskIds(day, twice.value.tasks.map(readPisiTask).filter(Boolean));
+    for (const day of rewritten.days) assert.deepEqual(readPisiDiaryTaskSection(readJson(root, `diary/${day}.node`).content).taskIds, rule(day), day);
+    // A day given only as a diary the turn wrote is never created, and a correct section is not written again.
+    const stamp = fs.statSync(path.join(root, dayKey)).mtimeMs;
+    const again = service.rewritePisiDiarySectionsForTaskChange(root, twice.value.tasks, twice.value.tasks, { days: ['2026-11-14', '2026-11-25'] });
+    assert.deepEqual([again.context.writtenDiaries, again.context.createdDiaries], [[], []]);
+    assert.equal(fs.existsSync(path.join(root, 'diary/2026-11-25.node')), false);
+    assert.equal(fs.statSync(path.join(root, dayKey)).mtimeMs, stamp);
 
     // 7. relationships.json: a second parent from the local side is dropped; a stream link and a label stay.
     const relationships = readJson(root, '.pisi/relationships.json');

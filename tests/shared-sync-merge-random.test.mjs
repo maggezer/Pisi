@@ -9,6 +9,8 @@ import { makePisiSyncConflictCopy } from '../shared/sync-conflict.mjs';
 import { mergePisiSyncAuthority } from '../shared/sync-merge-authority.mjs';
 import { stableStringify } from '../shared/sync-merge-json.mjs';
 import { getPisiSyncChangedUnits, mergePisiSyncNode, splitPisiSyncNoteUnits } from '../shared/sync-merge-node.mjs';
+import { getPisiSyncCompletionKey } from '../shared/sync-merge-tasks.mjs';
+import { completePisiTask, normalizePisiTask, readPisiTask, reopenPisiTask } from '../shared/task-model.mjs';
 
 const CASES = 1000;
 
@@ -188,4 +190,77 @@ test(`${CASES} rastgele tasks.json düzenleme çiftinde birleştirme değişmezl
             for (const task of side.tasks) if (!baseTasks.some((item) => item.id === task.id)) assert.ok(ids.has(task.id), `tohum ${seed}: ${task.id}`);
         assert.equal(ids.size, result.value.tasks.length, `tohum ${seed}: tekrar eden kimlik`);
     }
+});
+
+// docs/task-plan.md G9: both devices complete, take back and rename one repeating
+// task with the real task rules; the merge loses no completion, keeps one per
+// occurrence and never leaves the task due on an occurrence that is done.
+test(`${CASES} rastgele tekrar eden görev düzenlemesinde tamamlama değişmezleri`, () => {
+    let uuid = 0;
+    const makeUuid = () => `00000000-0000-4000-8000-${String((uuid += 1)).padStart(12, '0')}`;
+    const repeats = ['daily', 'weekdays', 'weekly', 'after-completion'];
+    let keyedCases = 0;
+    for (let seed = 1; seed <= CASES; seed += 1) {
+        const rand = random(seed * 104729);
+        // A device's clock only goes forward: every call is a later minute of the day `offset`.
+        let tick = 0;
+        const day = (offset) => new Date(Date.UTC(2026, 10, 10 + offset, 8, (tick += 1)));
+        const repeat = pick(rand, repeats);
+        let base = normalizePisiTask(
+            { title: 'Spor', repeat, completionOffsetDays: repeat === 'after-completion' ? 2 : null, dueDate: '2026-11-10', diaryDate: '2026-11-10' },
+            null,
+            { now: day(0), makeUuid }
+        ).task;
+        for (let step = 1, count = Math.floor(rand() * 3); step <= count; step += 1) base = completePisiTask(base, { now: day(step) }).task;
+        const edit = (side) => {
+            let task = structuredClone(base);
+            let offset = 3;
+            for (let step = 1 + Math.floor(rand() * 4); step > 0; step -= 1) {
+                offset += Math.floor(rand() * 3);
+                const now = day(offset);
+                const roll = rand();
+                const next =
+                    roll < 0.55
+                        ? completePisiTask(task, { now })
+                        : roll < 0.8
+                          ? reopenPisiTask(task, null, { now })
+                          : normalizePisiTask({ title: `${side} ${text(rand)}` }, task, { now, makeUuid });
+                if (next.ok && next.task) task = next.task;
+            }
+            return task;
+        };
+        const local = edit('L');
+        const remote = edit('R');
+        const file = (task) => ({ version: 2, updatedAt: task.updatedAt, tasks: [task] });
+        const merge = (b, l, r) => mergePisiSyncAuthority('.pisi/tasks.json', file(b), file(l), file(r));
+        for (const value of [base, local, remote]) assert.equal(stableStringify(merge(value, value, value).value.tasks[0]), stableStringify(value));
+        assert.equal(stableStringify(merge(base, local, base).value.tasks[0]), stableStringify(local));
+        assert.equal(stableStringify(merge(base, base, remote).value.tasks[0]), stableStringify(remote));
+        const result = merge(base, local, remote);
+        assert.equal(stableStringify(merge(structuredClone(base), structuredClone(local), structuredClone(remote))), stableStringify(result), `tohum ${seed}`);
+        const merged = result.value.tasks[0];
+        const keys = merged.completions.map(getPisiSyncCompletionKey);
+        // An 'after-completion' task completed twice on one day repeats a due day; such a list merges as a whole.
+        const keyed = [base, local, remote].every((side) => new Set(side.completions.map(getPisiSyncCompletionKey)).size === side.completions.length);
+        if (keyed) {
+            keyedCases += 1;
+            assert.equal(new Set(keys).size, keys.length, `tohum ${seed}: bir tekrar bir kez`);
+            const baseKeys = new Set(base.completions.map(getPisiSyncCompletionKey));
+            for (const side of [local, remote])
+                for (const entry of side.completions)
+                    if (!baseKeys.has(getPisiSyncCompletionKey(entry)))
+                        assert.ok(keys.includes(getPisiSyncCompletionKey(entry)), `tohum ${seed}: tamamlama kayboldu`);
+            const lastDone = merged.completions
+                .map((entry) => entry.dueDate)
+                .sort()
+                .at(-1);
+            if (lastDone)
+                assert.ok(
+                    repeat === 'after-completion' ? merged.dueDate >= lastDone : merged.dueDate > lastDone,
+                    `tohum ${seed}: ${merged.dueDate} ≤ ${lastDone}`
+                );
+        }
+        assert.ok(readPisiTask(merged), `tohum ${seed}: birleşik kayıt okunur`);
+    }
+    assert.ok(keyedCases > CASES * 0.8, `anahtarlanan durum ${keyedCases}`);
 });

@@ -1,5 +1,37 @@
 # PISI Güncelleme Takip Dosyası
 
+## 22-11-2026 — Senkron: görev modeliyle birleştirme (G9)
+
+Görev işi ve senkron işi (`docs/task-plan.md` G9, `docs/sync-plan.md` §3.4). Birleştirme kuralı istemcidedir; protokol
+sürümü değişmez.
+
+- `tasks.json` birleşiminde görev kuralları (`shared/sync-merge-tasks.mjs`, `sync-merge-authority.mjs` çağırır):
+  `completions` tamamlanan tekrarın bitiş gününe (`dueDate`) göre girdi girdi birleşir; aynı tekrar iki tarafta
+  tamamlanmışsa önce tamamlanan (`at` küçük olan) kalır, öbürü çakışma günlüğüne yazılır (`kind: 'completion'`).
+  Bir tarafta geri alınıp öbüründe değişen girdide kaydın `updatedAt` kuralı geçer. İki tarafta da `done` olan
+  tekrarsız görevde önce tamamlanan tarafın `completedAt`/`completedOn` değerleri kalır. İlerleme geri gitmez:
+  tekrar eden görevin birleşik bitiş günü birleşik tamamlamaların bitiş gününü geçmiyorsa bitiş günü ve
+  `reminderAt` daha ileri olan taraftan alınır (`kind: 'progress'`). Bitiş günü tekrar eden liste (aynı gün iki kez
+  tamamlanan "tamamlandıktan sonra" görevi) eskisi gibi bütün alan olarak birleşir.
+- Günlük görev bölümü birleştirilmez ve çakışma sayılmaz (GV15): iki tarafta farklıysa uzak bölüm yer tutucu
+  olarak alınır ve son blok kalır. İki cihazda oluşan aynı günün günlüğünde tek bölüm kalır; yeni günlüğün boş ilk
+  satırı (`<div><br></div>`) çakışma sayılmaz. Masaüstü, turun yazdığı her günlüğün bölümünü aynı atomik mutation'da
+  birleşik `tasks.json`'dan yeniden üretir (`sync-client-desktop.js`; `rewritePisiDiarySectionsForTaskChange`
+  `days` seçeneği; o günler için günlük oluşturulmaz, doğru bölüm yeniden yazılmaz). Telefon bölümü senkrondan
+  sonra yazmaz; ekranları bölümü zaten kuraldan çizer.
+- Çakışma kopyası görev bloklarını ve günlük görev bölümünü almaz (`makePisiSyncConflictContent`,
+  `stripPisiTaskBlocks` ile aynı kural); görevler asıl notta kalır, aynı görev kimliği iki notta bulunmaz.
+- Test vektörleri: `tests/fixtures/sync-vectors.json`'a `merges` bölümü (tamamlama ve günlük bölümü örnekleri)
+  eklendi; Node (`tests/shared-sync-vectors.test.mjs`) ve mobil vitest (`mobile/tests/sync-vectors.test.mjs`) aynı
+  girdiden aynı sonucu doğrular.
+- Testler: `tests/shared-sync-merge.test.mjs` (örnekli kurallar), `tests/shared-sync-merge-random.test.mjs`
+  (gerçek görev kurallarıyla tohumlu 1.000 düzenleme: tamamlama kaybolmaz, bir tekrar bir kez, ilerleme geri
+  gitmez), `tests/sync-merge-integrity.test.mjs` (birleşik `tasks.json`, günlük bölümü ve görev bloklu notun
+  kopyası masaüstü Integrity'de yeni bulgu vermez). Matris (`scripts/sync-e2e-matrix.mjs`) 18–22: telefon tekrar
+  eden görevi tamamlar ve masaüstü başlığını değiştirir; iki cihaz aynı tekrarı tamamlar; masaüstü görev bloğunu
+  siler, telefon aynı görevi düzenler; iki cihaz aynı yeni güne çevrimdışı görev ekler; telefonda ileri tarihli
+  görev o günün günlüğünü iki cihazda aynı baytlarla oluşturur.
+
 ## 22-11-2026 — Mobil: sürüm 2 görevler ve açılışta gün (G8)
 
 Görev işi ve mobil iş (`docs/task-plan.md` G8, `docs/mobile-plan.md` §3.6). Kapanan bulgular: GB5 (mobil tarafı),

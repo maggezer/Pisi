@@ -11,6 +11,11 @@
 // On a conflict the result is the merge in which the remote side wins every
 // conflicting part, and the caller writes the full local document as a
 // conflict copy (shared/sync-conflict.mjs), so no text is lost.
+//
+// A diary's task section (docs/task-plan.md §3.2.2) is never merged and never
+// a conflict: it is derived from tasks.json (GV15). When the sides differ the
+// remote section stands in and stays the last block; the desktop writes it
+// again from the merged tasks.json in the same turn (docs/task-plan.md G9).
 
 import { splitNoteBlocks } from './note-blocks.mjs';
 import {
@@ -25,21 +30,26 @@ import {
 
 const HEAD = '\u0000head';
 const MANAGED_START = 'PISI_DIARY_MANAGED_START';
+// Markup that holds no text: the empty line a new diary starts with.
+const EMPTY_HEAD = /^(?:\s|<\/?(?:div|p|span)\b[^>]*>|<br\s*\/?>|&nbsp;)*$/i;
 
 /**
- * Units of note content: `{ ok, order, html: Map(key → html) }`. `ok` is false
- * when a key repeats; the content is then one unit, so it merges as a whole.
+ * Units of note content: `{ ok, order, html: Map(key → html), sections }`.
+ * `ok` is false when a key repeats; the content is then one unit, so it merges
+ * as a whole. `sections` holds the keys of diary task sections.
  */
 export function splitPisiSyncNoteUnits(content) {
     const text = typeof content === 'string' ? content : '';
     const units = [];
     let head = '';
     const keys = new Set();
+    const sections = new Set();
     let ok = true;
     for (const segment of splitNoteBlocks(text)) {
         const key = segment.kind === 'element' ? segment.blockId || sheetKey(segment) : null;
         if (key && !keys.has(key)) {
             keys.add(key);
+            if (segment.blockType === 'diary-tasks') sections.add(key);
             units.push({ key, html: segment.html });
         } else {
             if (key) ok = false;
@@ -47,14 +57,20 @@ export function splitPisiSyncNoteUnits(content) {
             else head += segment.html;
         }
     }
-    if (!ok) return { ok: false, order: text ? [HEAD] : [], html: new Map(text ? [[HEAD, text]] : []) };
+    if (!ok) return { ok: false, order: text ? [HEAD] : [], html: new Map(text ? [[HEAD, text]] : []), sections: new Set() };
     const order = units.map((unit) => unit.key);
     const html = new Map(units.map((unit) => [unit.key, unit.html]));
     if (head) {
         order.unshift(HEAD);
         html.set(HEAD, head);
     }
-    return { ok: true, order, html };
+    return { ok: true, order, html, sections };
+}
+
+/** Puts the head first and the diary task section last, the rest in `order`. */
+function placeUnits(order, sections) {
+    const middle = order.filter((key) => key !== HEAD && !sections.has(key));
+    return [...(order.includes(HEAD) ? [HEAD] : []), ...middle, ...order.filter((key) => sections.has(key))];
 }
 
 function sheetKey(segment) {
@@ -97,8 +113,17 @@ export function mergePisiSyncNoteContent(baseContent, localContent, remoteConten
     }
 
     const merged = new Map();
+    const sections = new Set([...local.sections, ...remote.sections, ...base.sections]);
     for (const key of new Set([...remote.order, ...local.order, ...base.order])) {
         const [b, l, r] = [base.html.get(key), local.html.get(key), remote.html.get(key)];
+        if (sections.has(key)) {
+            // Derived from tasks.json: never a conflict (GV15); the remote section stands in.
+            if (sameUnit(l, b) || sameUnit(r, b) || sameUnit(l, r)) {
+                const value = sameUnit(r, b) ? l : r;
+                if (value !== undefined) merged.set(key, value);
+            } else if (r !== undefined || l !== undefined) merged.set(key, r ?? l);
+            continue;
+        }
         if (sameUnit(l, r)) {
             if (r !== undefined) merged.set(key, r);
         } else if (sameUnit(l, b)) {
@@ -113,8 +138,8 @@ export function mergePisiSyncNoteContent(baseContent, localContent, remoteConten
         }
     }
     const order = mergePisiSyncOrder(local.order, remote.order, new Set(merged.keys()));
-    // The head (text before the first block) stays first.
-    const sorted = order.includes(HEAD) ? [HEAD, ...order.filter((key) => key !== HEAD)] : order;
+    // The head (text before the first block) stays first, the diary's task section last.
+    const sorted = placeUnits(order, sections);
     return { content: sorted.map((key) => merged.get(key)).join(''), conflicts };
 }
 
@@ -173,7 +198,11 @@ export function mergePisiSyncNode({ base = null, local, remote, diary = false })
 /**
  * A diary day written on both devices before either synced: the remote file
  * (and its id) is kept and the local blocks are added after the remote ones.
- * A block id on both sides with different text, or two task sections, is a conflict.
+ * The task section is derived (GV15): one section stays at the end (the
+ * remote one, else the local one) and is written again from tasks.json. The
+ * empty line a new diary starts with is no text. A block id on both sides
+ * with different text, text before the first block, or two old managed
+ * sections, is a conflict.
  */
 function mergeNewDiary(local, remote) {
     const conflicts = [];
@@ -185,15 +214,20 @@ function mergeNewDiary(local, remote) {
     if (!localUnits.ok || !remoteUnits.ok || (localContent.includes(MANAGED_START) && remoteContent.includes(MANAGED_START))) {
         conflicts.push({ unit: null, reason: 'unidentified' });
     } else {
+        const kept = remoteUnits.order.filter((key) => !remoteUnits.sections.has(key)).map((key) => remoteUnits.html.get(key));
         for (const key of localUnits.order) {
             const html = localUnits.html.get(key);
+            if (localUnits.sections.has(key)) continue;
             if (key === HEAD) {
-                if (html.trim()) conflicts.push({ unit: null, reason: 'unidentified' });
+                if (!EMPTY_HEAD.test(html)) conflicts.push({ unit: null, reason: 'unidentified' });
                 continue;
             }
-            if (!remoteUnits.html.has(key)) content += html;
+            if (!remoteUnits.html.has(key)) kept.push(html);
             else if (remoteUnits.html.get(key) !== html) conflicts.push({ unit: key, reason: 'both-added' });
         }
+        const section =
+            [...remoteUnits.sections].map((key) => remoteUnits.html.get(key))[0] ?? [...localUnits.sections].map((key) => localUnits.html.get(key))[0];
+        content = kept.join('') + (section ?? '');
     }
     const value = clonePisiSyncJson(remote);
     if (isPisiSyncPlainObject(value.pisi) && isPisiSyncPlainObject(local?.pisi))

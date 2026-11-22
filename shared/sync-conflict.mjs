@@ -1,8 +1,9 @@
 // Conflict copies of the sync core (docs/sync-plan.md §3.4, rules SV3, SV6).
 // A copy is a new note with a new node_ id and its own sidecar, in the same
 // folder and with the same parentMap as the original. A diary day's copy is a
-// normal note at the project root. Task blocks become plain text, so the copy
-// never captures a second task, and the attachments the copy refers to are
+// normal note at the project root. Task blocks and the diary's task section
+// stay out of the copy: the tasks stay in the original note (docs/task-plan.md
+// §3.3, G9), so no task id is in two notes. The attachments the copy refers to are
 // listed as new paths for the same content (the same blob id on the server).
 // Clock, uuid and the "is this path taken" question come from the caller.
 
@@ -39,9 +40,12 @@ export function getPisiSyncContentAssetReferences(content) {
 }
 
 /**
- * Content of a conflict copy: a task block becomes a paragraph with the same
- * text (one line per line of the task), and the task section the desktop keeps
- * in a diary day (a projection of tasks.json) is left out.
+ * Content of a conflict copy. Task blocks (§3.2.1) and the diary's task
+ * section (§3.2.2) are left out, as stripPisiTaskBlocks (shared/task-blocks.mjs)
+ * leaves them out; they carry only task ids, so no text is lost. Old markup
+ * keeps its earlier handling: an old task block becomes a paragraph with the
+ * same text (one line per line of the task) and the old managed section is
+ * left out.
  */
 export function makePisiSyncConflictContent(content) {
     let out = '';
@@ -56,6 +60,7 @@ export function makePisiSyncConflictContent(content) {
             continue;
         }
         if (managed || segment.blockType === 'diary-managed' || segment.blockType === 'diary-heading') continue;
+        if (segment.blockType === 'diary-tasks' || (segment.blockType === 'task' && segment.taskId)) continue;
         if (segment.blockType === 'task') {
             const text = htmlToText((segment.inner || '').replace(TASK_CHROME, (span) => (/data-pisi-tag="(?!todo\.)/i.test(span) ? span : '')))
                 .split('\n')

@@ -98,7 +98,7 @@ Bu kurallar her fazda geçerlidir. Bir PR bunlardan birini çiğniyorsa bitmiş 
 - **SV10 · Bozuk dosya yayılmaz:** JSON'u bozuk yerel dosya (`.node`, `.map`, `.pisi/*.json`, `.pisi-*.json`) ne gönderilir ne de uzaktan gelenle ezilir (V7). Uzaktan gelen ve çözüldükten sonra JSON olarak okunamayan içerik de yazılmaz.
 - **SV11 · Atomik uygulama:** Masaüstünde bir senkron turunun yazdığı dosyalar tek bir atomik mutation içinde yazılır (`docs/atomic-mutations.md`); kesilirse proje turun öncesine ya da sonrasına döner. Mobilde her dosya `ProjectWriter` ile atomik yazılır; imleç (cursor) yalnız tur bütünüyle uygulanınca ilerler ve tur yeniden oynatılırsa aynı sonucu verir.
 - **SV12 · Telefon silmez:** Telefon silme değişikliği üretmez (V9). Telefonda eksik bulunan dosya "silindi" sayılmaz, yeniden indirilir. Sunucu `member` rolündeki cihazdan gelen silmeyi `DELETE_NOT_ALLOWED` ile reddeder.
-- **SV13 · Yansıtma yazması yoktur:** Görevin bilgisi yalnız `tasks.json`'dadır; not ve günlük yalnız görev kimliğini taşır (`docs/task-plan.md` G2). Not işaretinden `tasks.json`'a yazan bir yol bu yüzden yoktur ve uzaktan gelen bir görev değişikliği geri çevrilemez. Senkron turu `tasks.json`'u değiştirince masaüstü, değişen görevlerin günlerinin görev bölümünü aynı atomik mutation'da kuraldan üretir (`shared/task-diary.mjs`; dosya zaten doğruysa yazmaz, kaydedilmemiş düzenlemesi olan günlüğü editöre bırakır). S3'teki görev durumu koruması (cihaz durumundaki `task-guards.json`) G2'de kalktı; eski dosya okunmaz ve silinmez.
+- **SV13 · Yansıtma yazması yoktur:** Görevin bilgisi yalnız `tasks.json`'dadır; not ve günlük yalnız görev kimliğini taşır (`docs/task-plan.md` G2). Not işaretinden `tasks.json`'a yazan bir yol bu yüzden yoktur ve uzaktan gelen bir görev değişikliği geri çevrilemez. Senkron turu `tasks.json`'u değiştirince masaüstü, değişen görevlerin günlerinin görev bölümünü aynı atomik mutation'da kuraldan üretir (`shared/task-diary.mjs`; dosya zaten doğruysa yazmaz, kaydedilmemiş düzenlemesi olan günlüğü editöre bırakır). G9'dan beri turun yazdığı her günlüğün bölümü de kuraldan üretilir (o gün için günlük oluşturulmaz): birleştirme bölümü birleştirmez, yer tutucu bırakır. S3'teki görev durumu koruması (cihaz durumundaki `task-guards.json`) G2'de kalktı; eski dosya okunmaz ve silinmez.
 
 ---
 
@@ -185,17 +185,22 @@ Birleştirmeyi her zaman, gönderimi `STALE_BASE` ile reddedilen cihaz yapar; b�
     - İki tarafın **aynı bloğu farklı** değiştirmesi, bir tarafın değiştirip öbürünün silmesi ya da kimliksiz (eski) içeriğin iki tarafta değişmesi **çakışmadır**.
     - `pisi` ve `properties` alanları anahtar düzeyinde birleşir; `updatedAt` iki taraftan büyük olandır; aynı anahtar iki tarafta farklı değiştiyse çakışmadır.
     - Çakışmada dosya, uzak tarafın kazandığı birleşik sürüm olur; yerel tarafın **tam** sürümü çakışma kopyası olarak yanına yazılır (SV3, SV6).
+    - Günlüğün görev bölümü (`docs/task-plan.md` §3.2.2) birleştirilmez ve çakışma sayılmaz (G9, GV15): iki taraf farklıysa uzak bölüm yer tutucu olarak alınır ve son blok kalır. Masaüstü, turun yazdığı her günlüğün bölümünü aynı atomik mutation'da birleşik `tasks.json`'dan yeniden üretir (SV13).
 - **Çakışma kopyası (`shared/sync-conflict.mjs`):**
     - Başlık: `<başlık> (çakışma DD-MM-YYYY HH.mm <cihaz adı>)`. Dosya adı ve sidecar `shared/document-naming.mjs` kurallarıyla; yeni `node_…` kimliği `shared/ids.mjs` ile.
     - Aynı klasöre ve aynı `parentMap` ile yazılır. Kopyanın başvurduğu ekler, kopyanın sidecar'ına **aynı blob kimliğiyle** yeni yollar olarak eklenir; telefon bunun için baytları indirmez.
-    - Görev blokları kopyada salt metin olarak kalır; canonical görevin kaynağı değişmez. Kopya Project Integrity'de yeni bulgu üretmez (S1 kabulü).
+    - Görev blokları ve günlüğün görev bölümü kopyaya girmez (`stripPisiTaskBlocks`, `docs/task-plan.md` §3.3, G9); görevler asıl notta kalır ve aynı görev kimliği iki notta bulunmaz. Bloklar yalnız kimlik taşıdığı için metin kaybı olmaz. Eski işaretli görev bloğu kopyada salt metin paragraf olur. Kopya Project Integrity'de yeni bulgu üretmez (S1 kabulü).
     - Günlük dosyasında (`diary/YYYY-MM-DD.node`) çakışma kopyası günlük olamaz: proje köküne `Günlük çakışması DD-MM-YYYY (<cihaz>)` adlı normal not olarak yazılır.
 - **Aynı yolda iki yeni dosya (temel yok):**
-    - Günlükte aynı gün iki cihazda yazıldıysa uzak dosyanın kimliği korunur, bloklar birleşir (önce uzak, sonra yerel bloklar).
+    - Günlükte aynı gün iki cihazda yazıldıysa uzak dosyanın kimliği korunur, bloklar birleşir (önce uzak, sonra yerel bloklar). Sonda tek görev bölümü kalır (uzaktaki, yoksa yereldeki; masaüstü kuraldan yeniden üretir); yeni günlüğün boş ilk satırı (`<div><br></div>`) çakışma sayılmaz (G9).
     - Başka `.node` dosyasında kimlikler farklıysa yerel dosya çakışma kopyasına dönüşür. Kimlikler aynıysa blok birleştirmesi boş temelle yapılır.
 - **Otorite dosyaları (`shared/sync-merge-authority.mjs`):**
     - Kayıt listeleri (`tasks[]`, `relationships[]`, `definitions[]`) kimliğe göre üç yollu birleşir; kayıtta alan düzeyinde birleştirme yapılır.
     - Aynı alan iki tarafta farklı değiştiyse kaydın `updatedAt`'i büyük olan taraf kazanır; eşitse uzak taraf kazanır. Kaybeden değer cihazın çakışma günlüğüne yazılır (Ayarlar'da görünür).
+    - Görevde (`tasks.json`, `shared/sync-merge-tasks.mjs`; `docs/task-plan.md` G9):
+        - `completions` tamamlanan tekrarın bitiş gününe (`dueDate`) göre girdi girdi birleşir. Aynı tekrar iki tarafta tamamlanmışsa önce tamamlanan (`at` küçük olan) kalır, öbürü çakışma günlüğüne yazılır (`kind: 'completion'`). Bir tarafta geri alınıp öbüründe değişen girdide kaydın `updatedAt` kuralı geçer. Bitiş günü tekrar eden bir liste girdi girdi birleşmez, alan olarak birleşir.
+        - İki tarafta da `done` olan tekrarsız görevde önce tamamlanan tarafın `completedAt` ve `completedOn` değerleri kalır.
+        - İlerleme geri gitmez: tekrar eden görevin birleşik `dueDate`'i birleşik tamamlamalardaki bir bitiş gününe eşit ya da ondan önceyse ("tamamlandıktan sonra" tekrarında yalnız önceyse), `dueDate` ve `reminderAt` daha ileri tarihli taraftan alınır (`kind: 'progress'`).
     - Bir tarafta silinen, öbüründe değiştirilen kayıtta silme kazanır (silme yalnız masaüstünden gelir; kayıt masaüstü çöp kutusundadır) ve olay çakışma günlüğüne yazılır.
     - Tanınmayan kayıtlar ve alanlar korunur (V3). Dosyanın üst düzey `updatedAt`'i iki taraftan büyük olandır.
     - `relationships.json` birleşimi masaüstünün ilişki kurallarını (ikinci hiyerarşik ebeveyn, döngü, kendine bağlantı) çiğniyorsa kuralı çiğneten **yerel** değişiklik bırakılır ve çakışma günlüğüne yazılır. Kurallar saf değilse S1 planında nasıl paylaşılacağı önerilir.

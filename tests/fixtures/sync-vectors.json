@@ -438,5 +438,937 @@
             "path": "~$rapor.docx",
             "reason": "excluded"
         }
-    ]
+    ],
+    "merges": {
+        "tasks": [
+            {
+                "name": "phone-completes-desktop-renames",
+                "base": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T06:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-21",
+                            "dueTime": "07:30",
+                            "repeat": "daily",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T06:00:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "local": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T07:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-22",
+                            "dueTime": "07:30",
+                            "repeat": "daily",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [
+                                {
+                                    "date": "2026-11-21",
+                                    "dueDate": "2026-11-21",
+                                    "at": "2026-11-21T07:00:00.000Z"
+                                }
+                            ],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T07:00:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "remote": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T08:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor (masaüstü)",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-21",
+                            "dueTime": "07:30",
+                            "repeat": "daily",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T08:00:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "path": ".pisi/tasks.json",
+                "expected": {
+                    "value": {
+                        "version": 2,
+                        "updatedAt": "2026-11-21T08:00:00.000Z",
+                        "tasks": [
+                            {
+                                "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                                "title": "Spor (masaüstü)",
+                                "tags": [],
+                                "status": "todo",
+                                "priority": 3,
+                                "dueDate": "2026-11-22",
+                                "dueTime": "07:30",
+                                "repeat": "daily",
+                                "completionOffsetDays": null,
+                                "reminderMode": "none",
+                                "reminderAt": null,
+                                "dependencies": [],
+                                "manualOrder": 1,
+                                "noteId": null,
+                                "diaryDate": "2026-11-20",
+                                "durationMinutes": 0,
+                                "actualMinutes": 0,
+                                "completions": [
+                                    {
+                                        "date": "2026-11-21",
+                                        "dueDate": "2026-11-21",
+                                        "at": "2026-11-21T07:00:00.000Z"
+                                    }
+                                ],
+                                "createdAt": "2026-11-21T06:00:00.000Z",
+                                "updatedAt": "2026-11-21T08:00:00.000Z",
+                                "completedAt": null,
+                                "completedOn": null
+                            }
+                        ]
+                    },
+                    "conflicts": []
+                }
+            },
+            {
+                "name": "same-occurrence-on-both",
+                "base": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T06:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-21",
+                            "dueTime": "07:30",
+                            "repeat": "daily",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T06:00:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "local": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T07:05:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-22",
+                            "dueTime": "07:30",
+                            "repeat": "daily",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [
+                                {
+                                    "date": "2026-11-21",
+                                    "dueDate": "2026-11-21",
+                                    "at": "2026-11-21T07:05:00.000Z"
+                                }
+                            ],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T07:05:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "remote": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T07:40:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-22",
+                            "dueTime": "07:30",
+                            "repeat": "daily",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [
+                                {
+                                    "date": "2026-11-21",
+                                    "dueDate": "2026-11-21",
+                                    "at": "2026-11-21T07:40:00.000Z"
+                                }
+                            ],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T07:40:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "path": ".pisi/tasks.json",
+                "expected": {
+                    "value": {
+                        "version": 2,
+                        "updatedAt": "2026-11-21T07:40:00.000Z",
+                        "tasks": [
+                            {
+                                "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                                "title": "Spor",
+                                "tags": [],
+                                "status": "todo",
+                                "priority": 3,
+                                "dueDate": "2026-11-22",
+                                "dueTime": "07:30",
+                                "repeat": "daily",
+                                "completionOffsetDays": null,
+                                "reminderMode": "none",
+                                "reminderAt": null,
+                                "dependencies": [],
+                                "manualOrder": 1,
+                                "noteId": null,
+                                "diaryDate": "2026-11-20",
+                                "durationMinutes": 0,
+                                "actualMinutes": 0,
+                                "completions": [
+                                    {
+                                        "date": "2026-11-21",
+                                        "dueDate": "2026-11-21",
+                                        "at": "2026-11-21T07:05:00.000Z"
+                                    }
+                                ],
+                                "createdAt": "2026-11-21T06:00:00.000Z",
+                                "updatedAt": "2026-11-21T07:40:00.000Z",
+                                "completedAt": null,
+                                "completedOn": null
+                            }
+                        ]
+                    },
+                    "conflicts": [
+                        {
+                            "recordId": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "field": "completions",
+                            "kind": "completion",
+                            "winner": "local",
+                            "base": null,
+                            "lost": {
+                                "date": "2026-11-21",
+                                "dueDate": "2026-11-21",
+                                "at": "2026-11-21T07:40:00.000Z"
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "progress-does-not-go-back",
+                "base": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T06:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-21",
+                            "dueTime": "07:30",
+                            "repeat": "daily",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T06:00:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "local": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T11:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Sabah sporu",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-22",
+                            "dueTime": "07:30",
+                            "repeat": "daily",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [
+                                {
+                                    "date": "2026-11-21",
+                                    "dueDate": "2026-11-21",
+                                    "at": "2026-11-21T07:00:00.000Z"
+                                }
+                            ],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T11:00:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "remote": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T09:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-23",
+                            "dueTime": "07:30",
+                            "repeat": "daily",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": "2026-11-23T07:00",
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [
+                                {
+                                    "date": "2026-11-21",
+                                    "dueDate": "2026-11-21",
+                                    "at": "2026-11-21T07:30:00.000Z"
+                                },
+                                {
+                                    "date": "2026-11-22",
+                                    "dueDate": "2026-11-22",
+                                    "at": "2026-11-21T09:00:00.000Z"
+                                }
+                            ],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T09:00:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "path": ".pisi/tasks.json",
+                "expected": {
+                    "value": {
+                        "version": 2,
+                        "updatedAt": "2026-11-21T11:00:00.000Z",
+                        "tasks": [
+                            {
+                                "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                                "title": "Sabah sporu",
+                                "tags": [],
+                                "status": "todo",
+                                "priority": 3,
+                                "dueDate": "2026-11-23",
+                                "dueTime": "07:30",
+                                "repeat": "daily",
+                                "completionOffsetDays": null,
+                                "reminderMode": "none",
+                                "reminderAt": "2026-11-23T07:00",
+                                "dependencies": [],
+                                "manualOrder": 1,
+                                "noteId": null,
+                                "diaryDate": "2026-11-20",
+                                "durationMinutes": 0,
+                                "actualMinutes": 0,
+                                "completions": [
+                                    {
+                                        "date": "2026-11-21",
+                                        "dueDate": "2026-11-21",
+                                        "at": "2026-11-21T07:00:00.000Z"
+                                    },
+                                    {
+                                        "date": "2026-11-22",
+                                        "dueDate": "2026-11-22",
+                                        "at": "2026-11-21T09:00:00.000Z"
+                                    }
+                                ],
+                                "createdAt": "2026-11-21T06:00:00.000Z",
+                                "updatedAt": "2026-11-21T11:00:00.000Z",
+                                "completedAt": null,
+                                "completedOn": null
+                            }
+                        ]
+                    },
+                    "conflicts": [
+                        {
+                            "recordId": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "field": "completions",
+                            "kind": "completion",
+                            "winner": "local",
+                            "base": null,
+                            "lost": {
+                                "date": "2026-11-21",
+                                "dueDate": "2026-11-21",
+                                "at": "2026-11-21T07:30:00.000Z"
+                            }
+                        },
+                        {
+                            "recordId": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "field": "dueDate",
+                            "kind": "progress",
+                            "winner": "remote",
+                            "base": "2026-11-21",
+                            "lost": "2026-11-22"
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "taken-back-and-renamed",
+                "base": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T07:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-22",
+                            "dueTime": "07:30",
+                            "repeat": "daily",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [
+                                {
+                                    "date": "2026-11-21",
+                                    "dueDate": "2026-11-21",
+                                    "at": "2026-11-21T07:00:00.000Z"
+                                }
+                            ],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T07:00:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "local": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T08:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-21",
+                            "dueTime": "07:30",
+                            "repeat": "daily",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T08:00:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "remote": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T09:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor (telefon)",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-22",
+                            "dueTime": "07:30",
+                            "repeat": "daily",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [
+                                {
+                                    "date": "2026-11-21",
+                                    "dueDate": "2026-11-21",
+                                    "at": "2026-11-21T07:00:00.000Z"
+                                }
+                            ],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T09:00:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "path": ".pisi/tasks.json",
+                "expected": {
+                    "value": {
+                        "version": 2,
+                        "updatedAt": "2026-11-21T09:00:00.000Z",
+                        "tasks": [
+                            {
+                                "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                                "title": "Spor (telefon)",
+                                "tags": [],
+                                "status": "todo",
+                                "priority": 3,
+                                "dueDate": "2026-11-21",
+                                "dueTime": "07:30",
+                                "repeat": "daily",
+                                "completionOffsetDays": null,
+                                "reminderMode": "none",
+                                "reminderAt": null,
+                                "dependencies": [],
+                                "manualOrder": 1,
+                                "noteId": null,
+                                "diaryDate": "2026-11-20",
+                                "durationMinutes": 0,
+                                "actualMinutes": 0,
+                                "completions": [],
+                                "createdAt": "2026-11-21T06:00:00.000Z",
+                                "updatedAt": "2026-11-21T09:00:00.000Z",
+                                "completedAt": null,
+                                "completedOn": null
+                            }
+                        ]
+                    },
+                    "conflicts": []
+                }
+            },
+            {
+                "name": "done-on-both-without-repeat",
+                "base": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T06:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor",
+                            "tags": [],
+                            "status": "todo",
+                            "priority": 3,
+                            "dueDate": "2026-11-21",
+                            "dueTime": null,
+                            "repeat": "none",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T06:00:00.000Z",
+                            "completedAt": null,
+                            "completedOn": null
+                        }
+                    ]
+                },
+                "local": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T12:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor",
+                            "tags": [],
+                            "status": "done",
+                            "priority": 3,
+                            "dueDate": "2026-11-21",
+                            "dueTime": null,
+                            "repeat": "none",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T12:00:00.000Z",
+                            "completedAt": "2026-11-21T10:00:00.000Z",
+                            "completedOn": "2026-11-21"
+                        }
+                    ]
+                },
+                "remote": {
+                    "version": 2,
+                    "updatedAt": "2026-11-21T09:00:00.000Z",
+                    "tasks": [
+                        {
+                            "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "title": "Spor",
+                            "tags": [],
+                            "status": "done",
+                            "priority": 3,
+                            "dueDate": "2026-11-21",
+                            "dueTime": null,
+                            "repeat": "none",
+                            "completionOffsetDays": null,
+                            "reminderMode": "none",
+                            "reminderAt": null,
+                            "dependencies": [],
+                            "manualOrder": 1,
+                            "noteId": null,
+                            "diaryDate": "2026-11-20",
+                            "durationMinutes": 0,
+                            "actualMinutes": 0,
+                            "completions": [],
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T09:00:00.000Z",
+                            "completedAt": "2026-11-21T09:00:00.000Z",
+                            "completedOn": "2026-11-21"
+                        }
+                    ]
+                },
+                "path": ".pisi/tasks.json",
+                "expected": {
+                    "value": {
+                        "version": 2,
+                        "updatedAt": "2026-11-21T12:00:00.000Z",
+                        "tasks": [
+                            {
+                                "id": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                                "title": "Spor",
+                                "tags": [],
+                                "status": "done",
+                                "priority": 3,
+                                "dueDate": "2026-11-21",
+                                "dueTime": null,
+                                "repeat": "none",
+                                "completionOffsetDays": null,
+                                "reminderMode": "none",
+                                "reminderAt": null,
+                                "dependencies": [],
+                                "manualOrder": 1,
+                                "noteId": null,
+                                "diaryDate": "2026-11-20",
+                                "durationMinutes": 0,
+                                "actualMinutes": 0,
+                                "completions": [],
+                                "createdAt": "2026-11-21T06:00:00.000Z",
+                                "updatedAt": "2026-11-21T12:00:00.000Z",
+                                "completedAt": "2026-11-21T09:00:00.000Z",
+                                "completedOn": "2026-11-21"
+                            }
+                        ]
+                    },
+                    "conflicts": [
+                        {
+                            "recordId": "task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11",
+                            "field": "completedAt",
+                            "kind": "completion",
+                            "winner": "remote",
+                            "base": null,
+                            "lost": {
+                                "completedAt": "2026-11-21T10:00:00.000Z",
+                                "completedOn": "2026-11-21"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "notes": [
+            {
+                "name": "diary-section-changed-on-both",
+                "base": {
+                    "pisi": {
+                        "version": 1,
+                        "type": "node",
+                        "id": "node_d1a2b3c4-0000-4000-8000-000000000022",
+                        "title": "22-11-2026",
+                        "sidecar": "none",
+                        "parentMap": "none",
+                        "diaryDate": "2026-11-22",
+                        "createdAt": "2026-11-21T06:00:00.000Z",
+                        "updatedAt": "2026-11-21T06:00:00.000Z"
+                    },
+                    "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_a\" data-pisi-block-type=\"paragraph\">Sabah</div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-22\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_0a0a0a0a-0000-4000-8000-00000000000a\"></div>\n</div>"
+                },
+                "local": {
+                    "pisi": {
+                        "version": 1,
+                        "type": "node",
+                        "id": "node_d1a2b3c4-0000-4000-8000-000000000022",
+                        "title": "22-11-2026",
+                        "sidecar": "none",
+                        "parentMap": "none",
+                        "diaryDate": "2026-11-22",
+                        "createdAt": "2026-11-21T06:00:00.000Z",
+                        "updatedAt": "2026-11-21T08:00:00.000Z"
+                    },
+                    "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_a\" data-pisi-block-type=\"paragraph\">Sabah yürüyüşü</div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-22\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_0a0a0a0a-0000-4000-8000-00000000000a\"></div>\n    <div data-pisi-task-ref=\"task_0b0b0b0b-0000-4000-8000-00000000000b\"></div>\n</div>"
+                },
+                "remote": {
+                    "pisi": {
+                        "version": 1,
+                        "type": "node",
+                        "id": "node_d1a2b3c4-0000-4000-8000-000000000022",
+                        "title": "22-11-2026",
+                        "sidecar": "none",
+                        "parentMap": "none",
+                        "diaryDate": "2026-11-22",
+                        "createdAt": "2026-11-21T06:00:00.000Z",
+                        "updatedAt": "2026-11-21T09:00:00.000Z"
+                    },
+                    "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_a\" data-pisi-block-type=\"paragraph\">Sabah</div><div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_c\" data-pisi-block-type=\"paragraph\">Akşam</div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-22\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_0a0a0a0a-0000-4000-8000-00000000000a\"></div>\n    <div data-pisi-task-ref=\"task_0c0c0c0c-0000-4000-8000-00000000000c\"></div>\n</div>"
+                },
+                "path": "diary/2026-11-22.node",
+                "expected": {
+                    "status": "merged",
+                    "value": {
+                        "pisi": {
+                            "version": 1,
+                            "type": "node",
+                            "id": "node_d1a2b3c4-0000-4000-8000-000000000022",
+                            "title": "22-11-2026",
+                            "sidecar": "none",
+                            "parentMap": "none",
+                            "diaryDate": "2026-11-22",
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T09:00:00.000Z"
+                        },
+                        "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_a\" data-pisi-block-type=\"paragraph\">Sabah yürüyüşü</div><div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_c\" data-pisi-block-type=\"paragraph\">Akşam</div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-22\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_0a0a0a0a-0000-4000-8000-00000000000a\"></div>\n    <div data-pisi-task-ref=\"task_0c0c0c0c-0000-4000-8000-00000000000c\"></div>\n</div>"
+                    },
+                    "conflicts": []
+                },
+                "copyContent": null
+            },
+            {
+                "name": "new-diary-on-both",
+                "base": null,
+                "local": {
+                    "pisi": {
+                        "version": 1,
+                        "type": "node",
+                        "id": "node_d1a2b3c4-0000-4000-8000-0000000000aa",
+                        "title": "22-11-2026",
+                        "sidecar": "none",
+                        "parentMap": "none",
+                        "diaryDate": "2026-11-22",
+                        "createdAt": "2026-11-21T06:00:00.000Z",
+                        "updatedAt": "2026-11-21T08:00:00.000Z"
+                    },
+                    "content": "<div><br></div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-22\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_0b0b0b0b-0000-4000-8000-00000000000b\"></div>\n</div>"
+                },
+                "remote": {
+                    "pisi": {
+                        "version": 1,
+                        "type": "node",
+                        "id": "node_d1a2b3c4-0000-4000-8000-000000000022",
+                        "title": "22-11-2026",
+                        "sidecar": "none",
+                        "parentMap": "none",
+                        "diaryDate": "2026-11-22",
+                        "createdAt": "2026-11-21T06:00:00.000Z",
+                        "updatedAt": "2026-11-21T09:00:00.000Z"
+                    },
+                    "content": "<div><br></div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-22\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_0c0c0c0c-0000-4000-8000-00000000000c\"></div>\n</div>"
+                },
+                "path": "diary/2026-11-22.node",
+                "expected": {
+                    "status": "merged",
+                    "value": {
+                        "pisi": {
+                            "version": 1,
+                            "type": "node",
+                            "id": "node_d1a2b3c4-0000-4000-8000-000000000022",
+                            "title": "22-11-2026",
+                            "sidecar": "none",
+                            "parentMap": "none",
+                            "diaryDate": "2026-11-22",
+                            "createdAt": "2026-11-21T06:00:00.000Z",
+                            "updatedAt": "2026-11-21T09:00:00.000Z"
+                        },
+                        "content": "<div><br></div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-22\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_0c0c0c0c-0000-4000-8000-00000000000c\"></div>\n</div>"
+                    },
+                    "conflicts": []
+                },
+                "copyContent": null
+            },
+            {
+                "name": "conflict-copy-keeps-tasks-in-the-note",
+                "base": {
+                    "pisi": {
+                        "version": 1,
+                        "type": "node",
+                        "id": "node_a1a1a1a1-0000-4000-8000-000000000001",
+                        "title": "Ortak",
+                        "sidecar": "none",
+                        "parentMap": "none"
+                    },
+                    "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_a\" data-pisi-block-type=\"paragraph\">Bir</div>"
+                },
+                "local": {
+                    "pisi": {
+                        "version": 1,
+                        "type": "node",
+                        "id": "node_a1a1a1a1-0000-4000-8000-000000000001",
+                        "title": "Ortak",
+                        "sidecar": "none",
+                        "parentMap": "none"
+                    },
+                    "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_a\" data-pisi-block-type=\"paragraph\">Bir telefon</div><div class=\"pisi-editor-block pisi-task-block\" data-pisi-block-id=\"blk_t\" data-pisi-block-type=\"task\" data-pisi-task-id=\"task_0a0a0a0a-0000-4000-8000-00000000000a\" contenteditable=\"false\"></div>"
+                },
+                "remote": {
+                    "pisi": {
+                        "version": 1,
+                        "type": "node",
+                        "id": "node_a1a1a1a1-0000-4000-8000-000000000001",
+                        "title": "Ortak",
+                        "sidecar": "none",
+                        "parentMap": "none"
+                    },
+                    "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_a\" data-pisi-block-type=\"paragraph\">Bir masaüstü</div>"
+                },
+                "path": "Ortak.node",
+                "expected": {
+                    "status": "conflict",
+                    "value": {
+                        "pisi": {
+                            "version": 1,
+                            "type": "node",
+                            "id": "node_a1a1a1a1-0000-4000-8000-000000000001",
+                            "title": "Ortak",
+                            "sidecar": "none",
+                            "parentMap": "none"
+                        },
+                        "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_a\" data-pisi-block-type=\"paragraph\">Bir masaüstü</div><div class=\"pisi-editor-block pisi-task-block\" data-pisi-block-id=\"blk_t\" data-pisi-block-type=\"task\" data-pisi-task-id=\"task_0a0a0a0a-0000-4000-8000-00000000000a\" contenteditable=\"false\"></div>"
+                    },
+                    "conflicts": [
+                        {
+                            "unit": "blk_a",
+                            "reason": "both-changed"
+                        }
+                    ]
+                },
+                "copyContent": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_a\" data-pisi-block-type=\"paragraph\">Bir telefon</div>"
+            }
+        ]
+    }
 }
