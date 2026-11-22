@@ -51,6 +51,7 @@ test('yeni görev: bütün alanlar §3.1 sırasıyla, varsayılanlarla ve task_<
     assert.deepEqual(task, {
         id: task.id,
         title: 'Spor sabah',
+        tags: [],
         status: 'todo',
         priority: 4,
         dueDate: '2026-11-22',

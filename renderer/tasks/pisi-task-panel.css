@@ -158,6 +158,32 @@
     color: #c0392b;
 }
 
+/* Tags and note links of a card (G6). */
+.pisi-task-card-tags {
+    color: var(--accent-color, #f39c12);
+}
+
+.pisi-task-title-link {
+    color: #5dade2;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+.pisi-task-card-link {
+    padding: 0 4px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #5dade2;
+    font: inherit;
+    cursor: pointer;
+}
+
+.pisi-task-card-link:hover,
+.pisi-task-card-link:focus-visible {
+    text-decoration: underline;
+}
+
 .pisi-task-card-side {
     flex: 0 0 auto;
     display: grid;

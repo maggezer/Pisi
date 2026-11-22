@@ -2,13 +2,13 @@
   "pisi": {
     "version": 1,
     "type": "node",
-    "id": "node_109dfd59-a6ef-4008-856a-6285e4503073",
+    "id": "node_168de282-742a-47e1-b543-e4d1df5a5aea",
     "title": "12-11-2026",
-    "sidecar": "inv_12-11-2026__node_109dfd59-a6ef-4008-856a-6285e4503073",
-    "createdAt": "2026-11-21T09:30:47.102Z",
-    "updatedAt": "2026-11-21T09:30:47.599Z",
+    "sidecar": "inv_12-11-2026__node_168de282-742a-47e1-b543-e4d1df5a5aea",
+    "createdAt": "2026-11-22T03:29:07.298Z",
+    "updatedAt": "2026-11-22T03:29:07.757Z",
     "parentMap": "diary",
     "diaryDate": "2026-11-12"
   },
-  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_df82ffd2-4abf-40a6-b2df-206b1aff9d7a\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Plan belgesini okudum.</div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-12\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_3d792e5f-41a4-42cb-858c-23ec4c3be32a\"></div>\n</div>"
+  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_64191e03-5222-42d7-ab0c-142bf6ef3399\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Plan belgesini okudum.</div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-12\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_1f299d14-af2e-4fb1-9337-ea6d5ffd3445\"></div>\n</div>"
 }

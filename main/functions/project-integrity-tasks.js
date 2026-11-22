@@ -14,7 +14,20 @@ import { getPisiDiaryNodeFileName, normalizePisiDiaryIsoDate, PISI_DIARY_FOLDER 
 
 const STORE_PATH = '.pisi/tasks.json';
 // Version 2 fields a record may hold only in their valid form.
-const CHECKED_FIELDS = ['title', 'status', 'priority', 'dueDate', 'repeat', 'reminderMode', 'reminderAt', 'noteId', 'diaryDate', 'completions', 'dependencies'];
+const CHECKED_FIELDS = [
+    'title',
+    'tags',
+    'status',
+    'priority',
+    'dueDate',
+    'repeat',
+    'reminderMode',
+    'reminderAt',
+    'noteId',
+    'diaryDate',
+    'completions',
+    'dependencies'
+];
 
 function taskIssue(context, code, severity, message, extra = {}) {
     shared.issue(context, { severity, code, domain: 'tasks', path: extra.path || STORE_PATH, entityId: extra.entityId || '', message });

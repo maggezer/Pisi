@@ -58,3 +58,27 @@ test('başlıksız görevin adı "Görev"dir; geçersiz değer kayıt vermez; de
     assert.notEqual(base, getPisiTaskSearchFingerprintPart(task, { path: '/p/B.node', title: 'A' }));
     assert.equal(base, getPisiTaskSearchFingerprintPart({ ...task }, { path: '/p/A.node', title: 'A' }));
 });
+
+test('görevin etiketleri (G6) kayıtta durur ve görevi # ile ya da # olmadan buldurur', async () => {
+    const { searchPisiRecords } = await import('../renderer/search/pisi-search-core.mjs');
+    const tagged = makePisiTaskSearchRecord({ id, title: 'Raporu bitir', tags: ['proje', 'acil'], diaryDate: '2026-11-22' }, { translate, formatDay });
+    assert.deepEqual(tagged.tags, ['proje', 'acil']);
+    assert.equal(tagged.tag, 'proje');
+    assert.deepEqual(
+        tagged.searchFields.filter((field) => field.kind === 'tag').map((field) => field.value),
+        ['proje', 'acil']
+    );
+    const plain = makePisiTaskSearchRecord({ id: `${id}2`, title: 'Başka iş', diaryDate: '2026-11-22' }, { translate, formatDay });
+    for (const query of ['#acil', 'acil']) {
+        assert.deepEqual(
+            searchPisiRecords([tagged, plain], query).map((record) => record.taskId),
+            [id],
+            query
+        );
+    }
+    assert.notEqual(
+        getPisiTaskSearchFingerprintPart({ id, tags: ['proje'] }),
+        getPisiTaskSearchFingerprintPart({ id, tags: ['acil'] }),
+        'a tag change rebuilds the record'
+    );
+});

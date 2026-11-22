@@ -35,6 +35,7 @@ export function makePisiTaskSearchRecord(task, { note = null, memberships = [], 
     const maps = known && Array.isArray(memberships) ? memberships : [];
     const membership = maps[0] || null;
     const title = String(task.title || '').trim();
+    const tags = Array.isArray(task.tags) ? task.tags.filter((tag) => typeof tag === 'string' && tag) : [];
     const dueDate = task.dueDate || null;
     const previewParts = [placeLabel, membership?.mapTitle || '', dueDate ? formatDay(dueDate) : ''].filter(Boolean);
     return {
@@ -56,8 +57,8 @@ export function makePisiTaskSearchRecord(task, { note = null, memberships = [], 
         mapItem: membership?.mapItem || null,
         memberships: maps,
         relativePath: known?.relativePath || '',
-        tag: '',
-        tags: [],
+        tag: tags[0] || '',
+        tags,
         status: task.status || 'todo',
         priority: Number(task.priority) || 3,
         dueDate,
@@ -66,6 +67,8 @@ export function makePisiTaskSearchRecord(task, { note = null, memberships = [], 
         canonical: true,
         searchFields: [
             { kind: 'task', value: title, weight: 125 },
+            // A task's tags (G6) find it by name, with or without the #.
+            ...tags.map((tag) => ({ kind: 'tag', value: tag, weight: 96 })),
             { kind: 'title', value: title, weight: 132 },
             { kind: 'title', value: placeLabel, weight: 88 },
             { kind: 'map', value: membership?.mapTitle || '', weight: 66 },
@@ -85,6 +88,7 @@ export function getPisiTaskSearchFingerprintPart(task, note = null) {
         task?.status || '',
         task?.priority || '',
         task?.title || '',
+        (Array.isArray(task?.tags) ? task.tags : []).join(','),
         task?.noteId || '',
         task?.diaryDate || '',
         task?.dueDate || '',

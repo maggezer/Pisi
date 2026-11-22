@@ -36,14 +36,28 @@ async function readPisiWikiCandidatesAsync(paths) {
         .map((result) => ({ filePath: result.path, data: result.data, id: result.data.pisi?.id || null, title: String(result.data.pisi?.title || '') }));
 }
 
-function getPisiWikiRenameImpactForPayload(payload = {}) {
+/**
+ * Task titles hold links as [[Başlık]] text (docs/task-plan.md G6). They
+ * follow a rename under the legacy rule: only when no other note carries the
+ * old title. Counted from tasks.json; no note is read for them.
+ */
+function addPisiWikiRenameTaskImpact(projectFolder, nodePath, impact) {
+    if (!impact?.ok || !impact.legacyIncluded) return { ...impact, tasks: 0 };
+    const oldTitle = readPisiWikiNode(nodePath)?.title || '';
+    const tasks = oldTitle ? modules['main.taskService']?.countPisiTaskTitleLinks?.(projectFolder, oldTitle) || 0 : 0;
+    return { ...impact, tasks };
+}
+
+async function getPisiWikiRenameImpactForPayload(payload = {}) {
     const safeNodePath = electronIpc.assertProjectPath(payload.nodePath, { type: 'file', extensions: ['.node'] });
     const projectFolder = getPisiWikiActiveProject();
-    if (!modules['main.projectRead']) return getPisiWikiRenameImpact(projectFolder, safeNodePath, String(payload.newTitle || ''));
-    return getPisiWikiRenameImpactAsync(projectFolder, safeNodePath, String(payload.newTitle || ''), {
-        scan: (nodeId) => scanPisiWikiRenameCandidates(projectFolder, nodeId),
-        readCandidates: readPisiWikiCandidatesAsync
-    });
+    const impact = !modules['main.projectRead']
+        ? getPisiWikiRenameImpact(projectFolder, safeNodePath, String(payload.newTitle || ''))
+        : await getPisiWikiRenameImpactAsync(projectFolder, safeNodePath, String(payload.newTitle || ''), {
+              scan: (nodeId) => scanPisiWikiRenameCandidates(projectFolder, nodeId),
+              readCandidates: readPisiWikiCandidatesAsync
+          });
+    return addPisiWikiRenameTaskImpact(projectFolder, safeNodePath, impact);
 }
 
 // Before the rename's atomic mutation: find, asynchronously, which notes can
@@ -63,7 +77,8 @@ async function preparePisiRenameWikiLinks(payload = {}) {
 
 // project.item.rename.v1 already runs inside the project atomic mutation. The
 // link rewrite joins the same transaction: a failure returns ok:false, which
-// rolls back the file move, the sidecar and every note written so far.
+// rolls back the file move, the sidecar, every note written so far and the
+// task titles (tasks.json, G6).
 function wrapPisiRenameWithWikiLinks(renameHandler) {
     return (payload = {}) => {
         const safeOldPath = electronIpc.assertProjectPath(payload.oldPath, { type: 'file', extensions: ['.map', '.node'] });
@@ -75,12 +90,20 @@ function wrapPisiRenameWithWikiLinks(renameHandler) {
             const scanned = domain.getPisiDomainCommandPrepared?.(payload);
             // The renamed note itself has a new path now; it is read again too.
             const prepared = scanned?.nodeId === before.id ? { ...scanned, candidates: [...scanned.candidates, result.fullPath].filter(Boolean) } : null;
+            const projectFolder = getPisiWikiActiveProject();
             const wikiLinks = applyPisiWikiRename(
-                getPisiWikiActiveProject(),
+                projectFolder,
                 { nodeId: before.id, oldTitle: before.title, newTitle },
                 { writeDocument: writePisiWikiDocument, prepared }
             );
-            return { ...result, wikiLinks: { ...wikiLinks, nodeId: before.id, oldTitle: before.title, newTitle } };
+            const taskLinks = wikiLinks.rewriteLegacy
+                ? modules['main.taskService'].renamePisiTaskTitleLinks(projectFolder, { oldTitle: before.title, newTitle })
+                : { ok: true, tasks: 0, links: 0, taskIds: [] };
+            if (!taskLinks.ok) throw new Error(taskLinks.error || 'Görev başlıkları güncellenemedi.');
+            return {
+                ...result,
+                wikiLinks: { ...wikiLinks, nodeId: before.id, oldTitle: before.title, newTitle, tasks: taskLinks.tasks, taskIds: taskLinks.taskIds }
+            };
         } catch (error) {
             return { ...result, ok: false, code: 'WIKI_LINK_REWRITE_FAILED', error: `Not bağlantıları güncellenemedi: ${error.message}` };
         }

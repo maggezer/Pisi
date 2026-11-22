@@ -18,5 +18,6 @@ export {
     parsePisiWikiTarget,
     replacePisiWikiLinkMarkdown,
     resolvePisiLegacyWikiTitle,
-    serializePisiWikiLinkMarkdown
+    serializePisiWikiLinkMarkdown,
+    splitPisiWikiText
 } from '../../shared/wiki-link-core.mjs';

@@ -1,4 +1,11 @@
-import { PISI_TASK_REMINDER_MODES, PISI_TASK_REPEATS, addPisiTaskDays, getPisiTaskDaysBetween, normalizePisiTaskDay } from '../../shared/task-model.mjs';
+import {
+    PISI_TASK_REMINDER_MODES,
+    PISI_TASK_REPEATS,
+    addPisiTaskDays,
+    getPisiTaskDaysBetween,
+    normalizePisiTaskDay,
+    normalizePisiTaskTags
+} from '../../shared/task-model.mjs';
 import {
     PISI_TASK_DATE_FILTERS,
     PISI_TASK_SORT_MODES,
@@ -78,6 +85,7 @@ export function getPisiTaskCardSignature(task, { today = '', place = '', blocked
     if (!task) return '';
     return JSON.stringify([
         task.title,
+        task.tags || [],
         task.status,
         task.priority,
         task.dueDate,
@@ -215,6 +223,7 @@ export function readPisiQuickAddTask(values = {}, parsed = null) {
 
 const DETAIL_FIELDS = Object.freeze([
     'title',
+    'tags',
     'status',
     'priority',
     'dueDate',
@@ -248,6 +257,7 @@ export function readPisiTaskDetailPatch(task, values = {}) {
     const status = task.status === 'done' || !PISI_TASK_KANBAN_STATUSES.includes(values.status) ? task.status : values.status;
     const next = {
         title,
+        tags: Array.isArray(values.tags) ? normalizePisiTaskTags(values.tags) : normalizePisiTaskTags(task.tags),
         status,
         priority: Math.max(1, Math.min(5, Math.round(Number(values.priority)) || 3)),
         dueDate,
@@ -263,7 +273,7 @@ export function readPisiTaskDetailPatch(task, values = {}) {
     };
     const patch = {};
     for (const field of DETAIL_FIELDS) {
-        const before = field === 'dependencies' || field === 'completions' ? task[field] || [] : task[field];
+        const before = field === 'dependencies' || field === 'completions' || field === 'tags' ? task[field] || [] : task[field];
         if (!sameValue(before, next[field])) patch[field] = next[field];
     }
     return { patch, changed: Object.keys(patch).length > 0 };

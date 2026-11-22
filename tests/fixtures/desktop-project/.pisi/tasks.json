@@ -3,8 +3,9 @@
   "updatedAt": "2026-11-14T09:30:00.000Z",
   "tasks": [
     {
-      "id": "task_777d976c-fdcd-4244-8744-5886c284291c",
+      "id": "task_1812b961-497a-4902-9fe1-dfd05b6b7343",
       "title": "Raporu gönder",
+      "tags": [],
       "status": "todo",
       "priority": 2,
       "dueDate": "2026-11-14",
@@ -15,7 +16,7 @@
       "reminderAt": null,
       "dependencies": [],
       "manualOrder": 1794648600000,
-      "noteId": "node_96396783-2c65-4fe3-acc1-86e55649274b",
+      "noteId": "node_6b1f4641-ced1-4209-9f5e-bd293355a74d",
       "diaryDate": null,
       "durationMinutes": 0,
       "actualMinutes": 0,
@@ -26,8 +27,9 @@
       "completedOn": null
     },
     {
-      "id": "task_5762773f-2c06-4854-a706-b97163ca8322",
+      "id": "task_20dbc6d3-bff2-413d-9909-b09d5e5e6088",
       "title": "Haftalık özet yaz",
+      "tags": [],
       "status": "todo",
       "priority": 3,
       "dueDate": "2026-11-13",
@@ -38,7 +40,7 @@
       "reminderAt": null,
       "dependencies": [],
       "manualOrder": 1794648600000,
-      "noteId": "node_96396783-2c65-4fe3-acc1-86e55649274b",
+      "noteId": "node_6b1f4641-ced1-4209-9f5e-bd293355a74d",
       "diaryDate": null,
       "durationMinutes": 0,
       "actualMinutes": 0,
@@ -49,8 +51,9 @@
       "completedOn": null
     },
     {
-      "id": "task_b07895fb-e865-4e50-a55b-085e0be07d74",
+      "id": "task_a0100128-27e7-49eb-91d1-20371492fe89",
       "title": "Sunucu faturasını öde",
+      "tags": [],
       "status": "todo",
       "priority": 4,
       "dueDate": "2026-11-20",
@@ -61,7 +64,7 @@
       "reminderAt": "2026-11-19T09:00",
       "dependencies": [],
       "manualOrder": 1794648600000,
-      "noteId": "node_4617583b-d3e6-4968-81d1-20873eed098a",
+      "noteId": "node_0b0e84b6-bdde-49ff-b75b-9d3079d30094",
       "diaryDate": null,
       "durationMinutes": 0,
       "actualMinutes": 0,
@@ -72,8 +75,9 @@
       "completedOn": null
     },
     {
-      "id": "task_22f06dd6-dc1c-4c78-9340-b71952ddb6bc",
+      "id": "task_ed10cb5e-c911-45a8-9e70-39014a526cff",
       "title": "Okuma listesini düzenle",
+      "tags": [],
       "status": "todo",
       "priority": 5,
       "dueDate": null,
@@ -95,8 +99,9 @@
       "completedOn": null
     },
     {
-      "id": "task_42767ccb-a303-4455-a940-bf3c983fb9c2",
+      "id": "task_c3c4fbbb-c18c-45d2-9664-d49cf243014d",
       "title": "Egzersiz",
+      "tags": [],
       "status": "todo",
       "priority": 3,
       "dueDate": "2026-11-14",
@@ -118,8 +123,9 @@
       "completedOn": null
     },
     {
-      "id": "task_3d792e5f-41a4-42cb-858c-23ec4c3be32a",
+      "id": "task_1f299d14-af2e-4fb1-9337-ea6d5ffd3445",
       "title": "Toplantı odasını ayır",
+      "tags": [],
       "status": "done",
       "priority": 3,
       "dueDate": "2026-11-12",

@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-22T03:29:07.211Z",
+  "entries": [
+    {
+      "historyId": "1795318147208-2026-11-22T03-29-07-208Z-ccd7245f6cfb3c8a.json.gz",
+      "capturedAt": "2026-11-22T03:29:07.208Z",
+      "reason": "task-block",
+      "hash": "ccd7245f6cfb3c8a",
+      "preview": "Gündem: mobil veri katmanı Kararlar bu paragrafta toplanır. A B 1 Kalem Tutar 2 Sunucu 120 3 Alan adı 45 Rapor Özet.pdf 19 B",
+      "size": 1253,
+      "compressed": true
+    },
+    {
+      "historyId": "1795318146327-2026-11-22T03-29-06-326Z-41f889e4ac74a5ea.json.gz",
+      "capturedAt": "2026-11-22T03:29:06.326Z",
+      "reason": "editor-save",
+      "hash": "41f889e4ac74a5ea",
+      "preview": "",
+      "size": 265,
+      "compressed": true
+    }
+  ]
+}

@@ -1,4 +1,36 @@
 import { registerModule } from '../core/module-registry.mjs';
+import { getPisiTagPanelModel, listPisiTaggedTasks } from './pisi-tag-panel-core.mjs';
+import { getPisiTaskTitleReadingText } from '../tasks/pisi-task-title-links.mjs';
+import { getPisiTaskPlaceLabel } from '../tasks/pisi-task-panel-dom.mjs';
+
+function pisiTagPanelTranslate(value) {
+    return window.pisiT?.(value) ?? String(value ?? '');
+}
+
+/** A tagged task in the Tags panel (G6): its title and place; a click opens where it lives. */
+function makePisiTagTaskCard(task) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'pisi-tag-result-card pisi-tag-result-task';
+    card.dataset.pisiTaskId = task.id;
+    card.classList.toggle('pisi-task-done', task.status === 'done');
+    const place = document.createElement('div');
+    place.className = 'pisi-tag-result-node';
+    place.textContent = `${task.status === 'done' ? '☑' : '☐'} ${getPisiTaskPlaceLabel(task)}`;
+    const text = document.createElement('div');
+    text.className = 'pisi-tag-result-text';
+    text.textContent = getPisiTaskTitleReadingText(task.title) || pisiTagPanelTranslate('Başlıksız görev');
+    card.append(place, text);
+    card.addEventListener('click', () => void window.openPisiTaskLocation?.(task.id));
+    return card;
+}
+
+function makePisiTagResultsHeading(text) {
+    const heading = document.createElement('div');
+    heading.className = 'pisi-tag-results-heading';
+    heading.textContent = pisiTagPanelTranslate(text);
+    return heading;
+}
 
 function ensurePisiTagsPanelDom() {
     const panel = document.getElementById('pisi-tags-panel');
@@ -51,22 +83,10 @@ function renderPisiTagsPanel() {
     const { pickerButton, pickerMenu, resultsEl } = dom;
 
     const index = Array.isArray(pisiTagsPanelState.index) ? pisiTagsPanelState.index : [];
-
-    const counts = new Map();
-
-    for (const block of index) {
-        const blockTags = Array.isArray(block.tags) ? block.tags : [];
-
-        for (const tag of blockTags) {
-            // Old `todo.*` task tags are ordinary tags now (docs/task-plan.md §3.2.1).
-            const normalizedTag = normalizePisiUserTag(tag);
-            counts.set(normalizedTag, (counts.get(normalizedTag) || 0) + 1);
-        }
-    }
-
-    const tags = Array.from(counts.keys()).sort((a, b) => {
-        return a.localeCompare(b, 'tr');
-    });
+    // Tagged tasks come from the task store (tasks.json), never from notes (G6).
+    const tasks = window.getPisiTasks?.() || [];
+    // Old `todo.*` task tags are ordinary tags now (docs/task-plan.md §3.2.1).
+    const { tags, counts } = getPisiTagPanelModel(index, tasks, normalizePisiUserTag);
 
     if (!tags.length) {
         pisiTagsPanelState.selectedTag = null;
@@ -79,7 +99,7 @@ function renderPisiTagsPanel() {
 
         resultsEl.innerHTML = `
             <div class="right-panel-empty">
-                Bu map veya günlük notlar içinde kullanıcı etiketi içeren blok yok.
+                ${escapeHtml(pisiTagPanelTranslate('Bu map, günlük notlar veya görevler içinde kullanıcı etiketi yok.'))}
             </div>
         `;
 
@@ -144,6 +164,8 @@ function renderPisiTagsPanel() {
     });
 
     resultsEl.innerHTML = '';
+    const taggedTasks = listPisiTaggedTasks(tasks, selectedTag, normalizePisiUserTag);
+    if (taggedTasks.length && matchingBlocks.length) resultsEl.appendChild(makePisiTagResultsHeading('Bloklar'));
 
     for (const block of matchingBlocks) {
         const card = document.createElement('button');
@@ -167,7 +189,17 @@ function renderPisiTagsPanel() {
 
         resultsEl.appendChild(card);
     }
+
+    if (taggedTasks.length) {
+        resultsEl.appendChild(makePisiTagResultsHeading('Görevler'));
+        for (const task of taggedTasks) resultsEl.appendChild(makePisiTagTaskCard(task));
+    }
 }
+
+// A task's tags change with the task store; the panel follows without reading notes.
+document.addEventListener('pisi:task-store-updated', () => {
+    if (document.getElementById('pisi-tags-panel')) renderPisiTagsPanel();
+});
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {

@@ -3,10 +3,19 @@ import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { modules, registerMainModule } from '../module-registry.js';
 import { formatPisiBlockId, isPisiTaskId } from '../../shared/ids.mjs';
-import { completePisiTask, findPisiTaskDependencyCycle, isSamePisiTask, normalizePisiTask, readPisiTask, reopenPisiTask } from '../../shared/task-model.mjs';
+import {
+    PISI_TASK_TITLE_MAX_LENGTH,
+    completePisiTask,
+    findPisiTaskDependencyCycle,
+    isSamePisiTask,
+    normalizePisiTask,
+    readPisiTask,
+    reopenPisiTask
+} from '../../shared/task-model.mjs';
 import { diffPisiTaskMembership, insertPisiTaskBlock, listPisiTaskBlocks, makePisiTaskBlockHtml, removePisiTaskBlock } from '../../shared/task-blocks.mjs';
 import { getPisiTaskDayChanges, listPisiDiaryTaskIds, replacePisiDiaryTaskSection } from '../../shared/task-diary.mjs';
 import { normalizePisiDiaryIsoDate } from '../../shared/diary-rules.mjs';
+import { hasPisiWikiTextLinkTo, rewritePisiWikiTextForRename } from '../../shared/wiki-link-core.mjs';
 
 // The task service (docs/task-plan.md §3.4, G2): the only writer of tasks on
 // the desktop (GV4). Every command re-reads tasks.json, changes only its own
@@ -24,6 +33,7 @@ const documentStore = modules['main.documentStore'];
 const PISI_TASK_CREATE_FIELDS = Object.freeze([
     'id',
     'title',
+    'tags',
     'status',
     'priority',
     'dueDate',
@@ -485,6 +495,50 @@ function batchUpdatePisiTasks(projectFolder, payload = {}, { single = false } = 
     );
 }
 
+// ---- Note links in titles (G6) -----------------------------------------------------
+
+/** How many task titles link to a note called `title` (the rename impact); reads tasks.json only. */
+function countPisiTaskTitleLinks(projectFolder, title) {
+    const state = taskStore.readPisiTaskStoreState(projectFolder);
+    return state.tasks.map(readPisiTask).filter((task) => task && hasPisiWikiTextLinkTo(task.title, title)).length;
+}
+
+/**
+ * A note called `oldTitle` was renamed to `newTitle`: every task title with
+ * [[oldTitle]] follows it, in one tasks.json write. It runs inside the
+ * rename's atomic mutation (wiki-link-domain.js), so the notes and the titles
+ * change together or not at all. A title the new name would make longer than
+ * the title limit stays as it is. Field change only: no .node file (GV5).
+ */
+function renamePisiTaskTitleLinks(projectFolder, { oldTitle, newTitle }) {
+    const state = taskStore.readPisiTaskStoreState(projectFolder, { fresh: true });
+    if (state.readOnly) {
+        return state.tasks.some((task) => hasPisiWikiTextLinkTo(readPisiTask(task)?.title, oldTitle))
+            ? makePisiTaskServiceError('TASK_STORE_READ_ONLY', state.error || 'Görev deposu salt okunur.')
+            : { ok: true, tasks: 0, links: 0, taskIds: [] };
+    }
+    const tasks = state.tasks.slice();
+    const now = pisiTaskServiceClock();
+    const changed = [];
+    let links = 0;
+    for (const [index, record] of tasks.entries()) {
+        const task = readPisiTask(record);
+        if (!task) continue;
+        const rewritten = rewritePisiWikiTextForRename(task.title, { oldTitle, newTitle });
+        if (!rewritten.changed || rewritten.text.length > PISI_TASK_TITLE_MAX_LENGTH) continue;
+        const normalized = normalizePisiTask({ title: rewritten.text }, record, { now, makeUuid: () => crypto.randomUUID() });
+        if (!normalized.ok) continue;
+        tasks[index] = normalized.task;
+        changed.push(normalized.task);
+        links += rewritten.count;
+    }
+    if (!changed.length) return { ok: true, tasks: 0, links: 0, taskIds: [] };
+    taskStore.writePisiTaskStore(projectFolder, state, tasks, { now });
+    reachPisiTaskServicePoint('after-title-links-write');
+    emitPisiTasksChanged(projectFolder, { changed });
+    return { ok: true, tasks: changed.length, links, taskIds: changed.map((task) => task.id) };
+}
+
 function completePisiTaskCommand(projectFolder, payload = {}) {
     const read = readPisiWritableTaskState(projectFolder);
     if (read.error) return read.error;
@@ -907,7 +961,9 @@ const moduleApi = {
     makePisiTaskCommandContext,
     savePisiNoteWithTasks,
     writePisiRestoredNote,
-    getOrCreatePisiDiaryWithTasks
+    getOrCreatePisiDiaryWithTasks,
+    countPisiTaskTitleLinks,
+    renamePisiTaskTitleLinks
 };
 
 registerMainModule('main.taskService', moduleApi);

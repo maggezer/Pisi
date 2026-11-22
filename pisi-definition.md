@@ -318,7 +318,7 @@ Canonical görev otoritesi:
 ```
 
 Görevin bütün bilgisi burada durur: kimlik (`task_<uuid>`), başlık (düz metin,
-tek satır, en çok 500 karakter), durum, öncelik (**1-5**), bitiş günü
+tek satır, en çok 500 karakter), etiketler (`tags`), durum, öncelik (**1-5**), bitiş günü
 (`dueDate`, `YYYY-MM-DD`) ve saati (`dueTime`, `HH:MM`), tekrar
 (`repeat`, `completionOffsetDays`), hatırlatma (`reminderMode`, `reminderAt`),
 bağımlılıklar, elle sıra (`manualOrder`), yer (`noteId` ya da `diaryDate`),
@@ -332,7 +332,8 @@ damgaları (`createdAt`, `updatedAt`, `completedAt`, `completedOn`).
     "tasks": [
         {
             "id": "task_…",
-            "title": "Spor",
+            "title": "Spor [[Antrenman Planı]]",
+            "tags": ["sağlık"],
             "status": "todo",
             "priority": 3,
             "dueDate": "2026-11-22",
@@ -363,6 +364,28 @@ düzey anahtarlar korunur. Sürüm 1'den kalan alanlar (`source`, `todoTag`,
 `scheduledAt`, `deadline`) okunmaz ve silinmez; böyle bir kaydın yeri yoktur ve
 G8'e kadar bulgu sayılmaz. Okunamayan `tasks.json` ezilmez; görevler salt
 okunurdur.
+
+Etiketler ve not bağlantıları (`docs/task-plan.md` G6) da yalnız bu kayıttadır:
+
+- `tags`: `#` olmadan, not etiketlerinin karakter kuralıyla (harf, rakam, `_`,
+  `-`; seviyeler `.` ile) en çok 20 etiket, her biri en çok 64 karakter. Büyük
+  küçük harf farkıyla tekrar eden etiket tek sayılır; ilk yazılış ve sıra
+  korunur. Alanı olmayan eski kayıt boş liste okunur. Etiket değişikliği bir alan
+  değişikliğidir: hiçbir `.node` okunmaz ya da yazılmaz. Etiketler paneli etiketli
+  görevleri `tasks.json`'dan listeler; arama görevi etiketiyle de bulur.
+- Başlıktaki bağlantı düz metindir: `[[Not başlığı]]` ya da
+  `[[Not başlığı#blk_…]]`. Kimlik yazılmaz; bağlantı notlardaki eski
+  `[[Başlık]]` metni gibi başlıkla çözülür (aynı başlıkta birden çok not varsa
+  seçici açılır). Editörde başlıkta `[[` yazınca bağlantı menüsü açılır ve seçilen
+  not bu metinle girer; Ctrl/Cmd+tıklama notu açar. Panel kartı bağlantıyı notun
+  başlığıyla çizer ve her bağlantıya bir düğme verir. Bağlantılar panelinde
+  başlığı bu nota bağlanan görev geri bağlantı sayılır.
+- Not yeniden adlandırılınca (`project.item.rename.v1`) başlığında `[[Eski]]`
+  olan görevler `[[Yeni]]` olur; notlardaki bağlantılarla aynı atomik
+  mutation'da ve tek `tasks.json` yazmasıyla. Eski başlığı taşıyan başka bir not
+  varsa metin değişmez (notlardaki eski bağlantı kuralı). Yeni başlık köşeli
+  parantez içeriyorsa ya da görev başlığını 500 karakterin üstüne çıkarıyorsa o
+  başlık değişmez.
 
 Canonical priority aralığı **1-5**'tir. Canonical durumlar: `todo`, `doing`, `waiting`, `blocked`, `done`. Tekrar
 değerleri: `none`, `daily`, `weekdays`, `weekly`, `biweekly`, `monthly`,

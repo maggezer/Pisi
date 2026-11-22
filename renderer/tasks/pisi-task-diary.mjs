@@ -80,7 +80,7 @@ function drawPisiDiaryTaskRow(previous, task, day, { readOnly, overdue = false, 
     else if (task.dueTime) text = task.dueTime;
     if (info.textContent !== text) info.textContent = text;
     info.hidden = !text;
-    ensurePisiTaskChips(row, task, { kinds: ['priority', 'repeat'], readOnly: readOnly || lockedDone });
+    ensurePisiTaskChips(row, task, { kinds: ['priority', 'repeat', 'tags'], readOnly: readOnly || lockedDone });
     let menu = row.querySelector(':scope > .pisi-diary-task-menu');
     if (!menu) {
         menu = makePisiTaskView('button', 'pisi-diary-task-menu', '…');

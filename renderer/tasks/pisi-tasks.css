@@ -246,3 +246,51 @@
     padding: 4px 8px;
     border-left: 3px solid color-mix(in srgb, #e74c3c 70%, var(--border-color, #555));
 }
+
+/* Task tags (docs/task-plan.md G6): the tag editor of the chip window and the detail window. */
+.pisi-task-tags-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 220px;
+}
+
+.pisi-task-tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.pisi-task-tag {
+    display: inline-flex;
+    gap: 2px;
+    align-items: center;
+    padding: 0 2px 0 6px;
+    border-radius: 8px;
+    font-size: 0.86em;
+    background: color-mix(in srgb, var(--accent-color, #f39c12) 18%, transparent);
+}
+
+.pisi-task-tag-remove {
+    padding: 0 4px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.pisi-task-tag-remove:hover,
+.pisi-task-tag-remove:focus-visible {
+    background: color-mix(in srgb, var(--border-color, #555) 50%, transparent);
+}
+
+.pisi-task-tags-message:empty {
+    display: none;
+}
+
+.pisi-task-tags-message {
+    font-size: 0.82em;
+    color: #e67e22;
+}

@@ -2,13 +2,13 @@
   "pisi": {
     "version": 1,
     "type": "node",
-    "id": "node_03463558-dc9f-4723-8f16-4a0758f8926e",
+    "id": "node_89a53825-c5be-40b3-ad30-3fc9fb5233ef",
     "title": "13-11-2026",
-    "sidecar": "inv_13-11-2026__node_03463558-dc9f-4723-8f16-4a0758f8926e",
-    "createdAt": "2026-11-21T09:30:46.922Z",
-    "updatedAt": "2026-11-21T09:30:47.660Z",
+    "sidecar": "inv_13-11-2026__node_89a53825-c5be-40b3-ad30-3fc9fb5233ef",
+    "createdAt": "2026-11-22T03:29:07.158Z",
+    "updatedAt": "2026-11-22T03:29:07.811Z",
     "parentMap": "diary",
     "diaryDate": "2026-11-13"
   },
-  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_d5dd940d-378c-4cf0-9474-e779d35efce0\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Veri katmanı için notlar aldım.</div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-13\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_5762773f-2c06-4854-a706-b97163ca8322\"></div>\n</div>"
+  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_e7dbde50-7492-48d3-87f6-4f058571fd19\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Veri katmanı için notlar aldım.</div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-13\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_20dbc6d3-bff2-413d-9909-b09d5e5e6088\"></div>\n</div>"
 }

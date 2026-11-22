@@ -1,14 +1,14 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-21T09:30:50.210Z",
+  "updatedAt": "2026-11-22T03:29:10.362Z",
   "entries": [
     {
-      "historyId": "1795253450209-2026-11-21T09-30-50-209Z-5c5560b8cdabffaa.json.gz",
-      "capturedAt": "2026-11-21T09:30:50.209Z",
+      "historyId": "1795318150360-2026-11-22T03-29-10-360Z-6551c4f17c1942b2.json.gz",
+      "capturedAt": "2026-11-22T03:29:10.360Z",
       "reason": "quit",
-      "hash": "5c5560b8cdabffaa",
+      "hash": "6551c4f17c1942b2",
       "preview": "1 bağlantı",
-      "size": 393,
+      "size": 394,
       "compressed": true
     }
   ]

@@ -2,6 +2,7 @@ import { registerModule } from '../core/module-registry.mjs';
 import { buildPisiRelationshipModel, pisiSearchPathKey } from './pisi-search-core.mjs';
 import { ensurePisiSearchIndex, getPisiSearchCurrentNodePath, getPisiSearchLiveIndex } from './pisi-search-index.mjs';
 import { openPisiSearchResult } from './pisi-global-search.mjs';
+import { getPisiTaskTitleReadingText } from '../tasks/pisi-task-title-links.mjs';
 
 let pisiLinksRefreshTimer = null;
 let pisiLinksRefreshRequest = 0;
@@ -137,14 +138,15 @@ function listPisiLinksNoteTasks(target) {
     return (window.getPisiTasks?.() || []).filter((task) => (noteId && task.noteId === noteId) || (diaryDate && task.diaryDate === diaryDate));
 }
 
-function makePisiLinksTaskButton(task) {
+function makePisiLinksTaskButton(task, { linking = false } = {}) {
     const button = makePisiLinksElement('button', 'pisi-links-item pisi-links-task');
     button.type = 'button';
     button.dataset.pisiTaskId = task.id;
-    button.append(
-        makePisiLinksElement('span', 'pisi-links-item-title', task.title || pisiLinksTranslate('Görev')),
-        makePisiLinksElement('span', 'pisi-links-item-meta', pisiLinksTranslate(task.status === 'done' ? 'Tamamlandı' : 'Açık'))
-    );
+    const metadata = makePisiLinksElement('span', 'pisi-links-item-meta');
+    // A task that links to this note (G6) carries the "Görev" type, as the note links carry "Metin".
+    if (linking) metadata.appendChild(makePisiLinksTypeChip('task'));
+    metadata.appendChild(makePisiLinksElement('span', '', pisiLinksTranslate(task.status === 'done' ? 'Tamamlandı' : 'Açık')));
+    button.append(makePisiLinksElement('span', 'pisi-links-item-title', getPisiTaskTitleReadingText(task.title) || pisiLinksTranslate('Görev')), metadata);
     button.addEventListener('click', () => {
         void window.openPisiTaskLocation?.(task.id);
     });
@@ -196,8 +198,12 @@ function renderPisiLinksModel(index, model) {
         return;
     }
 
+    // Backlinks: the notes that link here, then the tasks whose title does (G6).
+    const inbound = [...model.inbound.map((item) => ({ item })), ...(model.inboundTasks || []).map((task) => ({ task }))];
     const sections = [
-        makePisiLinksSection('Bu node’a bağlantı verenler', model.inbound, (item) => makePisiLinksRelationButton(index, item)),
+        makePisiLinksSection('Bu node’a bağlantı verenler', inbound, (entry) =>
+            entry.task ? makePisiLinksTaskButton(entry.task, { linking: true }) : makePisiLinksRelationButton(index, entry.item)
+        ),
         makePisiLinksSection('Bu node’un bağlantı verdikleri', model.outbound, (item) => makePisiLinksRelationButton(index, item)),
         makePisiLinksSection('Bağlantısız bahsetmeler', model.unlinked, (item) => makePisiLinksRelationButton(index, item)),
         makePisiLinksSection('Bu node’dan üretilen görevler', listPisiLinksNoteTasks(model.target), (item) => makePisiLinksTaskButton(item)),
@@ -225,7 +231,7 @@ async function refreshPisiLinksPanel() {
     }
 
     const liveIndex = getPisiSearchLiveIndex(index, targetPath);
-    const model = buildPisiRelationshipModel(liveIndex, targetPath);
+    const model = buildPisiRelationshipModel(liveIndex, targetPath, { tasks: window.getPisiTasks?.() || [] });
     renderPisiLinksModel(liveIndex, model);
     return true;
 }
@@ -261,6 +267,10 @@ document.addEventListener('pisi:active-node-changed', () => {
 });
 document.addEventListener('pisi:search-index-ready', () => {
     schedulePisiLinksPanelRefresh(0);
+});
+// Task titles and places change with the task store; only an open links tab is drawn again.
+document.addEventListener('pisi:task-store-updated', () => {
+    if (document.getElementById('right-tab-links')?.classList.contains('active')) schedulePisiLinksPanelRefresh(220);
 });
 document.addEventListener('pisi:search-index-invalidated', () => {
     const page = document.getElementById('right-tab-links');

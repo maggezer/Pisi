@@ -11,5 +11,6 @@ export {
     normalizePisiWikiTitle,
     parsePisiWikiTarget,
     repairPisiWikiLinks,
-    rewritePisiWikiLinksForRename
+    rewritePisiWikiLinksForRename,
+    rewritePisiWikiTextForRename
 } from '../../shared/wiki-link-core.mjs';

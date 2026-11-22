@@ -1339,6 +1339,15 @@
         "{count} açık görev": "{count} open tasks",
         "{title}; {open} açık; {blocked} engelli; {overdue} gecikmiş": "{title}; {open} open; {blocked} blocked; {overdue} overdue",
         "Açık": "Open",
-        "Görevler okunamadı; görevli not kopyalanamaz.": "Tasks could not be read; a note with tasks cannot be copied."
+        "Görevler okunamadı; görevli not kopyalanamaz.": "Tasks could not be read; a note with tasks cannot be copied.",
+        "Etiketler": "Tags",
+        "Etiketi kaldır": "Remove tag",
+        "#etiket": "#tag",
+        "Etiket ekle": "Add a tag",
+        "Etiket yalnız harf, rakam, - ve _ içerebilir.": "A tag may contain only letters, digits, - and _.",
+        "Bir görevde en çok 20 etiket olabilir.": "A task can have at most 20 tags.",
+        "Bağlantılı notu aç": "Open the linked note",
+        "Etkilenecek görev": "Tasks affected",
+        "Bu map, günlük notlar veya görevler içinde kullanıcı etiketi yok.": "No user tags in this map, the diary notes or the tasks."
     }
 }

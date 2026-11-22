@@ -970,6 +970,8 @@
             "applyPisiWikiMenuItem",
             "renamePisiItemWithLinkReview",
             "openPisiWikiTarget",
+            "openPisiWikiTitle",
+            "routePisiTaskTitleWikiInput",
             "applyPisiWikiRenameToOpenEditors",
             "repairPisiWikiLinksInProject",
             "refreshPisiWikiDecorations",

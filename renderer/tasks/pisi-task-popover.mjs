@@ -1,9 +1,10 @@
 import { PISI_TODO_PRIORITY_OPTIONS, PISI_TODO_REPEAT_OPTIONS } from '../../shared/task-model.mjs';
 import { PISI_TASK_REMINDER_MODE_LABELS, makePisiTaskView, pisiTaskViewTranslate } from './pisi-task-view.mjs';
+import { makePisiTaskTagEditor } from './pisi-task-tags.mjs';
 
 // The small window a task chip opens (docs/task-plan.md G3.1): the due day and
-// time, the priority, the repeat rule, the reminder, or a list of actions (the
-// diary row menu). It reads the record and hands a patch back; it writes
+// time, the priority, the repeat rule, the reminder, the tags (G6), or a list
+// of actions (the diary row menu). It reads the record and hands a patch back; it writes
 // nothing itself. Escape or a click outside closes it.
 
 const pisiTaskPopoverState = { element: null, anchor: null, onClose: null };
@@ -120,6 +121,26 @@ function buildPisiTaskReminderBody(task, apply) {
     return { body, focus: body.querySelector('[aria-pressed="true"]') || body.firstElementChild };
 }
 
+// Each added or removed tag is written at once; the window stays open for the next one.
+function buildPisiTaskTagsBody(task, apply, update) {
+    const body = makePisiTaskView('div', 'pisi-task-popover-body');
+    const editor = makePisiTaskTagEditor(task.tags, (tags) => update({ tags }));
+    const actions = makePisiTaskView('div', 'pisi-task-popover-actions');
+    actions.append(
+        makePisiTaskPopoverButton(
+            pisiTaskViewTranslate('Tamam'),
+            () => {
+                const typed = editor.input.value.trim();
+                if (typed) editor.add();
+                if (!editor.input.value.trim()) apply(null);
+            },
+            { className: 'pisi-task-popover-primary' }
+        )
+    );
+    body.append(editor.element, actions);
+    return { body, focus: editor.input };
+}
+
 function buildPisiTaskMenuBody(items) {
     const body = makePisiTaskView('div', 'pisi-task-popover-body pisi-task-popover-list');
     body.setAttribute('role', 'menu');
@@ -136,7 +157,7 @@ function buildPisiTaskMenuBody(items) {
 }
 
 /**
- * Opens the window of a chip (`kind`: date, priority, repeat, reminder) for
+ * Opens the window of a chip (`kind`: date, priority, repeat, reminder, tags) for
  * `task`, or a menu (`kind: 'menu'`, `items: [{ label, run, danger }]`).
  * `onPatch(patch)` gets the change; `onClose({ restoreFocus })` runs when it closes.
  */
@@ -149,10 +170,17 @@ export function openPisiTaskPopover(anchor, { kind, task = null, items = [], onP
     if (!anchor?.isConnected) return null;
     const apply = (patch) => {
         closePisiTaskPopover();
-        onPatch(patch);
+        if (patch) onPatch(patch);
     };
-    const builders = { date: buildPisiTaskDateBody, priority: buildPisiTaskPriorityBody, repeat: buildPisiTaskRepeatBody, reminder: buildPisiTaskReminderBody };
-    const built = kind === 'menu' ? buildPisiTaskMenuBody(items) : builders[kind]?.(task, apply);
+    const update = (patch) => onPatch(patch);
+    const builders = {
+        date: buildPisiTaskDateBody,
+        priority: buildPisiTaskPriorityBody,
+        repeat: buildPisiTaskRepeatBody,
+        reminder: buildPisiTaskReminderBody,
+        tags: buildPisiTaskTagsBody
+    };
+    const built = kind === 'menu' ? buildPisiTaskMenuBody(items) : builders[kind]?.(task, apply, update);
     if (!built) return null;
     const element = makePisiTaskView('div', 'pisi-task-popover');
     element.dataset.pisiTaskPopover = kind;
