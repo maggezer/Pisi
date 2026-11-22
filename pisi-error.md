@@ -251,6 +251,17 @@ Kalanlar (parantez içi kapatacak faz):
   okunur. Çözüm önerisi: etiket dizinini arama dizini gibi proje okuma işçisinden ve değişiklik deltasıyla kurmak.
   (etiketler, faz dışı)
 
+## 5i. Görev satırının üstüne gelince boş çipler görünüp başlığı kaydırıyor
+
+**[Düşük · tasks · doğrulandı, çözülmedi]**
+Not bloğundaki ve günlük satırındaki boş çipler (Öncelik, Tekrar, Tarih, Etiket) yalnız `:hover` ya da
+`:focus-within` iken `display: inline` olur (`renderer/tasks/pisi-tasks.css` `.pisi-task-chip-empty`). Görünür
+olunca satırdaki başlık daralır; dar pencerede (ör. 1024 px ve açık sağ panel) başlık kaydırılır ve fare
+altındaki metin yer değiştirir: kullanıcının üstüne geldiği `[[Not]]` bağlantısı alt satıra iner, tıklama
+çipe düşer. `scripts/electron-tasks-links-e2e.mjs` Windows CI'da (pencere 1024 × 720) bu yüzden düşüyordu;
+test artık önce fareyi satıra getirip yerleşim durulduktan sonra ölçüyor. Çözüm önerisi: boş çiplerin yerini
+her zaman ayırmak (`visibility`/`opacity`) ya da çipleri başlığın akışından çıkarmak.
+
 ## 6. Güncel doğrulama snapshot’ı
 
 6 Ekim 2026 current `main` kontrolü:

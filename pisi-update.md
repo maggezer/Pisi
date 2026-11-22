@@ -12,7 +12,9 @@ Yalnız test betikleri değişti; uygulama davranışı aynı.
   `electron-tasks-surfaces-e2e.mjs` harita kutusunu Windows yolunu CSS seçicisine koyarak arıyordu (ters bölüler
   kaçış sayılır); kutu artık yol değeriyle bulunur. `electron-tasks-scale-e2e.mjs` geçici klasörü `realpath` ile
   çözmüyordu (Windows'ta kısa 8.3 yolu, uygulama uzun yolu açar). `electron-tasks-links-e2e.mjs` Ctrl+tıklama
-  adımı bağlantı metnini metin düğümünde arar ve zaman aşımında tıklamanın düştüğü yeri raporlar.
+  adımında Windows penceresi 1024 px olduğundan satırın üstüne gelince görünen boş çipler başlığı daraltıyor,
+  `[[Hedef]]` alt satıra inip tıklama çipe düşüyordu; fare önce satıra getirilir, bağlantı yerleşim durulunca
+  ölçülür (1024 × 720 öykünmesiyle yerelde üretildi ve doğrulandı). Hover'daki kayma `pisi-error.md` §5i.
 
 ## 22-11-2026 — Görev bütünlüğü onarımları, büyük proje ölçümü ve temizlik (G7)
 
