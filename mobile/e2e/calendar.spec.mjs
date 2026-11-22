@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { readPisiTask } from '../../shared/task-model.mjs';
+import { getPisiTaskCalendarSummary } from '../../shared/task-diary.mjs';
 import {
     TODAY,
     back,
@@ -33,24 +35,22 @@ const shownMarks = (page) =>
 
 /**
  * The marks the project files call for in `month`, worked out here from the stored files with the
- * desktop calendar's rule: every task counts on its scheduled day, else its due date, else its deadline;
- * a day is "done" when none of its tasks is open; a diary day has a `diary/YYYY-MM-DD.node` file.
+ * desktop calendar's rule, the day rule of the diary task section (docs/task-plan.md §3.2.2, shared/task-diary.mjs):
+ * a day counts the tasks its section lists, each with its state on that day; a day is "done" when none of
+ * them is open there; a diary day has a `diary/YYYY-MM-DD.node` file.
  */
 async function expectedMarks(page, month) {
     const { tasks } = await readProjectJson(page, '.pisi/tasks.json');
-    const days = new Map();
-    for (const task of tasks) {
-        const day = [task.scheduledAt, task.dueDate, task.deadline]
-            .map((value) => String(value || '').slice(0, 10))
-            .find((value) => /^\d{4}-\d{2}-\d{2}$/.test(value));
-        if (!day) continue;
-        days.set(day, (days.get(day) ?? false) || String(task.status || 'todo').toLowerCase() !== 'done');
-    }
+    const summary = getPisiTaskCalendarSummary(tasks.map(readPisiTask).filter(Boolean));
     const diaryDays = new Set((await projectFiles(page)).map((file) => /^diary\/(\d{4}-\d{2}-\d{2})\.node$/.exec(file.path)?.[1]).filter(Boolean));
-    return [...new Set([...days.keys(), ...diaryDays])]
+    return [...new Set([...summary.keys(), ...diaryDays])]
         .filter((day) => day.startsWith(month))
         .sort()
-        .map((day) => `${day} ${[days.has(day) ? (days.get(day) ? 'tasks' : 'done') : null, diaryDays.has(day) ? 'diary' : null].filter(Boolean).join('+')}`);
+        .map((day) => {
+            const entry = summary.get(day);
+            const tasksMark = entry ? (entry.open > 0 ? 'tasks' : 'done') : null;
+            return `${day} ${[tasksMark, diaryDays.has(day) ? 'diary' : null].filter(Boolean).join('+')}`;
+        });
 }
 
 test('takvim: pazartesiyle başlayan ay, bugün işaretli, noktalar proje dosyalarıyla birebir; açıklama satırı var', async ({ page }) => {
@@ -66,8 +66,9 @@ test('takvim: pazartesiyle başlayan ay, bugün işaretli, noktalar proje dosyal
     // G12: no Gregorian/Hijri/Chinese switch.
     await expect(page.locator('[data-screen="calendar"] select, [data-screen="calendar"] [role="radiogroup"]')).toHaveCount(0);
 
-    // Sample project: overdue rent on the 12th, today's tasks and diary, the weekly meeting on the 17th.
-    await expect.poll(() => shownMarks(page)).toEqual(['2026-11-12 tasks', '2026-11-14 tasks+diary', '2026-11-17 tasks']);
+    // Sample project: overdue rent on the 12th, today's tasks and diary, the weekly meeting on the 17th. Each task lives in
+    // its day's diary, so those days have a diary too (docs/task-plan.md §3.2.2).
+    await expect.poll(() => shownMarks(page)).toEqual(['2026-11-12 tasks+diary', '2026-11-14 tasks+diary', '2026-11-17 tasks+diary']);
     expect(await shownMarks(page)).toEqual(await expectedMarks(page, '2026-11'));
     await expect(cell(page, TODAY)).toHaveAttribute('aria-label', 'Cumartesi, 14 Kasım, Bugün, görev var, günlük var');
 
@@ -99,7 +100,7 @@ test('takvimden güne dokununca Pisi sekmesi o günle açılır; orada yapılan 
 
     // Back on the calendar the 12th has the "all done" dot and the diary ring.
     await openFromMenu(page, 'calendar');
-    await expect.poll(() => shownMarks(page)).toEqual(['2026-11-12 done+diary', '2026-11-14 tasks+diary', '2026-11-17 tasks']);
+    await expect.poll(() => shownMarks(page)).toEqual(['2026-11-12 done+diary', '2026-11-14 tasks+diary', '2026-11-17 tasks+diary']);
     expect(await shownMarks(page)).toEqual(await expectedMarks(page, '2026-11'));
     await expect(cell(page, '2026-11-12')).toHaveAttribute('aria-pressed', 'true');
     await expect(cell(page, '2026-11-12')).toHaveAttribute('aria-label', 'Perşembe, 12 Kasım, görevlerin hepsi tamamlandı, günlük var');

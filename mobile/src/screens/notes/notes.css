@@ -287,6 +287,24 @@
     counter-reset: pisi-note-number;
 }
 
+/* A diary's task section (docs/task-plan.md §3.2.2): its heading is drawn here, never written to the file. */
+.pisi-note-task-heading {
+    margin: 0;
+    padding: var(--pisi-space-3) var(--pisi-space-4) 0;
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+    font-weight: 600;
+    line-height: var(--pisi-leading-tight);
+}
+
+/* "Görev bulunamadı", "Görevler okunamadı": the block stays in the note. */
+.pisi-note-task-missing {
+    margin: 0;
+    padding: var(--pisi-space-3) var(--pisi-space-4);
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+}
+
 .pisi-note-divider {
     width: 100%;
     margin: var(--pisi-space-3) 0;

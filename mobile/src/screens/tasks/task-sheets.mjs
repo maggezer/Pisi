@@ -3,12 +3,11 @@
 // ids (`task:<id>` and `task-field:<field>`), so the back button closes the
 // field sheet first and then the detail.
 
-import { getPisiTaskCalendarIsoDate } from '../../../../shared/task-views.mjs';
+import { normalizePisiTaskDay } from '../../../../shared/task-model.mjs';
 import { renderButton } from '../../ui/button.mjs';
 import { renderDatePicker } from '../../ui/date-picker.mjs';
-import { shiftMonth } from '../../ui/dates.mjs';
+import { formatDayTitle, shiftMonth } from '../../ui/dates.mjs';
 import { renderChoiceSheet } from '../../ui/overlay.mjs';
-import { getTaskSourceTitle } from '../pisi/day-model.mjs';
 import { createTaskDetail } from './task-detail.mjs';
 import {
     PISI_TASK_PRIORITY_VALUES,
@@ -36,15 +35,30 @@ export const getTaskOverlay = (taskId) => `${TASK_PREFIX}${taskId}`;
 /**
  * `tasks` is the task controller; `getContext()` returns `{ t, locale, today }`.
  * The app owns navigation: `onOpenOverlay` / `onCloseOverlay` for the sheets,
- * `onOpenNote({ path, title })` for the note a task came from.
+ * `onOpenNote({ path, title })` for the note a task lives in and
+ * `onOpenDay(isoDate)` for the diary day it lives in (the Pisi tab).
  */
-export function createTaskSheets({ tasks, getContext, onOpenOverlay, onCloseOverlay, onOpenNote }) {
+export function createTaskSheets({ tasks, getContext, onOpenOverlay, onCloseOverlay, onOpenNote, onOpenDay }) {
     let detail = null;
     let detailT = null;
     let pickerMonth = null;
 
     const openTaskId = (overlays) => overlays.findLast((overlay) => overlay.startsWith(TASK_PREFIX))?.slice(TASK_PREFIX.length) ?? null;
     const change = (task, patch) => (patch ? tasks.update(task.id, patch) : null);
+
+    /** "Günlük · 14 Kasım" or the note's title; null while the note is not known yet. */
+    function describePlace(task) {
+        const { t, locale, today } = getContext();
+        const place = tasks.getPlace(task);
+        if (place?.kind === 'diary') return t('task.placeDiary', { date: formatDayTitle(place.date, locale, today) });
+        return place?.title ?? null;
+    }
+
+    function openPlace(task) {
+        const place = tasks.getPlace(task);
+        if (place?.kind === 'diary') onOpenDay(place.date);
+        else if (place?.key) onOpenNote({ path: place.key, title: place.title });
+    }
 
     function renderDetail(task) {
         const { t, locale, today } = getContext();
@@ -62,7 +76,8 @@ export function createTaskSheets({ tasks, getContext, onOpenOverlay, onCloseOver
                 onTitle: (text) => void change(current(), getTaskTitlePatch(current(), text)),
                 onTime: (value) => void change(current(), getTaskTimePatch(current(), value)),
                 onReminderAt: (value) => void change(current(), getTaskReminderPatch(current(), value)),
-                onOpenSource: () => onOpenNote({ path: current().source?.nodePath ?? null, title: getTaskSourceTitle(current()) })
+                onOpenPlace: () => openPlace(current()),
+                describePlace
             });
         }
         detail.update({ task, locale, today });
@@ -73,7 +88,7 @@ export function createTaskSheets({ tasks, getContext, onOpenOverlay, onCloseOver
         const { t, locale, today } = getContext();
         const id = `task-${field}`;
         if (field === 'date') {
-            const day = getPisiTaskCalendarIsoDate(task);
+            const day = normalizePisiTaskDay(task.dueDate);
             const month = pickerMonth ?? (day ?? today).slice(0, 7);
             const pick = (isoDate) => {
                 onCloseOverlay();

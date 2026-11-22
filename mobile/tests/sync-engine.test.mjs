@@ -54,7 +54,7 @@ describe('mobil senkron motoru', () => {
 
     it('telefonda yazılan görev ve günlük masaüstüne gider; masaüstündeki not değişikliği telefona gelir', async () => {
         const { desktop, phone } = await pairedPair();
-        await phone.project.tasks.upsert({ id: 'task_phone_1', title: 'Telefondan görev', status: 'todo' });
+        await phone.project.tasks.create({ id: 'task_phone_1', title: 'Telefondan görev' }, { diaryDate: '2026-11-14' });
         await phone.project.diary.setText('2026-11-17', 'Bugün telefondan yazdım.');
         await phone.service.sync('test');
 
@@ -81,7 +81,7 @@ describe('mobil senkron motoru', () => {
         const again = createPhone(server, { driver: phone.driver, stateDriver: phone.stateDriver, secrets: phone.secrets });
         await again.project.open();
         await again.service.init();
-        await again.project.tasks.upsert({ id: 'task_phone_2', title: 'İkinci', status: 'todo' });
+        await again.project.tasks.create({ id: 'task_phone_2', title: 'İkinci' }, { diaryDate: '2026-11-14' });
         await again.service.sync('test');
 
         const phoneCommits = server.commits().filter((body) => body.changes.length);
@@ -171,7 +171,7 @@ describe('mobil senkron motoru', () => {
         const state = await phone.service.store.load();
         server.revoke(state.deviceId);
 
-        await phone.project.tasks.upsert({ id: 'task_phone_3', title: 'İptalden sonra', status: 'todo' });
+        await phone.project.tasks.create({ id: 'task_phone_3', title: 'İptalden sonra' }, { diaryDate: '2026-11-14' });
         await phone.service.sync('test');
         expect(events).toContain('revoked');
         expect(phone.service.getStatus()).toMatchObject({ state: 'unpaired', code: 'DEVICE_REVOKED' });
@@ -198,7 +198,7 @@ describe('mobil senkron motoru', () => {
     it("sunucu, telefonun kendi commit'inin altına geri sarılırsa SERVER_ROLLBACK: tur durur, gönderilen değişiklik kaybolmaz (S7)", async () => {
         const { server, phone } = await pairedPair();
         const backup = server.snapshot();
-        await phone.project.tasks.upsert({ id: 'task_phone_rollback', title: 'Geri sarmadan önce', status: 'todo' });
+        await phone.project.tasks.create({ id: 'task_phone_rollback', title: 'Geri sarmadan önce' }, { diaryDate: '2026-11-14' });
         expect((await phone.service.sync('test')).ok).toBe(true);
         // The cursor has not passed the phone's own commit: only the seq the server gave it can tell.
         backup();

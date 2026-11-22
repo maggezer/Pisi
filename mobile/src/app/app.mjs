@@ -83,7 +83,8 @@ export function createApp({
         getContext: () => ({ t: i18n.t, locale: i18n.locale, today }),
         onOpenOverlay: (overlay) => router.openOverlay(overlay),
         onCloseOverlay: () => closeOverlay(),
-        onOpenNote: (note) => openNote(note)
+        onOpenNote: (note) => openNote(note),
+        onOpenDay: (isoDate) => navigate(() => router.openDay(isoDate))
     });
 
     // The start screen and the Tasks tab are built once and updated in place.

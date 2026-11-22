@@ -170,14 +170,20 @@ function moveToBlock(projectFolder, payload, context) {
     return finish(projectFolder, context, { changed: [after] });
 }
 
-/** The note of the task is gone: the task lives in today's diary (created if needed). */
+/**
+ * The note of the task is gone, or the task never had a place (a version 1
+ * record, `noteId: null`): the task lives in today's diary (created if needed).
+ */
 function placeInTodayDiary(projectFolder, payload, context) {
     const read = readWritable(projectFolder);
     if (read.error) return read.error;
     const index = findIndex(read.tasks, payload.taskId);
     if (index < 0) return unchanged(context);
     const before = read.tasks[index];
-    if (readPisiTask(before)?.noteId !== payload.noteId) return unchanged(context);
+    const current = readPisiTask(before);
+    const noteId = payload.noteId ?? null;
+    // The finding is still true only while the task is where the audit saw it.
+    if (!current || current.noteId !== noteId || (!noteId && current.diaryDate)) return unchanged(context);
     const now = taskService().getPisiTaskServiceNow();
     const after = placeTask(before, { diaryDate: getPisiLocalDay(now), noteId: null }, now);
     read.tasks[index] = after;

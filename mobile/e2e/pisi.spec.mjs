@@ -72,7 +72,13 @@ test('görevler: gruplar, iki satıra saran başlık, saat ve öncelik; tamamlam
 
     await expect(group(page, 'overdue').locator('.pisi-task-group-title')).toContainText('Gecikmiş');
     await expect(taskTitles(page, 'overdue')).toHaveText(['Kira ödemesi']);
-    await expect(taskTitles(page, 'day')).toHaveText(['Sabah yürüyüşü', 'TÜBİTAK raporunun yöntem bölümünü gözden geçir', 'Market alışverişi']);
+    // The day's section (docs/task-plan.md §3.2.2): its own tasks by time and priority, then the undated task living in today's diary.
+    await expect(taskTitles(page, 'day')).toHaveText([
+        'Sabah yürüyüşü',
+        'TÜBİTAK raporunun yöntem bölümünü gözden geçir',
+        'Market alışverişi',
+        'Okuma listesini düzenle'
+    ]);
     await expect(page.locator('[data-action="toggle-completed"]')).toHaveCount(0);
     await expect(diary(page)).toHaveValue('Örnek proje yüklendi.');
 
@@ -96,22 +102,27 @@ test('görevler: gruplar, iki satıra saran başlık, saat ve öncelik; tamamlam
     const market = (await storedTasks(page)).find((task) => task.title === 'Market alışverişi');
     await page.getByRole('checkbox', { name: 'Tamamla: Market alışverişi' }).tap();
     await expect(page.getByRole('status')).toContainText('Görev tamamlandı.');
-    await expect(taskTitles(page, 'day')).toHaveCount(2);
+    await expect(taskTitles(page, 'day')).toHaveCount(3);
     await expect(page.locator('[data-action="toggle-completed"]')).toHaveText('Tamamlanan (1)');
     await expect.poll(async () => (await storedTasks(page)).find((task) => task.id === market.id).status).toBe('done');
     await shot(page, '14-pisi-completed-undo');
 
     await page.getByRole('status').getByRole('button', { name: 'Geri al' }).tap();
-    await expect(taskTitles(page, 'day')).toHaveCount(3);
+    await expect(taskTitles(page, 'day')).toHaveCount(4);
     await expect.poll(async () => (await storedTasks(page)).find((task) => task.id === market.id).status).toBe('todo');
     const restored = (await storedTasks(page)).find((task) => task.id === market.id);
     expect({ ...restored, updatedAt: null }).toEqual({ ...market, updatedAt: null });
 
-    // A repeating task: completing it adds the next occurrence, undo takes that back too.
+    // A repeating task (§3.2.3): completing it adds no record; it moves on to tomorrow and stays ☑ today. Undo brings it back.
+    const walk = (tasks) => tasks.find((task) => task.title === 'Sabah yürüyüşü');
     await page.getByRole('checkbox', { name: 'Tamamla: Sabah yürüyüşü' }).tap();
-    await expect.poll(async () => (await storedTasks(page)).length).toBe(7);
+    await expect.poll(async () => walk(await storedTasks(page)).dueDate).toBe('2026-11-15');
+    expect((await storedTasks(page)).length).toBe(6);
+    expect(walk(await storedTasks(page)).completions).toMatchObject([{ date: TODAY, dueDate: TODAY }]);
+    await expect.poll(async () => (await readProjectJson(page, 'diary/2026-11-15.node'))?.content ?? '').toContain(walk(await storedTasks(page)).id);
     await page.getByRole('status').getByRole('button', { name: 'Geri al' }).tap();
-    await expect.poll(async () => (await storedTasks(page)).length).toBe(6);
+    await expect.poll(async () => walk(await storedTasks(page)).dueDate).toBe(TODAY);
+    expect(walk(await storedTasks(page)).completions).toEqual([]);
 
     // The row opens the task detail, the same sheet the Tasks tab opens.
     await page.locator('.pisi-task-body', { hasText: 'Sabah yürüyüşü' }).tap();
@@ -123,6 +134,30 @@ test('görevler: gruplar, iki satıra saran başlık, saat ve öncelik; tamamlam
     await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
+test('S20: uygulama açılınca bugünün günlüğü, günün görevleri ve gecikenler ek dokunuş olmadan görünür', async ({ page }) => {
+    await open(page);
+    await loadSampleProject(page);
+    // A cold start: nothing is tapped after the app comes up.
+    await page.reload();
+    await expect(screen(page)).toHaveAttribute('data-screen', 'pisi');
+    await expect(dayTitle(page)).toHaveText('Cumartesi, 14 Kasım');
+    await expect(diary(page)).toHaveValue('Örnek proje yüklendi.');
+    await expect(taskTitles(page, 'overdue')).toHaveText(['Kira ödemesi']);
+    await expect(taskTitles(page, 'day')).toHaveText([
+        'Sabah yürüyüşü',
+        'TÜBİTAK raporunun yöntem bölümünü gözden geçir',
+        'Market alışverişi',
+        'Okuma listesini düzenle'
+    ]);
+    for (const locator of [diary(page), group(page, 'overdue'), group(page, 'day')]) await expect(locator).toBeInViewport();
+    // The day's diary file holds the day's section with the ids only (§3.2.2); the screen draws the rest.
+    const today = await readProjectJson(page, `diary/${TODAY}.node`);
+    const ids = (await storedTasks(page)).filter((task) => task.diaryDate === TODAY || task.dueDate === TODAY).map((task) => task.id);
+    for (const id of ids) expect(today.content).toContain(`data-pisi-task-ref="${id}"`);
+    expect(today.content).not.toContain('Market alışverişi');
+    await shot(page, '13-pisi-open-day');
+});
+
 test('görev ekleme: doğal dil çipte görünür; tarih yoksa seçili güne yazılır', async ({ page }) => {
     await open(page);
     const input = page.getByRole('textbox', { name: 'Görev ekle' });
@@ -132,7 +167,10 @@ test('görev ekleme: doğal dil çipte görünür; tarih yoksa seçili güne yaz
     await expect(chips).toHaveText(['15 Kas', '14:00']);
     await shot(page, '16-pisi-add-task');
     await input.press('Enter');
-    await expect(page.getByRole('status')).toContainText('Görev 15 Kas gününe eklendi.');
+    await expect(page.getByRole('status')).toContainText('Görev eklendi; günü 15 Kas.');
+    // It lives in today's diary (docs/task-plan.md §1.4) and shows there with its own day.
+    await expect(taskTitles(page, 'day')).toHaveText(['yarın 14:00 rapor yaz']);
+    await expect(group(page, 'day').locator('.pisi-task-meta-date')).toHaveText('15 Kas');
     await expect(input).toHaveValue('');
     await expect(chips).toHaveCount(0);
 
@@ -144,10 +182,11 @@ test('görev ekleme: doğal dil çipte görünür; tarih yoksa seçili güne yaz
     await expect(taskTitles(page, 'day')).toHaveText(['Süt al']);
 
     const tasks = await storedTasks(page);
-    expect(tasks.map((task) => [task.title, task.scheduledAt, task.dueDate, task.todoTag, task.status])).toEqual([
-        ['yarın 14:00 rapor yaz', '2026-11-15T14:00', '2026-11-15', 'todo.3.15-11-2026', 'todo'],
-        ['Süt al', '2026-11-16', '2026-11-16', 'todo.3.16-11-2026', 'todo']
+    expect(tasks.map((task) => [task.title, task.dueDate, task.dueTime, task.diaryDate, task.noteId, task.status])).toEqual([
+        ['yarın 14:00 rapor yaz', '2026-11-15', '14:00', TODAY, null, 'todo'],
+        ['Süt al', '2026-11-16', null, '2026-11-16', null, 'todo']
     ]);
+    expect((await readProjectJson(page, '.pisi/tasks.json')).version).toBe(2);
     expect(tasks.every((task) => /^task_[0-9a-f-]{36}$/.test(task.id))).toBe(true);
 
     // Cold start: both are read back from storage on their own days.

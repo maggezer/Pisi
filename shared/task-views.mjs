@@ -1,7 +1,7 @@
 // Task view rules shared by desktop and mobile: which bucket a task date
 // falls into (overdue / today / upcoming / later / undated), the date filters
-// built on it, what a todo tag says about a task, and which calendar day a
-// task belongs to. Option labels are the desktop's source strings.
+// built on it and what a todo tag says about a task. Option labels are the
+// desktop's source strings. A version 2 task's day is its `dueDate` (below).
 
 import { getPisiTaskDaysBetween, getPisiTodoPriorityOption, normalizePisiTaskDay, normalizePisiTodoTagValue } from './task-model.mjs';
 import { getPisiTaskCalendarSummary } from './task-diary.mjs';
@@ -84,25 +84,6 @@ export function parsePisiTodoTagValue(tag, now = new Date()) {
         dateBucket: getPisiTodoDateBucket(finishDate, now),
         workorder: finishDate ? daysLeft / priority : Number.POSITIVE_INFINITY
     };
-}
-
-/** The todo tag a task is listed under; a task without one is undated. */
-export function getPisiTaskTodoTag(task) {
-    return String(task?.todoTag || `todo.${task?.priority || 3}.none`);
-}
-
-/**
- * The calendar day (YYYY-MM-DD) a canonical task is counted on: its scheduled
- * day, else its due date, else its deadline. Null when none of them is a date.
- */
-export function getPisiTaskCalendarIsoDate(task) {
-    const isoDay = /^\d{4}-\d{2}-\d{2}$/;
-    const scheduled = String(task.scheduledAt || '').slice(0, 10);
-    if (isoDay.test(scheduled)) return scheduled;
-    const due = String(task.dueDate || '').slice(0, 10);
-    if (isoDay.test(due)) return due;
-    const deadline = String(task.deadline || '').slice(0, 10);
-    return isoDay.test(deadline) ? deadline : null;
 }
 
 // ---------------------------------------------------------------------------

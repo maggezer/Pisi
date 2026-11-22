@@ -1,5 +1,6 @@
 // The Tasks tab (docs/mobile-plan.md M6): quick add on top, the view chips
-// under it and the list of the chosen view. Like the Pisi tab it is built
+// under it and the list of the chosen view. On the phone it comes second to
+// the Pisi tab (docs/task-plan.md §1.3); what it adds lives in today's diary. Like the Pisi tab it is built
 // once and updated in place, so the line being typed in the quick add
 // survives the redraws around it. Which task is in which view is worked out
 // in view-model.mjs; the tasks themselves come from the shared controller.
@@ -13,7 +14,7 @@ import { renderChoiceSheet } from '../../ui/overlay.mjs';
 import { createTaskAddRow } from '../../ui/task-add.mjs';
 import { renderTaskRow } from '../../ui/task-row.mjs';
 import { parseTaskDraft } from '../pisi/day-model.mjs';
-import { getTaskRowMeta } from '../pisi/task-section.mjs';
+import { getTaskCheckLabel, getTaskRowMeta } from '../pisi/task-section.mjs';
 import { PISI_TASK_PRIORITY_VALUES } from './task-edit.mjs';
 import {
     PISI_DEFAULT_TASK_VIEW,
@@ -27,7 +28,7 @@ import {
 
 export const PISI_OVERLAY_QUICK_PRIORITY = 'tasks-priority';
 const DEFAULT_PRIORITY = 3;
-const VIEW_ICONS = Object.freeze({ today: 'calendar', upcoming: 'calendar', overdue: 'clock', inbox: 'inbox', done: 'check' });
+const VIEW_ICONS = Object.freeze({ today: 'calendar', upcoming: 'calendar', overdue: 'clock', undated: 'inbox', done: 'check' });
 
 /**
  * `tasks` is the task controller; `snackbar` the app's snackbar controller.
@@ -55,9 +56,7 @@ export function createTasksScreen({ tasks, snackbar, now, onOpenTask, onOpenOver
         if (!draft) return [];
         const day = draft.day ? describeDay(draft.day) : null;
         return [
-            day
-                ? { kind: 'date', icon: 'calendar', text: draft.deadline ? t('pisi.chipDeadline', { date: day }) : day }
-                : { kind: 'inbox', icon: 'inbox', text: t('tasks.view.inbox') },
+            day ? { kind: 'date', icon: 'calendar', text: day } : { kind: 'undated', icon: 'inbox', text: t('tasks.view.undated') },
             draft.time ? { kind: 'time', icon: 'clock', text: draft.time } : null,
             {
                 kind: 'priority',
@@ -74,7 +73,8 @@ export function createTasksScreen({ tasks, snackbar, now, onOpenTask, onOpenOver
         if (!draft) return;
         const priority = state.priority;
         state.priority = DEFAULT_PRIORITY;
-        const result = await tasks.add({ ...draft.payload, priority });
+        // The task lives in today's diary; a line that names no day gives an undated task (docs/task-plan.md §1.4).
+        const result = await tasks.add({ ...draft.payload, priority }, { diaryDate: context.today });
         if (!result?.ok || !context) return;
         // A task that went to another view is not in the list being looked at; the user is told where it is.
         const view = getTaskView(result.task, { today: context.today });
@@ -108,13 +108,14 @@ export function createTasksScreen({ tasks, snackbar, now, onOpenTask, onOpenOver
     function renderRow(entry, view) {
         const { t, locale, today } = context;
         const { task } = entry;
+        const place = tasks.getPlace(task);
         return renderTaskRow({
             id: task.id,
             title: task.title,
             done: task.status === 'done',
             late: view === 'overdue',
-            meta: getTaskRowMeta(entry, { t, locale, today, showDate: view !== 'today' }),
-            checkLabel: task.status === 'done' ? t('task.reopen', { title: task.title }) : t('task.complete', { title: task.title }),
+            meta: getTaskRowMeta(entry, { t, locale, today, showDate: view !== 'today', placeTitle: place?.kind === 'note' ? place.title : null }),
+            checkLabel: getTaskCheckLabel(t, task, { done: task.status === 'done' }),
             onToggle: (id) => void tasks.toggle(id),
             onOpen: onOpenTask
         });

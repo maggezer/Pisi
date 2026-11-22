@@ -1,6 +1,7 @@
 // Project Integrity's task findings (docs/task-plan.md G2 step 5, GV14): a
 // project the task service wrote has none; each broken case gives its code.
-// A version 1 task without a place is not a finding until G8 (§3.1).
+// Since G8 a version 1 task without a place is a finding (§3.1), and a diary
+// section must be exactly the one the day rule gives (GV15).
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -49,11 +50,21 @@ function writeNoteContent(filePath, content) {
     globalThis.writePisiDocument(filePath, { ...info.data, content });
 }
 
-test('a section that leaves out a task is not a finding until the phone writes sections (G8)', (t) => {
+test('a diary whose section leaves out a task of its day, or lists one of another day, is a finding (G8)', (t) => {
     const { project } = makeProject(t);
-    taskService.createPisiTask(project, { task: { title: 'Günlükte' }, target: { diaryDate: '2026-11-21' } });
+    const first = taskService.createPisiTask(project, { task: { title: 'Günlükte' }, target: { diaryDate: '2026-11-21' } }).task;
     const diaryPath = documentStore.getPisiDiaryNodePath(project, '2026-11-21');
+    const written = documentStore.ensurePisiFileMetadata(diaryPath).data.content;
     writeNoteContent(diaryPath, '<div>Günün notu</div>');
+    assert.deepEqual(taskCodes(project), ['diary-task-section-mismatch']);
+    // A section with an id of a task that is not on that day breaks the rule too.
+    const other = taskService.createPisiTask(project, { task: { title: 'Başka gün' }, target: { diaryDate: '2026-11-22' } }).task;
+    writeNoteContent(
+        diaryPath,
+        written.replace(`data-pisi-task-ref="${first.id}"></div>`, `data-pisi-task-ref="${first.id}"></div>\n    <div data-pisi-task-ref="${other.id}"></div>`)
+    );
+    assert.deepEqual(taskCodes(project), ['diary-task-section-mismatch']);
+    writeNoteContent(diaryPath, written);
     assert.deepEqual(taskCodes(project), []);
 });
 
@@ -99,10 +110,10 @@ test('orphan block, homeless task, missing note, double reference and broken sec
     ]);
 });
 
-test('a dependency loop and an invalid field are reported; a version 1 task without a place is not', (t) => {
+test('a dependency loop, an invalid field and a version 1 task without a place are reported', (t) => {
     const { project } = makeProject(t);
     fs.mkdirSync(path.join(project, '.pisi'), { recursive: true });
-    const base = { status: 'todo', priority: 3, dueDate: null, diaryDate: null, noteId: null };
+    const base = { status: 'todo', priority: 3, dueDate: null, diaryDate: '2026-11-21', noteId: null };
     fs.writeFileSync(
         taskStore.getPisiTaskStorePath(project),
         JSON.stringify({
@@ -111,11 +122,11 @@ test('a dependency loop and an invalid field are reported; a version 1 task with
                 { ...base, id: 'task_loop00001', dependencies: ['task_loop00002'] },
                 { ...base, id: 'task_loop00002', dependencies: ['task_loop00001'] },
                 { ...base, id: 'task_badfield1', priority: 9, dependencies: [] },
-                { ...base, id: 'task_mobile001', title: 'Telefonda', source: {}, todoTag: 'todo.3.none', dependencies: [] }
+                { ...base, id: 'task_mobile001', title: 'Telefonda', diaryDate: null, source: {}, todoTag: 'todo.3.none', dependencies: [] }
             ]
         })
     );
-    assert.deepEqual(taskCodes(project), ['task-dependency-cycle', 'task-field-invalid']);
+    assert.deepEqual(taskCodes(project), ['task-dependency-cycle', 'task-field-invalid', 'task-place-missing']);
 });
 
 test('an unreadable tasks.json is a critical finding', (t) => {

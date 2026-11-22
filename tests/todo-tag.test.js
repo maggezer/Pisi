@@ -9,7 +9,7 @@ const { pathToFileURL } = require('node:url');
 const root = path.resolve(__dirname, '..');
 const read = (filePath) => fs.readFileSync(path.join(root, filePath), 'utf8');
 const readJson = (filePath) => JSON.parse(read(filePath));
-// The version 1 todo grammar (shared/task-model.mjs, shared/task-views.mjs): the phone writes it until G8.
+// The version 1 todo grammar (shared/task-model.mjs, shared/task-views.mjs): old records and the fixture generator's version 1 mode still carry it.
 const utilsPromise = Promise.all([
     import(pathToFileURL(path.join(root, 'shared/task-model.mjs')).href),
     import(pathToFileURL(path.join(root, 'shared/task-views.mjs')).href)

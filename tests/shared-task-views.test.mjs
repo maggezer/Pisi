@@ -2,8 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     PISI_TODO_FILTER_OPTIONS,
-    getPisiTaskCalendarIsoDate,
-    getPisiTaskTodoTag,
     getPisiTodoDateBucket,
     getPisiTodoFilterOption,
     matchesPisiTodoFilter,
@@ -88,25 +86,4 @@ test('etiket: iki haneli yıl ve 5 üstü eski öncelik kabul edilir, geçersiz 
     for (const invalid of ['todo.3.31-02-2026', 'todo.0.none', 'todo.3', 'etiket', '', null]) {
         assert.equal(parsePisiTodoTagValue(invalid, NOW), null, String(invalid));
     }
-});
-
-test('görevin etiketi: kayıttaki etiket, yoksa önceliğe göre tarihsiz etiket', () => {
-    assert.equal(getPisiTaskTodoTag({ todoTag: 'todo.4.20-11-2026', priority: 1 }), 'todo.4.20-11-2026');
-    assert.equal(getPisiTaskTodoTag({ priority: 5 }), 'todo.5.none');
-    assert.equal(getPisiTaskTodoTag({ todoTag: '' }), 'todo.3.none');
-    assert.equal(getPisiTaskTodoTag(null), 'todo.3.none');
-
-    // Lists place a task by its tag: a due date alone does not date it.
-    const listedBy = (task) => parsePisiTodoTagValue(getPisiTaskTodoTag(task), NOW).dateBucket;
-    assert.equal(listedBy({ todoTag: 'todo.3.13-11-2026', dueDate: '2026-12-31' }), 'today');
-    assert.equal(listedBy({ priority: 3, dueDate: '2026-11-13' }), 'undated');
-});
-
-test('takvim günü: planlanan gün, yoksa bitiş tarihi, yoksa son tarih', () => {
-    assert.equal(getPisiTaskCalendarIsoDate({ scheduledAt: '2026-11-20T10:00', dueDate: '2026-11-21', deadline: '2026-11-22' }), '2026-11-20');
-    assert.equal(getPisiTaskCalendarIsoDate({ scheduledAt: null, dueDate: '2026-11-21', deadline: '2026-11-22' }), '2026-11-21');
-    assert.equal(getPisiTaskCalendarIsoDate({ deadline: '2026-11-22T18:00' }), '2026-11-22');
-    assert.equal(getPisiTaskCalendarIsoDate({ scheduledAt: 'yarın', dueDate: '', deadline: undefined }), null);
-    assert.equal(getPisiTaskCalendarIsoDate({ scheduledAt: 'geçersiz', dueDate: '2026-11-21' }), '2026-11-21');
-    assert.equal(getPisiTaskCalendarIsoDate({}), null);
 });

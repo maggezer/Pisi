@@ -426,6 +426,46 @@ export function createNoteEditor({
         },
 
         /**
+         * Where a new task goes (docs/task-plan.md §3.3): the block the caret is
+         * in, whose text becomes the task's title. Returns null in a read-only
+         * note, else `{ title, place(html) }`: `place` puts the task block
+         * (shared/task-blocks.mjs, made once the task exists in tasks.json) in
+         * that block's stead, or at the end when no block had the caret, and
+         * marks it to be saved with the next patch.
+         */
+        taskTarget() {
+            if (readOnly) return null;
+            const item = active();
+            const field = isField(item) ? item : null;
+            const title = field ? field.el.textContent.replace(/\s+/g, ' ').trim() : '';
+            return {
+                title,
+                place(html) {
+                    const [segment] = splitNoteBlocks(html);
+                    const block = {
+                        segment: null,
+                        index: -1,
+                        el: renderProtected(segment),
+                        type: segment.blockType,
+                        dirty: true,
+                        saving: false,
+                        id: segment.blockId
+                    };
+                    block.newHtml = html;
+                    if (field && items.includes(field)) {
+                        insertAfter(field, block);
+                        removeBlock(field);
+                    } else {
+                        items.push(block);
+                        element.append(block.el);
+                    }
+                    onChange();
+                    onState();
+                }
+            };
+        },
+
+        /**
          * Puts the caret at the end of the note. When the last block is one
          * mobile does not edit, a blank paragraph is opened under it.
          */
@@ -459,6 +499,10 @@ export function createNoteEditor({
                 } else if (isField(item) && !item.blank) {
                     edited.push(item);
                     operations.push({ op: 'insert', afterIndex: anchor, html: makeBlockHtml(item.type, item.id, serialize(item), { indent: item.indent }) });
+                } else if (item.newHtml) {
+                    // A block made outside the editor (a task block): its HTML goes in as it was given.
+                    edited.push(item);
+                    operations.push({ op: 'insert', afterIndex: anchor, html: item.newHtml });
                 }
             }
             for (const item of edited) {
@@ -480,6 +524,7 @@ export function createNoteEditor({
                 item.segment = segments[index];
                 item.index = index;
                 item.saving = false;
+                delete item.newHtml;
                 if (isField(item)) item.baseHtml = inlineToHtml(parseInlineHtml(segments[index].inner));
             });
             removed = removed.filter((item) => !patch.gone.includes(item));

@@ -12,9 +12,11 @@ import { icon } from './icons.mjs';
  * - `date`: the task's day, shown for overdue tasks;
  * - `priority`: `level` 1–5 picks the colour of the mark, `text` names it;
  * - `repeat`: the task repeats;
- * - `source`: the note the task came from.
+ * - `source`: the note the task lives in.
+ * `locked`: the checkbox cannot be changed (a past completion of a repeating
+ * task, docs/task-plan.md §3.2.3); `checkLabel` then says why.
  */
-export function renderTaskRow({ id, title, done = false, late = false, meta = [], checkLabel, onToggle, onOpen }) {
+export function renderTaskRow({ id, title, done = false, late = false, locked = false, meta = [], checkLabel, onToggle, onOpen }) {
     const metaLine = meta.length
         ? h(
               'span',
@@ -33,8 +35,8 @@ export function renderTaskRow({ id, title, done = false, late = false, meta = []
         : null;
     return h(
         'div',
-        { class: `pisi-task${done ? ' pisi-task-done' : ''}${late ? ' pisi-task-late' : ''}`, dataset: { task: id } },
-        renderCheckbox({ checked: done, label: checkLabel, dataset: { taskToggle: id }, onChange: () => onToggle(id) }),
+        { class: `pisi-task${done ? ' pisi-task-done' : ''}${late ? ' pisi-task-late' : ''}${locked ? ' pisi-task-locked' : ''}`, dataset: { task: id } },
+        renderCheckbox({ checked: done, label: checkLabel, disabled: locked, dataset: { taskToggle: id }, onChange: () => onToggle(id) }),
         h(
             'button',
             { type: 'button', class: 'pisi-task-body', dataset: { taskOpen: id }, onClick: () => onOpen(id) },

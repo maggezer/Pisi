@@ -1,5 +1,46 @@
 # PISI Güncelleme Takip Dosyası
 
+## 22-11-2026 — Mobil: sürüm 2 görevler ve açılışta gün (G8)
+
+Görev işi ve mobil iş (`docs/task-plan.md` G8, `docs/mobile-plan.md` §3.6). Kapanan bulgular: GB5 (mobil tarafı),
+`pisi-error.md` §5d.
+
+- `TaskRepo` sürüm 2 (`mobile/src/data/task-repo.mjs`): kayıt kuralları, tamamlama ve geri alma
+  `shared/task-model.mjs`'ten gelir (`normalizePisiTask`, `completePisiTask`, `reopenPisiTask`); dosya
+  `version: 2` yazılır, tanınmayan ve sürüm 1'den kalan alanlar korunur (GV12). Tekrar eden görev tamamlanınca
+  yeni kayıt açılmaz: tamamlama `completions`'a yazılır, görev bitiş gününden ve bugünden sonraki ilk tekrara
+  ilerler; geri alma aynı tamamlama bilgisiyle yapılır, geçmişteki eski tamamlama kilitlidir (§3.2.3). Telefon
+  görev silmez ve taşımaz (V9).
+- Her görevin yeri var: Pisi sekmesinin ekleme satırı seçili günün, Görevler sekmesi bugünün günlüğüne yazar
+  (`diaryDate`); notta "Göreve çevir" görevi o nota (`noteId`) koyar. Görevin günleri değişince aynı yazma işinde
+  o günlerin görev bölümü yazılır, görevin girdiği günün günlüğü yoksa masaüstü biçiminde oluşturulur
+  (`mobile/src/data/task-days.mjs`, `diary-file.mjs`). Başlık, durum, öncelik, saat ve hatırlatma değişikliği
+  hiçbir not ya da günlük yazmaz (GV5). Telefonda ilk kez yazılan günlük de o günün bölümüyle oluşur. Ortak test:
+  aynı işlemler masaüstü görev servisi ve telefonun `TaskRepo`'suyla iki kopyada yapılır, `tasks.json` kayıtları
+  ve günlüklerin içeriği bayt bayt aynıdır (GV15, `tests/mobile-desktop-compat.test.mjs`).
+- Açılış ekranı (Pisi sekmesi): günün görevleri günlük bölümünün kuralıyla (`shared/task-diary.mjs`) çizilir;
+  bugünde gecikenler üstte, ek dokunuş olmadan görünür (S20). O güne ait tamamlama ☑ görünür, kilitli tamamlamanın
+  onay kutusu devre dışıdır ve nedenini söyler. Tarih çarkındaki görev noktaları takvimin kuralıyla gelir.
+- Görevler sekmesi masaüstü panelinin kovalarını kullanır; "Gelen kutusu" görünümü "Tarihsiz" oldu. Görev
+  ayrıntısında nottaki görev de bütün alanlarıyla düzenlenir ("Masaüstünde nottan düzenlenir" kısıtı kalktı);
+  "Son tarih" satırı kalktı, "Yer" satırı görevin notunu ya da günlüğünün gününü açar.
+- Not ekranı sürüm 2 görev bloğunu kimlikle kayıttan çizer ("Görev bulunamadı", "Görevler okunamadı" durumlarıyla;
+  blok korunur), günlük notunda görev bölümünü o günün kuralından satırlarla gösterir. Araç çubuğuna "Göreve çevir"
+  geldi (normal notlarda): önce `tasks.json`'a görev yazılır, sonra blok bulunulan bloğun yerine geçer ve not
+  kendi yamasıyla kaydedilir. Eski `todo.*` bloğu ve eski yönetilen bölüm sıradan kart olarak kalır.
+- Masaüstü Project Integrity: yeri olmayan eski kayıt artık bulgudur (`task-place-missing`, onarımı görevi
+  bugünün günlüğüne bağlar); günlük bölümü gün kuralının verdiği kimliklerle tam denetlenir (telefon da bölüm
+  yazdığı için). Görev E2E'leri bilerek kurdukları eski kaydın bulgusunu `setKnownIntegrityFindings` ile yeni
+  saymaz; Integrity E2E'si yersiz kaydın onarımını arayüzden çalıştırır.
+- Geliştirici menüsündeki örnek projede her görev kendi gününün günlüğündedir. Büyük proje ölçümü sürüm 2
+  görevlerle (`generate-project-fixture.mjs` `taskModel: 2`) çalışır: bu makinede Pisi ekranı 0,9 sn, ilk görev
+  satırı 1,4 sn (gün 511, geciken 1.776 satır), not listesi kaydırma medyanı 16 ms, arama en çok 35 ms.
+- Temizlik: yalnız eski mobilin kullandığı `getNextPisiTodoDate`, `getPisiTodoRepeatOption`,
+  `getPisiTaskTodoTag`, `getPisiTaskCalendarIsoDate` ve `formatPisiRecurrenceTaskId` kalktı.
+- Testler: `mobile/tests/data-tasks.test.mjs` (sürüm 2 depo, günlük bölümleri, §3.2.3 adımları), ekran testleri,
+  Playwright `pisi.spec` (S20, geçmiş gün kilidi), `tasks.spec`, `notes.spec`, `calendar.spec`; kökte
+  `project-integrity-tasks`, `task-repair` ve `mobile-desktop-compat` (GV15).
+
 ## 22-11-2026 — CI: senkron matrisi ve Windows Electron E2E düzeltmeleri
 
 Yalnız test betikleri değişti; uygulama davranışı aynı.

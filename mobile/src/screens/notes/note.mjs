@@ -10,15 +10,16 @@
 // (SV4). A change from outside that did get written is taken in place, block
 // by block (`handleExternal`); a note deleted on the desktop closes the screen.
 
+import { normalizePisiDiaryIsoDate } from '../../../../shared/diary-rules.mjs';
+import { makePisiTaskBlockHtml } from '../../../../shared/task-blocks.mjs';
 import { normalizeKey } from '../../data/drivers/keys.mjs';
 import { h } from '../../ui/dom.mjs';
 import { renderEmptyState } from '../../ui/list.mjs';
-import { renderTaskRow } from '../../ui/task-row.mjs';
-import { getTaskRowMeta } from '../pisi/task-section.mjs';
 import { whenVisible } from './attachment-views.mjs';
 import { getBlockLabel, renderProtectedBlock } from './block-views.mjs';
 import { createNoteEditor } from './note-editor.mjs';
 import { createNoteToolbar } from './note-toolbar.mjs';
+import { drawDiarySection, drawTaskBlock } from './task-views.mjs';
 
 export const PISI_NOTE_SAVE_DELAY_MS = 600;
 
@@ -99,26 +100,35 @@ export function createNoteScreen({
         );
     }
 
+    /** The day of the open note when it is a diary, else null. */
+    const diaryDay = () => (session?.key.startsWith('diary/') ? normalizePisiDiaryIsoDate(session.data?.pisi?.diaryDate) : null);
+
     function drawTask({ host, segment }) {
         const { t, locale, today } = context;
-        const key = session.key;
-        const task =
-            segment.blockType === 'diary-managed'
-                ? tasks.find(segment.taskId)
-                : tasks.getTasks().find((item) => item.source?.blockId === segment.blockId && normalizeKey(item.source?.nodePath ?? '') === key);
-        if (!task) return false;
-        host.replaceChildren(
-            renderTaskRow({
-                id: task.id,
-                title: task.title,
-                done: task.status === 'done',
-                meta: getTaskRowMeta({ task, day: null }, { t, locale, today }).filter((item) => item.kind !== 'source'),
-                checkLabel: task.status === 'done' ? t('task.reopen', { title: task.title }) : t('task.complete', { title: task.title }),
-                onToggle: (id) => void tasks.toggle(id),
-                onOpen: onOpenTask
-            })
-        );
-        return true;
+        const options = { t, locale, today, tasks, onOpen: onOpenTask };
+        if (segment.blockType === 'diary-tasks') {
+            const day = diaryDay() ?? /^blk_diary-tasks-(\d{4}-\d{2}-\d{2})$/.exec(segment.blockId ?? '')?.[1];
+            if (day) drawDiarySection(host, day, options);
+        } else drawTaskBlock(host, segment.taskId, options);
+    }
+
+    /**
+     * The "task" button (docs/task-plan.md §3.3, G8): first the task goes into
+     * tasks.json, living in this note; then its block takes the place of the
+     * block the caret is in, whose text is the title, and the note is saved
+     * with it. A task with no title yet opens its sheet to be named.
+     */
+    async function addTaskHere() {
+        const current = session;
+        const ed = editor;
+        const noteId = current?.data?.pisi?.id;
+        if (!ed || current.readOnly || diaryDay() || !noteId) return;
+        const target = ed.taskTarget();
+        if (!target) return;
+        const result = await tasks.add({ title: target.title }, { noteId });
+        if (!result?.ok || session !== current || editor !== ed) return;
+        target.place(makePisiTaskBlockHtml({ blockId: project.notes.newBlockId(), taskId: result.task.id }));
+        if (!target.title) onOpenTask(result.task.id);
     }
 
     function openLink(node) {
@@ -130,6 +140,7 @@ export function createNoteScreen({
 
     function runTool(id) {
         if (!editor) return;
+        if (id === 'task') return void addTaskHere();
         if (id === 'bold' || id === 'italic') editor.format(id);
         else if (id === 'heading') editor.cycleHeading();
         else editor.toggleList(id);
@@ -168,16 +179,16 @@ export function createNoteScreen({
                     loadAsset: (reference) => project.notes.readAsset(current.key, current.data, reference),
                     addTask(host, block) {
                         const entry = { host, segment: block };
-                        if (!drawTask(entry)) return false;
+                        drawTask(entry);
                         taskBlocks.push(entry);
-                        return true;
                     }
                 }),
             onChange: schedule,
             onState: () => toolbar?.update(focusInside() ? editor.getState() : null),
             onLink: openLink
         });
-        toolbar = createNoteToolbar({ t, onCommand: runTool });
+        // A diary's tasks live in its task section; they are added on the Pisi tab.
+        toolbar = createNoteToolbar({ t, onCommand: runTool, withTask: !diaryDay() });
         deferredNotice = h('p', { class: 'pisi-notice', role: 'status', dataset: { note: 'external-deferred' }, hidden: true }, t('note.externalDeferred'));
         const tail = h('button', {
             type: 'button',
@@ -321,6 +332,10 @@ export function createNoteScreen({
     }
 
     const stopDeferred = project?.documents.subscribeDeferred((key) => session?.key === key && drawDeferred());
+    // A diary's task section is written by the task repo when a task of that day changes (another tab, a sheet): the open note takes it in place.
+    const stopLocal = project?.writer.onFileChanged((key, info) => {
+        if (info?.source === 'local' && !info.removed && session?.key === key && diaryDay()) void handleExternal(key);
+    });
     const stopTasks = tasks.subscribe(() => {
         if (!session || !editor) return;
         for (const entry of taskBlocks) drawTask(entry);
@@ -376,6 +391,7 @@ export function createNoteScreen({
             timer = null;
             setSession(null);
             stopDeferred?.();
+            stopLocal?.();
             stopReconnect?.();
             waiting.clear();
             stopTasks();

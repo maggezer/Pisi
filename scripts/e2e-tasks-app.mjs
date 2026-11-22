@@ -211,7 +211,17 @@ export async function integrityIssues(app) {
     return Array.isArray(audit?.issues) ? audit.issues : audit?.report?.issues;
 }
 
+// Findings a scenario starts with on purpose (an old record it sets up): they are not new (GV14). `{ code, entityId }`.
+let knownIntegrityFindings = [];
+
+/** Findings present before the scenario's steps, which `assertIntegrityClean` does not count as new. */
+export function setKnownIntegrityFindings(findings) {
+    knownIntegrityFindings = Array.isArray(findings) ? findings : [];
+}
+
 export async function assertIntegrityClean(app, label) {
     const issues = await integrityIssues(app);
-    assert(Array.isArray(issues) && issues.length === 0, 'Project Integrity after ' + label, issues);
+    const known = (issue) => knownIntegrityFindings.some((finding) => finding.code === issue.code && finding.entityId === issue.entityId);
+    const fresh = Array.isArray(issues) ? issues.filter((issue) => !known(issue)) : issues;
+    assert(Array.isArray(fresh) && fresh.length === 0, 'Project Integrity after ' + label, fresh);
 }

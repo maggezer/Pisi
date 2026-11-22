@@ -160,14 +160,14 @@ Test APK'sı Android 8.0 ve üstüne kurulur (QR okuyucu için `minSdkVersion` 2
 Önce Ayarlar → "Örnek proje yükle" ile örnek veriyi yükleyin.
 
 - [x] Görevler sekmesi "Bugün" görünümüyle açılır; bugünün görevleri listelenir.
-- [x] Çiplerde görünüm adı ve sayı yazar: Bugün, Yaklaşan, Gecikmiş, Gelen kutusu, Tamamlanan. Satır parmakla yatay kayar; ekrandan taşan kenar solar, kesik çip görünmez.
+- [x] Çiplerde görünüm adı ve sayı yazar: Bugün, Yaklaşan, Gecikmiş, Tarihsiz, Tamamlanan (G8'den önce "Gelen kutusu"). Satır parmakla yatay kayar; ekrandan taşan kenar solar, kesik çip görünmez.
 - [x] "Yaklaşan" görünümünde "7 gün içinde" ve (varsa) "Daha sonra" grupları görünür; satırlarda tarih yazar.
 - [x] **Hızlı ekle:** "yarın 14:00 rapor" yazınca "Yarın", "14:00" ve "Öncelik 3" çipleri görünür. "Öncelik 3" çipine dokunup başka bir öncelik seçin: yazdığınız metin silinmez, klavye açıkken çipler görünür kalır.
-- [x] Tarihsiz yazılan görev Gelen kutusu'na düşer ve snackbar bunu söyler. "her pazartesi toplantı" yazınca "Her hafta" çipi görünür.
+- [x] Tarihsiz yazılan görev "Tarihsiz" görünümüne düşer ve snackbar bunu söyler (G8'den beri bugünün günlüğünde durur). "her pazartesi toplantı" yazınca "Her hafta" çipi görünür.
 - [x] Onay kutusu görevi tamamlar, telefon kısa titrer, 5 saniye "Geri al" görünür; çiplerdeki sayılar hemen değişir.
 - [x] **Görev detayı:** satıra dokununca açılır. Durum, öncelik, tarih, tekrar ve hatırlatma satırları kendi seçim ekranını açar; geri tuşu önce onu, sonra detayı kapatır.
 - [x] Başlığı değiştirip klavyede "Bitti"ye basın: listedeki satır güncellenir. Saat alanı Android saat seçicisini açar; seçilen saat satırda görünür.
-- [x] Tarihi başka bir güne alınca görev öteki görünüme geçer ve saati korunur. "Tarihi kaldır" görevi Gelen kutusu'na gönderir; tarihsiz görevde saat alanı pasiftir.
+- [x] Tarihi başka bir güne alınca görev öteki görünüme geçer ve saati korunur. "Tarihi kaldır" görevi "Tarihsiz" görünümüne gönderir; tarihsiz görevde saat alanı pasiftir.
 - [x] Durumu "Tamamlandı" yapınca tekrar eden görevin ("Sabah yürüyüşü") yarınki tekrarı oluşur.
 - [x] Uygulamayı tamamen kapatıp açın: yapılan bütün değişiklikler durur.
 - [x] Koyu temada ve Android yazı boyutu %130'da düzen bozulmaz.

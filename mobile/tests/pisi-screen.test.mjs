@@ -6,30 +6,42 @@ import { createFakePlatform, createFakeStorage, createFakeSystemTheme } from './
 let app;
 let root;
 
+// Version 2 records (docs/task-plan.md §3.1): each lives in a day's diary or a note.
+const EV_ID = 'node_00000000-0000-4000-8000-0000000000e1';
 const record = (id, title, fields = {}) => ({
     id: `task_00000000-0000-4000-9000-${String(id).padStart(12, '0')}`,
     title,
+    tags: [],
     status: 'todo',
     priority: 3,
     dueDate: null,
-    scheduledAt: null,
-    deadline: null,
+    dueTime: null,
     repeat: 'none',
-    source: { nodePath: null, blockId: null, mapPath: null, nodeTitle: '', mapTitle: '' },
+    completionOffsetDays: null,
+    reminderMode: 'none',
+    reminderAt: null,
+    dependencies: [],
+    manualOrder: id,
+    noteId: null,
+    diaryDate: TODAY,
+    durationMinutes: 0,
+    actualMinutes: 0,
+    completions: [],
+    createdAt: `2026-11-01T08:00:0${id}.000Z`,
+    updatedAt: '2026-11-01T08:00:00.000Z',
+    completedAt: null,
+    completedOn: null,
     ...fields
 });
 const TASKS = [
-    record(1, 'Sabah yürüyüşü', { dueDate: TODAY, scheduledAt: `${TODAY}T07:30`, repeat: 'daily', todoTag: 'todo.3.14-11-2026' }),
-    record(2, 'TÜBİTAK raporunun yöntem bölümünü gözden geçir', { dueDate: TODAY, scheduledAt: `${TODAY}T10:00`, priority: 5, deneme: 'korunur' }),
-    record(3, 'Kira ödemesi', {
-        dueDate: '2026-11-12',
-        priority: 4,
-        source: { nodePath: 'Ev.node', nodeTitle: 'Ev', blockId: null, mapPath: null, mapTitle: '' }
-    }),
-    record(4, 'Dün biten', { dueDate: TODAY, status: 'done', completedAt: new Date(2026, 10, 14, 8).toISOString() }),
-    record(5, 'Yarınki iş', { dueDate: '2026-11-15' })
+    record(1, 'Sabah yürüyüşü', { dueDate: TODAY, dueTime: '07:30', repeat: 'daily' }),
+    record(2, 'TÜBİTAK raporunun yöntem bölümünü gözden geçir', { dueDate: TODAY, dueTime: '10:00', priority: 5, deneme: 'korunur' }),
+    record(3, 'Kira ödemesi', { dueDate: '2026-11-12', priority: 4, noteId: EV_ID, diaryDate: null }),
+    record(4, 'Dün biten', { dueDate: TODAY, status: 'done', completedAt: new Date(2026, 10, 14, 8).toISOString(), completedOn: TODAY }),
+    record(5, 'Yarınki iş', { dueDate: '2026-11-15', diaryDate: '2026-11-15' })
 ];
-const tasksFile = (tasks = TASKS) => storeJson({ version: 1, updatedAt: null, tasks });
+const tasksFile = (tasks = TASKS) => storeJson({ version: 2, updatedAt: null, tasks });
+const NOTES = { 'Ev.node': noteFile({ id: EV_ID, title: 'Ev' }) };
 
 async function start({ files = {}, deviceLanguage = 'tr-TR' } = {}) {
     const platform = createFakePlatform();
@@ -165,7 +177,7 @@ describe('Pisi sekmesi: başlık ve gün değiştirme', () => {
     });
 
     it('tarih seçici: ay değiştirilir, gün seçilince kapanır ve odak başlığa döner', async () => {
-        const { platform } = await start({ files: { '.pisi/tasks.json': tasksFile() } });
+        const { platform } = await start({ files: { '.pisi/tasks.json': tasksFile(), ...NOTES } });
         tap('[data-action="pick-date"]');
         const dialog = $('[role="dialog"]');
         expect(document.getElementById(dialog.getAttribute('aria-labelledby')).textContent).toBe('Tarih seç');
@@ -196,7 +208,7 @@ describe('Pisi sekmesi: başlık ve gün değiştirme', () => {
 
 describe('Pisi sekmesi: görevler', () => {
     it('grupları, tam genişlikte satırı ve meta satırını gösterir (G4, G5)', async () => {
-        await start({ files: { '.pisi/tasks.json': tasksFile() } });
+        await start({ files: { '.pisi/tasks.json': tasksFile(), ...NOTES } });
         expect(all('.pisi-home-heading').map((heading) => heading.textContent)).toEqual(['Günlük', 'Görevler']);
         expect(all('.pisi-task-group-title').map((title) => title.textContent)).toEqual(['Gecikmiş1', 'Bu gün2']);
         expect(titles('overdue')).toEqual(['Kira ödemesi']);
@@ -217,7 +229,7 @@ describe('Pisi sekmesi: görevler', () => {
     });
 
     it('başka bir günde "Gecikmiş" görünmez; görevsiz günde boş durum ve ekleme satırı vardır', async () => {
-        await start({ files: { '.pisi/tasks.json': tasksFile() } });
+        await start({ files: { '.pisi/tasks.json': tasksFile(), ...NOTES } });
         tap('[data-wheel="track"] [data-date="2026-11-15"]');
         expect([$('[data-group="overdue"]'), titles('day')]).toEqual([null, ['Yarınki iş']]);
         tap('[data-wheel="track"] [data-date="2026-11-16"]');
@@ -226,7 +238,7 @@ describe('Pisi sekmesi: görevler', () => {
     });
 
     it('onay kutusu görevi tamamlar, titreşir ve 5 saniyelik "Geri al" sunar', async () => {
-        const { driver, platform } = await start({ files: { '.pisi/tasks.json': tasksFile() } });
+        const { driver, platform } = await start({ files: { '.pisi/tasks.json': tasksFile(), ...NOTES } });
         tap(`[data-task-toggle="${TASKS[1].id}"]`);
         // The row moves before the file is written.
         expect(titles('day')).toEqual(['Sabah yürüyüşü']);
@@ -242,13 +254,13 @@ describe('Pisi sekmesi: görevler', () => {
 
         tap('.pisi-snackbar [data-action="undo"]');
         await settle();
-        expect(storedTasks(driver)[1]).toMatchObject({ status: 'todo', completedAt: null });
+        expect(storedTasks(driver)[1]).toMatchObject({ status: 'todo', completedAt: null, completedOn: null });
         expect(titles('day')).toEqual(['Sabah yürüyüşü', 'TÜBİTAK raporunun yöntem bölümünü gözden geçir']);
         expect(snackbar()).toBe(null);
     });
 
     it('"Geri al" 5 saniye sonra kaybolur; tamamlanan görev yeniden açılabilir', async () => {
-        const { driver } = await start({ files: { '.pisi/tasks.json': tasksFile() } });
+        const { driver } = await start({ files: { '.pisi/tasks.json': tasksFile(), ...NOTES } });
         tap(`[data-task-toggle="${TASKS[2].id}"]`);
         await settle();
         expect(snackbar()).toBe('Görev tamamlandı.');
@@ -265,20 +277,54 @@ describe('Pisi sekmesi: görevler', () => {
         expect(titles('overdue')).toEqual(['Kira ödemesi']);
     });
 
-    it('tekrar eden görev: tamamlanınca sonraki tekrar eklenir, "Geri al" onu da geri alır', async () => {
-        const { driver } = await start({ files: { '.pisi/tasks.json': tasksFile() } });
+    it('tekrar eden görev: tamamlanınca yeni kayıt açılmaz, ertesi güne ilerler ve bugün ☑ kalır; "Geri al" geri getirir (§3.2.3)', async () => {
+        const { driver } = await start({ files: { '.pisi/tasks.json': tasksFile(), ...NOTES } });
         tap(`[data-task-toggle="${TASKS[0].id}"]`);
         await settle();
         const after = storedTasks(driver);
-        expect(after).toHaveLength(6);
-        expect(after[5]).toMatchObject({ title: 'Sabah yürüyüşü', status: 'todo', dueDate: '2026-11-15', repeat: 'daily' });
+        expect(after).toHaveLength(5);
+        expect(after[0]).toMatchObject({ status: 'todo', dueDate: '2026-11-15', completions: [{ date: TODAY, dueDate: TODAY, at: NOW.toISOString() }] });
+        expect(titles('day')).toEqual(['TÜBİTAK raporunun yöntem bölümünü gözden geçir']);
+        tap('[data-action="toggle-completed"]');
+        expect(titles('done')).toEqual(['Sabah yürüyüşü', 'Dün biten']);
+        // The next day's diary gets the row (it is created for it).
+        expect(driver.snapshot()['diary/2026-11-15.node']).toContain(TASKS[0].id);
 
         tap('.pisi-snackbar [data-action="undo"]');
         await settle();
         const undone = storedTasks(driver);
         expect(undone.map((task) => task.id)).toEqual(TASKS.map((task) => task.id));
-        expect(undone[0]).toMatchObject({ status: 'todo', completedAt: null });
+        expect(undone[0]).toMatchObject({ status: 'todo', dueDate: TODAY, completions: [] });
         expect(titles('day')).toEqual(['Sabah yürüyüşü', 'TÜBİTAK raporunun yöntem bölümünü gözden geçir']);
+    });
+
+    it('geçmiş günde tekrarın eski tamamlaması kilitlidir; en son tamamlama o günden geri alınır (§3.2.3, S18)', async () => {
+        const daily = record(9, 'Spor', {
+            repeat: 'daily',
+            dueDate: '2026-11-15',
+            diaryDate: '2026-11-12',
+            completions: [
+                { date: '2026-11-13', dueDate: '2026-11-13', at: new Date(2026, 10, 13, 7).toISOString() },
+                { date: TODAY, dueDate: TODAY, at: new Date(2026, 10, 14, 7).toISOString() }
+            ]
+        });
+        const { driver } = await start({ files: { '.pisi/tasks.json': tasksFile([daily]) } });
+        tap('[data-wheel="track"] [data-date="2026-11-13"]');
+        tap('[data-action="toggle-completed"]');
+        const locked = $(`[data-task-toggle="${daily.id}"]`);
+        expect([locked.disabled, locked.getAttribute('aria-checked'), locked.getAttribute('aria-label')]).toEqual([
+            true,
+            'true',
+            'Kilitli: Spor daha sonra yeniden tamamlandı'
+        ]);
+
+        tap('[data-wheel="track"] [data-date="2026-11-14"]');
+        tap('[data-action="toggle-completed"]');
+        expect($(`[data-task-toggle="${daily.id}"]`).disabled).toBe(false);
+        tap(`[data-task-toggle="${daily.id}"]`);
+        await settle();
+        expect(storedTasks(driver)[0]).toMatchObject({ dueDate: TODAY, completions: [{ date: '2026-11-13' }] });
+        expect(titles('day')).toEqual(['Spor']);
     });
 
     it('görev ekleme: ayrıştırılan tarih çipte görünür; tarih yoksa seçili güne yazılır', async () => {
@@ -299,26 +345,23 @@ describe('Pisi sekmesi: görevler', () => {
         await settle();
         expect($('[data-action="add-task-input"]').value).toBe('');
         expect(titles('day')).toEqual(['Süt al']);
-        expect(storedTasks(driver)[0]).toMatchObject({
-            title: 'Süt al',
-            status: 'todo',
-            dueDate: '2026-11-16',
-            scheduledAt: '2026-11-16',
-            todoTag: 'todo.3.16-11-2026'
-        });
+        expect(storedTasks(driver)[0]).toMatchObject({ title: 'Süt al', status: 'todo', dueDate: '2026-11-16', dueTime: null, diaryDate: '2026-11-16' });
         expect(snackbar()).toBe(null);
+        // The day's diary is created with the task in its section (docs/task-plan.md §3.2.2).
+        expect(driver.snapshot()['diary/2026-11-16.node']).toContain(storedTasks(driver)[0].id);
 
-        // A task for another day is saved there, and the user is told where it went.
+        // A task due another day still lives in the selected day's diary; it shows there with its own day.
         type('[data-action="add-task-input"]', 'yarın 14:00 rapor yaz');
         $('.pisi-task-add').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
         await settle();
-        expect(titles('day')).toEqual(['Süt al']);
-        expect(snackbar()).toBe('Görev 15 Kas gününe eklendi.');
-        expect(storedTasks(driver)[1]).toMatchObject({ title: 'yarın 14:00 rapor yaz', scheduledAt: '2026-11-15T14:00', dueDate: '2026-11-15' });
+        expect(titles('day')).toEqual(['Süt al', 'yarın 14:00 rapor yaz']);
+        expect(all(`[data-task="${storedTasks(driver)[1].id}"] .pisi-task-meta-item`).map((item) => item.textContent)).toEqual(['15 Kas', '14:00', 'Orta']);
+        expect(snackbar()).toBe('Görev eklendi; günü 15 Kas.');
+        expect(storedTasks(driver)[1]).toMatchObject({ title: 'yarın 14:00 rapor yaz', dueDate: '2026-11-15', dueTime: '14:00', diaryDate: '2026-11-16' });
     });
 
     it('satıra dokununca görev detayı açılır; geri tuşu kapatır ve odak satıra döner', async () => {
-        const { platform } = await start({ files: { '.pisi/tasks.json': tasksFile() } });
+        const { platform } = await start({ files: { '.pisi/tasks.json': tasksFile(), ...NOTES } });
         tap(`[data-task-open="${TASKS[0].id}"]`);
         expect($('[role="dialog"] .pisi-task-detail-title').value).toBe('Sabah yürüyüşü');
         const field = (id) => $(`[data-task-field="${id}"] .pisi-row-value`)?.textContent ?? null;
@@ -332,7 +375,7 @@ describe('Pisi sekmesi: görevler', () => {
     });
 
     it('detayda yapılan değişiklik Pisi sekmesindeki satıra yansır', async () => {
-        const { driver } = await start({ files: { '.pisi/tasks.json': tasksFile() } });
+        const { driver } = await start({ files: { '.pisi/tasks.json': tasksFile(), ...NOTES } });
         tap(`[data-task-open="${TASKS[1].id}"]`);
         tap('[data-task-field="priority"]');
         tap('.pisi-sheet-option[data-value="2"]');
@@ -340,7 +383,7 @@ describe('Pisi sekmesi: görevler', () => {
         expect($('[data-task-field="priority"] .pisi-row-value').textContent).toBe('Düşük');
         expect(document.activeElement.dataset.taskField).toBe('priority');
         expect($(`[data-task="${TASKS[1].id}"] .pisi-task-meta-priority`).textContent).toBe('Düşük');
-        expect(storedTasks(driver)[1]).toMatchObject({ priority: 2, todoTag: 'todo.2.14-11-2026', deneme: 'korunur' });
+        expect(storedTasks(driver)[1]).toMatchObject({ priority: 2, deneme: 'korunur' });
     });
 
     it('bozuk tasks.json ezilmez: görevler kilitlenir ve kullanıcıya söylenir (V7)', async () => {

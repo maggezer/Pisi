@@ -7,6 +7,8 @@ import { sortPisiTasks } from '../shared/task-views.mjs';
 import {
     assert,
     assertIntegrityClean,
+    setKnownIntegrityFindings,
+    integrityIssues,
     countNodeIo,
     createPisiTasksE2E,
     diaryPath,
@@ -140,7 +142,7 @@ async function drag(source, target, { before = true } = {}) {
 }
 
 try {
-    // A version 1 record without a place, as the mobile app writes it before G8 (S4).
+    // A version 1 record without a place, as the mobile app wrote it before G8 (S4).
     const today = getPisiTodayIsoDate(new Date());
     const phoneTaskId = 'task_0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0';
     await fs.mkdir(path.join(projectPath, '.pisi'), { recursive: true });
@@ -170,6 +172,18 @@ try {
         ) + '\n'
     );
     app = await pisi.launch(projectPath);
+    // Since G8 an old record without a place is a finding (task-place-missing, §3.1); it was there before the scenario, so it is not new (GV14).
+    setKnownIntegrityFindings([{ code: 'task-place-missing', entityId: phoneTaskId }]);
+    {
+        const issues = await integrityIssues(app);
+        assert(
+            issues.some(
+                (issue) => issue.code === 'task-place-missing' && issue.entityId === phoneTaskId && issue.repair?.action === 'task-place-in-today-diary'
+            ),
+            'the old record without a place is reported with its repair',
+            issues
+        );
+    }
     assert((await run('window.getPisiTaskToday()')) === today, 'today');
     await run(`window.__pisiPanelErrors = [];
         window.addEventListener('error', (event) => window.__pisiPanelErrors.push(String(event.message)));

@@ -33,6 +33,8 @@ const json = (value) => JSON.stringify(value);
 const EDITOR = "document.getElementById('center-node-editor-content')";
 const SECTION = "document.querySelector('.pisi-integrity-expanded')";
 
+const PLACELESS = 'task_00000000-0000-4000-8000-0000000000cc';
+
 async function command(name, payload) {
     const result = await run(`window.runPisiTaskCommand(${json(name)}, ${json(payload)})`);
     assert(result?.ok, name, result);
@@ -186,6 +188,8 @@ try {
         store.tasks = store.tasks.map((task) =>
             task.id === loopA.id ? { ...task, dependencies: [loopB.id, 'task_00000000-0000-4000-8000-0000000000bb'] } : task
         );
+        // An old version 1 record without a place (the phone wrote such records before G8, §3.1).
+        store.tasks.push({ id: PLACELESS, title: 'Yersiz eski görev', status: 'todo', priority: 3, todoTag: 'todo.3.none', source: {} });
         await fs.writeFile(tasksPath(projectPath), JSON.stringify(store, null, 2), 'utf8');
     }
     await editFromOutside(
@@ -206,6 +210,8 @@ try {
             json(
                 [
                     'task-append-block',
+                    'task-place-in-today-diary',
+                    // The old task without a place (G8).
                     'task-place-in-today-diary',
                     'task-rebuild-diary-section',
                     'task-remove-dependency',
@@ -276,13 +282,20 @@ try {
         assert(content.includes('Bölümden sonra'), 'the paragraph stays');
     }
 
-    // The task whose note is gone lives in today's diary.
+    // The task whose note is gone and the old task without a place (G8) both live in today's diary.
+    await repairInSettings('task-place-in-today-diary');
     await repairInSettings('task-place-in-today-diary');
     {
         const record = await storedTask(projectPath, lost.id);
         assert(record.diaryDate === today && record.noteId === null, 'lost task in today’s diary', record);
+        const placeless = await storedTask(projectPath, PLACELESS);
+        assert(
+            placeless.diaryDate === today && placeless.noteId === null && placeless.todoTag === 'todo.3.none',
+            'old task in today’s diary, old field kept',
+            placeless
+        );
         const section = readPisiDiaryTaskSection(await noteContent(diaryPath(projectPath, today)));
-        assert(section.taskIds.includes(lost.id) && section.last, 'today’s section names it', section);
+        assert(section.taskIds.includes(lost.id) && section.taskIds.includes(PLACELESS) && section.last, 'today’s section names both', section);
     }
 
     assert((await repairButtons()).length === 0, 'no task repair left', await repairButtons());

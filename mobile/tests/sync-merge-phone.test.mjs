@@ -80,10 +80,10 @@ describe('telefonda birleştirme', () => {
         const tasks = {
             version: 1,
             updatedAt: '2026-11-17T08:00:00.000Z',
-            tasks: [{ id: 'task_1', title: 'Eski başlık', status: 'todo', updatedAt: '2026-11-17T08:00:00.000Z' }]
+            tasks: [{ id: 'task_first', title: 'Eski başlık', status: 'todo', diaryDate: '2026-11-17', updatedAt: '2026-11-17T08:00:00.000Z' }]
         };
         const { desktop, phone } = await paired({ '.pisi/tasks.json': tasks });
-        await phone.project.tasks.setStatus('task_1', 'done');
+        expect(await phone.project.tasks.complete('task_first')).toMatchObject({ ok: true, changed: true });
         const changed = desktop.readJson('.pisi/tasks.json');
         changed.tasks[0] = { ...changed.tasks[0], title: 'Yeni başlık', updatedAt: '2026-11-17T09:00:00.000Z' };
         desktop.write('.pisi/tasks.json', changed);
