@@ -8,11 +8,9 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('takvim göstergesi görev durumlarına göre nötr, kırmızı ve yeşil renk sınıflarını barındırır', () => {
+test('takvim göstergesinin nötr, kırmızı ve yeşil renk sınıflarının CSS kuralları vardır', () => {
     const prodCss = read('styles/50-productivity.css');
     const polishCss = read('styles/105-feature-polish.css');
-    const calendarUi = read('renderer/calendar/pisi-calendar-ui.mjs');
-    const calendarRuntime = read('renderer/calendar/pisi-calendar-runtime.mjs');
 
     // 1. CSS kuralları
     assert.match(prodCss, /\.pisi-calendar-day\.has-diary-node\.has-uncompleted-tasks::after \{[\s\S]*?background:\s*#e74c3c;/);
@@ -23,14 +21,7 @@ test('takvim göstergesi görev durumlarına göre nötr, kırmızı ve yeşil r
     assert.match(polishCss, /\.pisi-calendar-day\.has-diary-node\.has-uncompleted-tasks::after \{[\s\S]*?background:\s*#d63031;/);
     assert.match(polishCss, /\.pisi-calendar-day\.has-diary-node\.has-completed-tasks::after \{[\s\S]*?background:\s*#2ecc71|#27ae60;/);
 
-    // 2. UI rendering mantığı
-    assert.match(calendarUi, /getCalendarTaskSummaryByDate/);
-    assert.match(calendarUi, /has-uncompleted-tasks/);
-    assert.match(calendarUi, /has-completed-tasks/);
-    assert.match(calendarUi, /has-diary-note-only/);
-
-    // 3. Runtime dinleyicileri
-    assert.match(calendarRuntime, /pisi:task-store-updated/);
+    // Günlerin sınıfları ve görev olayı: tests/calendar-task-marks.test.mjs (davranış testi).
 });
 
 test('takvim görev ve günlük not çeviri anahtarları catalog içinde yer alır', () => {

@@ -9,7 +9,7 @@ import {
     toIsoDate,
     translatePisiCalendarText
 } from './pisi-calendar-state.mjs';
-import { getPisiTaskCalendarIsoDate } from '../../shared/task-views.mjs';
+import { getPisiTaskCalendarSummary } from '../../shared/task-diary.mjs';
 
 let pisiCalendarDateOpenHandler = null;
 
@@ -315,22 +315,50 @@ function changeCalendarMonth(delta) {
     renderCalendar();
 }
 
-// The task marks, from the task store (tasks.json): a task counts on its day
-// (getPisiTaskCalendarIsoDate, the rule the phone's calendar uses too). The
-// calendar moves to the diary section's day rule with the phone in G5/G8
-// (docs/task-plan.md §3.2.2).
+// The task marks, from the task store (tasks.json), by the day rule of the
+// diary task section (docs/task-plan.md §3.2.2, shared/task-diary.mjs): a day
+// counts the tasks its diary section lists, that is the tasks living in that
+// diary, due that day or completed that day, each with its state on that day.
+// The phone's calendar uses the same rule (mobile calendar-model.mjs, GV13).
 function getCalendarTaskSummaryByDate() {
-    const tasksByDate = new Map();
-    for (const task of window.getPisiTasks?.() || []) {
-        const isoDate = getPisiTaskCalendarIsoDate(task);
-        if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) continue;
-        const entry = tasksByDate.get(isoDate) || { total: 0, open: 0, completed: 0 };
-        entry.total += 1;
-        if (String(task.status || 'todo').toLowerCase() === 'done') entry.completed += 1;
-        else entry.open += 1;
-        tasksByDate.set(isoDate, entry);
+    return getPisiTaskCalendarSummary(window.getPisiTasks?.() || []);
+}
+
+const PISI_CALENDAR_MARK_CLASSES = ['has-diary-node', 'has-uncompleted-tasks', 'has-completed-tasks', 'has-diary-note-only'];
+
+/** The mark classes and the title of one day button, from the task summary and the diary days. */
+function applyCalendarDayMarks(button, taskSummary, hasDiary) {
+    const isoDate = button.dataset.date;
+    button.classList.remove(...PISI_CALENDAR_MARK_CLASSES);
+    let dayTitle = isoDate;
+    if (taskSummary && taskSummary.total > 0) {
+        button.classList.add('has-diary-node');
+        if (taskSummary.open > 0) {
+            button.classList.add('has-uncompleted-tasks');
+            dayTitle = `${isoDate} · ${translatePisiCalendarText('Tamamlanmamış görev var')}`;
+        } else {
+            button.classList.add('has-completed-tasks');
+            dayTitle = `${isoDate} · ${translatePisiCalendarText('Tüm görevler tamamlandı')}`;
+        }
+    } else if (hasDiary) {
+        button.classList.add('has-diary-node', 'has-diary-note-only');
+        dayTitle = `${isoDate} · ${translatePisiCalendarText('Günlük not var')}`;
     }
-    return tasksByDate;
+    button.title = dayTitle;
+}
+
+/**
+ * Brings the marks of the drawn month up to date without rebuilding the grid
+ * (a task change, docs/task-plan.md §3.5). Returns false when the grid is not drawn.
+ */
+function updateCalendarTaskMarks() {
+    const daysEl = document.querySelector('#pisi-calendar .pisi-calendar-days');
+    const buttons = daysEl ? daysEl.querySelectorAll('.pisi-calendar-day[data-date]') : [];
+    if (!buttons.length) return false;
+    const diaryDates = new Set(Array.isArray(getCalendarState().diaryDates) ? getCalendarState().diaryDates : []);
+    const taskSummaryByDate = getCalendarTaskSummaryByDate();
+    for (const button of buttons) applyCalendarDayMarks(button, taskSummaryByDate.get(button.dataset.date), diaryDates.has(button.dataset.date));
+    return true;
 }
 
 function renderCalendar() {
@@ -405,24 +433,7 @@ function renderCalendar() {
             button.classList.add('selected');
         }
 
-        const taskSummary = taskSummaryByDate.get(isoDate);
-        let dayTitle = isoDate;
-
-        if (taskSummary && taskSummary.total > 0) {
-            button.classList.add('has-diary-node');
-            if (taskSummary.open > 0) {
-                button.classList.add('has-uncompleted-tasks');
-                dayTitle = `${isoDate} · ${translatePisiCalendarText('Tamamlanmamış görev var')}`;
-            } else {
-                button.classList.add('has-completed-tasks');
-                dayTitle = `${isoDate} · ${translatePisiCalendarText('Tüm görevler tamamlandı')}`;
-            }
-        } else if (diaryDates.has(isoDate)) {
-            button.classList.add('has-diary-node', 'has-diary-note-only');
-            dayTitle = `${isoDate} · ${translatePisiCalendarText('Günlük not var')}`;
-        }
-
-        button.title = dayTitle;
+        applyCalendarDayMarks(button, taskSummaryByDate.get(isoDate), diaryDates.has(isoDate));
 
         button.addEventListener('click', async () => {
             await pisiCalendarDateOpenHandler?.(isoDate);
@@ -441,5 +452,7 @@ export {
     getCalendarTaskSummaryByDate,
     renderCalendar,
     setCalendarDock,
+    updateCalendarTaskMarks,
+    applyCalendarDayMarks,
     setPisiCalendarDateOpenHandler
 };

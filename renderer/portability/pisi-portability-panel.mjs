@@ -106,8 +106,11 @@ async function renderPisiHistory(section, nodePath) {
                 cancelText: pisiPortableTranslate('Vazgeç')
             });
             if (!confirmed) return;
-            const result = await restorePisiEditorDocument(nodePath, () => window.pisiProject?.restoreNodeHistory?.(nodePath, version.historyId));
+            const openPaths = (window.getPisiOpenDocumentPaths?.() || []).filter((item) => item !== nodePath);
+            const result = await restorePisiEditorDocument(nodePath, () => window.pisiProject?.restoreNodeHistory?.(nodePath, version.historyId, openPaths));
             if (!result?.ok) return void pisiNotifyError(result?.error || pisiPortableTranslate('Sürüm geri yüklenemedi.'));
+            // Open diaries whose task section the restore changed are brought up to date in the editor (docs/task-plan.md G5).
+            if (result.deferred) await window.applyPisiTaskDeferred?.(result.deferred);
             invalidatePisiSearchIndex();
             await openPisiHistoryDialog();
         });

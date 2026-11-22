@@ -1,3 +1,6 @@
+import { getPisiTaskBucket } from '../../shared/task-views.mjs';
+import { getPisiTodayIsoDate } from '../../shared/task-model.mjs';
+
 const PISI_OPERATIONAL_SCOPE_MODES = new Set(['all', 'active', 'blocked', 'overdue', 'missing-next-action', 'neighbors', 'manual']);
 
 const PISI_OPERATIONAL_SCOPE_STRATEGIES = new Set(['live', 'snapshot']);
@@ -73,16 +76,30 @@ function isPisiOperationalTaskDone(task) {
     return String(task?.status || '').toLowerCase() === 'done';
 }
 
-function getPisiOperationalTaskTime(task) {
-    const value = task?.deadline || task?.dueDate || task?.scheduledAt || '';
-    const time = Date.parse(String(value || ''));
-    return Number.isFinite(time) ? time : null;
-}
-
+/**
+ * An open task whose day (`dueDate`, the one day rule of shared/task-views.mjs,
+ * docs/task-plan.md GK1) is before today's local day.
+ */
 function isPisiOperationalTaskOverdue(task, now = Date.now()) {
     if (isPisiOperationalTaskDone(task)) return false;
-    const time = getPisiOperationalTaskTime(task);
-    return time !== null && time < now;
+    return getPisiTaskBucket(task, getPisiTodayIsoDate(new Date(now))) === 'overdue';
+}
+
+/** The note id of a map node: its `pisi.id` (`node_…`), which a task names as its place (`noteId`). */
+function getPisiOperationalNoteId(node) {
+    return String(node?.metadata?.id || node?.id || '');
+}
+
+/** The tasks of each note by its id (docs/task-plan.md §3.1, `noteId`); diary and placeless tasks are on no map node. */
+function groupPisiOperationalTasksByNote(tasks = []) {
+    const byNote = new Map();
+    for (const task of Array.isArray(tasks) ? tasks : []) {
+        const noteId = String(task?.noteId || '');
+        if (!noteId) continue;
+        if (!byNote.has(noteId)) byNote.set(noteId, []);
+        byNote.get(noteId).push(task);
+    }
+    return byNote;
 }
 
 function isPisiOperationalTaskBlocked(task, taskById) {
@@ -188,17 +205,11 @@ function getPisiOperationalReviewedAt(node) {
 
 function buildPisiOperationalNodeStates(nodes = [], tasks = [], now = Date.now()) {
     const taskById = new Map((Array.isArray(tasks) ? tasks : []).map((task) => [String(task?.id || ''), task]));
-    const tasksByNodePath = new Map();
-    for (const task of Array.isArray(tasks) ? tasks : []) {
-        const nodePath = normalizePisiOperationalPath(task?.source?.nodePath);
-        if (!nodePath) continue;
-        if (!tasksByNodePath.has(nodePath)) tasksByNodePath.set(nodePath, []);
-        tasksByNodePath.get(nodePath).push(task);
-    }
+    const tasksByNote = groupPisiOperationalTasksByNote(tasks);
 
     return new Map(
         (Array.isArray(nodes) ? nodes : []).map((node) => {
-            const nodeTasks = tasksByNodePath.get(normalizePisiOperationalPath(node?.fullPath)) || [];
+            const nodeTasks = tasksByNote.get(getPisiOperationalNoteId(node)) || [];
             const openTasks = nodeTasks.filter((task) => !isPisiOperationalTaskDone(task));
             const blockedTasks = openTasks.filter((task) => {
                 return isPisiOperationalTaskBlocked(task, taskById);
@@ -326,19 +337,19 @@ function getPisiOperationalVisibleEdges(edges = [], visibleNodeIds, rawScope = {
 }
 
 function buildPisiTaskDependencyProjections(nodes = [], tasks = [], visibleNodeIds = null) {
-    const nodeIdByPath = new Map((Array.isArray(nodes) ? nodes : []).map((node) => [normalizePisiOperationalPath(node?.fullPath), node?.id]));
+    const nodeIdByNote = new Map((Array.isArray(nodes) ? nodes : []).map((node) => [getPisiOperationalNoteId(node), node?.id]));
     const taskById = new Map((Array.isArray(tasks) ? tasks : []).map((task) => [String(task?.id || ''), task]));
     const seen = new Set();
     const result = [];
 
     for (const task of Array.isArray(tasks) ? tasks : []) {
         if (isPisiOperationalTaskDone(task)) continue;
-        const targetNodeId = nodeIdByPath.get(normalizePisiOperationalPath(task?.source?.nodePath));
+        const targetNodeId = task?.noteId ? nodeIdByNote.get(String(task.noteId)) : null;
         if (!targetNodeId) continue;
         for (const dependencyId of Array.isArray(task?.dependencies) ? task.dependencies : []) {
             const dependency = taskById.get(String(dependencyId || ''));
             if (!dependency || isPisiOperationalTaskDone(dependency)) continue;
-            const sourceNodeId = nodeIdByPath.get(normalizePisiOperationalPath(dependency?.source?.nodePath));
+            const sourceNodeId = dependency?.noteId ? nodeIdByNote.get(String(dependency.noteId)) : null;
             if (!sourceNodeId || sourceNodeId === targetNodeId) continue;
             if (visibleNodeIds && (!visibleNodeIds.has(sourceNodeId) || !visibleNodeIds.has(targetNodeId))) continue;
             const key = `${sourceNodeId}->${targetNodeId}`;
@@ -380,6 +391,7 @@ export {
     buildPisiOperationalNodeStates,
     buildPisiTaskDependencyProjections,
     collectPisiOperationalNeighborIds,
+    getPisiOperationalNoteId,
     getPisiOperationalPropertyEntry,
     getPisiOperationalRelationshipLabel,
     getPisiOperationalVisibleEdges,

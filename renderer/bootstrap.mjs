@@ -51,7 +51,7 @@ import './editor/pisi-node-editor.mjs';
 import './tags/pisi-editor-blocks.mjs';
 import './tags/pisi-tag-index.mjs';
 import './tags/pisi-tag-panels.mjs';
-import './tags/pisi-todo-navigation.mjs';
+import './navigation/pisi-block-navigation.mjs';
 import './tags/pisi-tag-editor.mjs';
 import './editor/pisi-block-editor.mjs';
 import './editor/pisi-unified-command-menu.mjs';

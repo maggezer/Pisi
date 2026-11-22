@@ -124,33 +124,6 @@ function extractPisiSearchTags(container) {
         .filter((tag) => tag.value);
 }
 
-function extractPisiSearchTasks(container, tags) {
-    const tasks = [];
-
-    for (const tag of tags) {
-        if (!/^todo\./i.test(tag.value)) continue;
-        const block = tag.element.closest('.pisi-editor-block, p, div, li, h1, h2, h3, h4, h5, h6');
-        const normalizedTodo = tag.value.toLocaleLowerCase('tr-TR');
-        const source = Array.from(block?.querySelectorAll?.('.pisi-todo-source[data-pisi-todo-for]') || []).find((candidate) => {
-            return (
-                cleanPisiSearchText(candidate.dataset.pisiTodoFor || '')
-                    .replace(/^(?:\.\.|#|\/)/, '')
-                    .toLocaleLowerCase('tr-TR') === normalizedTodo
-            );
-        });
-        const text = cleanPisiSearchText(source?.textContent || block?.textContent || tag.value);
-
-        tasks.push({
-            text,
-            todoTag: tag.value,
-            blockId: tag.blockId,
-            status: tag.element.dataset.pisiTodoStatus || 'todo'
-        });
-    }
-
-    return tasks;
-}
-
 function extractPisiSearchContentBlocks(container) {
     let elements = Array.from(container.querySelectorAll('.pisi-editor-block[data-pisi-block-id]'));
 
@@ -234,7 +207,6 @@ function createPisiSearchDocumentRecord(rawNode, projectFolder) {
 
     const plainText = cleanPisiSearchText(container.textContent || '');
     const tags = extractPisiSearchTags(container);
-    const tasks = extractPisiSearchTasks(container, tags);
     const title = getPisiSearchNodeTitle(rawNode.item, rawNode.metadata);
     const path = rawNode.path;
     const relativePath = getPisiSearchRelativePath(path, projectFolder);
@@ -263,7 +235,6 @@ function createPisiSearchDocumentRecord(rawNode, projectFolder) {
         contentBlocks: extractPisiSearchContentBlocks(container),
         tables: extractPisiSearchTables(container),
         tags: tags.map(({ value, blockId }) => ({ value, blockId })),
-        tasks,
         memberships: Array.isArray(rawNode.memberships) ? rawNode.memberships : [],
         relativePath
     };
@@ -324,35 +295,19 @@ function createPisiSearchRecordsForDocument(documentRecord) {
         });
     });
 
-    documentRecord.tasks.forEach((task, index) => {
+    // Tasks are not read from notes: their records come from tasks.json
+    // (pisi-search-task-records.mjs). An old `todo.` marker is an ordinary tag (docs/task-plan.md §3.2.1).
+    documentRecord.tags.forEach((tag, index) => {
         records.push({
             ...base,
-            id: 'task:' + pisiSearchPathKey(documentRecord.path) + ':' + (task.blockId || index) + ':' + task.todoTag,
-            kind: 'task',
-            blockId: task.blockId,
-            todoTag: task.todoTag,
-            sourceText: task.text,
-            preview: task.text,
-            searchFields: [
-                { kind: 'task', value: task.text },
-                { kind: 'tag', value: task.todoTag }
-            ]
+            id: 'tag:' + pisiSearchPathKey(documentRecord.path) + ':' + (tag.blockId || index) + ':' + tag.value,
+            kind: 'tag',
+            blockId: tag.blockId,
+            tag: tag.value,
+            preview: '#' + tag.value,
+            searchFields: [{ kind: 'tag', value: tag.value }]
         });
     });
-
-    documentRecord.tags
-        .filter((tag) => !/^todo\./i.test(tag.value))
-        .forEach((tag, index) => {
-            records.push({
-                ...base,
-                id: 'tag:' + pisiSearchPathKey(documentRecord.path) + ':' + (tag.blockId || index) + ':' + tag.value,
-                kind: 'tag',
-                blockId: tag.blockId,
-                tag: tag.value,
-                preview: '#' + tag.value,
-                searchFields: [{ kind: 'tag', value: tag.value }]
-            });
-        });
 
     documentRecord.tables.forEach((table, index) => {
         records.push({

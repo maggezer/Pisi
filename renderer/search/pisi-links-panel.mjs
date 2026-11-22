@@ -130,30 +130,23 @@ function makePisiLinksRelationButton(index, relationship) {
     return button;
 }
 
-function makePisiLinksTaskButton(index, target, task) {
+/** The tasks that live in this note (or this diary) from the task store; the note is not read for them (docs/task-plan.md G5). */
+function listPisiLinksNoteTasks(target) {
+    const noteId = target?.metadata?.id || null;
+    const diaryDate = target?.metadata?.diaryDate || null;
+    return (window.getPisiTasks?.() || []).filter((task) => (noteId && task.noteId === noteId) || (diaryDate && task.diaryDate === diaryDate));
+}
+
+function makePisiLinksTaskButton(task) {
     const button = makePisiLinksElement('button', 'pisi-links-item pisi-links-task');
     button.type = 'button';
+    button.dataset.pisiTaskId = task.id;
     button.append(
-        makePisiLinksElement('span', 'pisi-links-item-title', task.text || task.todoTag || pisiLinksTranslate('Görev')),
-        makePisiLinksElement('span', 'pisi-links-item-meta', task.status || '')
+        makePisiLinksElement('span', 'pisi-links-item-title', task.title || pisiLinksTranslate('Görev')),
+        makePisiLinksElement('span', 'pisi-links-item-meta', pisiLinksTranslate(task.status === 'done' ? 'Tamamlandı' : 'Açık'))
     );
-    const membership = target.memberships?.[0] || null;
     button.addEventListener('click', () => {
-        void openPisiSearchResult({
-            kind: 'task',
-            title: target.title,
-            nodeTitle: target.title,
-            nodePath: target.path,
-            nodeItem: target.nodeItem,
-            fileName: target.fileName,
-            mapPath: membership?.mapPath || null,
-            mapTitle: membership?.mapTitle || '',
-            mapItem: membership?.mapItem || null,
-            blockId: task.blockId,
-            todoTag: task.todoTag,
-            sourceText: task.text,
-            preview: task.text
-        });
+        void window.openPisiTaskLocation?.(task.id);
     });
     return button;
 }
@@ -207,7 +200,7 @@ function renderPisiLinksModel(index, model) {
         makePisiLinksSection('Bu node’a bağlantı verenler', model.inbound, (item) => makePisiLinksRelationButton(index, item)),
         makePisiLinksSection('Bu node’un bağlantı verdikleri', model.outbound, (item) => makePisiLinksRelationButton(index, item)),
         makePisiLinksSection('Bağlantısız bahsetmeler', model.unlinked, (item) => makePisiLinksRelationButton(index, item)),
-        makePisiLinksSection('Bu node’dan üretilen görevler', model.tasks, (item) => makePisiLinksTaskButton(index, model.target, item)),
+        makePisiLinksSection('Bu node’dan üretilen görevler', listPisiLinksNoteTasks(model.target), (item) => makePisiLinksTaskButton(item)),
         makePisiLinksSection('Aynı map’ler', model.sameMaps, (item) => makePisiLinksMapButton(index, item))
     ];
     panel.replaceChildren(...sections);

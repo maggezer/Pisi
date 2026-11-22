@@ -215,7 +215,12 @@ async function createPisiTaskInTarget(task, target) {
     return runPisiTaskCommand('task.create.v1', { task, target: { ...target, afterBlockId: target?.afterBlockId || afterBlockId } });
 }
 
-/** Opens the place of a task: its note (the block is shown) or its day's diary. */
+/**
+ * Opens the place of a task: its note (the block is shown) or its day's diary
+ * (docs/task-plan.md G5: by the task id, nothing guessed, nothing written). A
+ * task whose place cannot be opened (a record without a place, or its note is
+ * not found) opens its detail window instead.
+ */
 async function openPisiTaskLocation(taskId) {
     const task = window.getPisiTask?.(taskId);
     if (!task) return false;
@@ -223,8 +228,12 @@ async function openPisiTaskLocation(taskId) {
         await window.openPisiDiaryForDate?.(task.diaryDate || task.dueDate);
         return true;
     }
-    const notePath = await resolvePisiNotePath(task.noteId);
+    const notePath = task.noteId ? await resolvePisiNotePath(task.noteId) : null;
     if (!notePath) {
+        if (typeof window.openPisiTaskDetail === 'function') {
+            await window.openPisiTaskDetail(task.id);
+            return true;
+        }
         window.pisiNotifyError?.(pisiTaskTranslate('Görevin notu bulunamadı.'));
         return false;
     }

@@ -389,7 +389,6 @@ export function buildPisiRelationshipModel(index, targetPath) {
         inbound: Array.from(inbound.values()),
         outbound: Array.from(outbound.values()),
         unlinked: Array.from(unlinked.values()),
-        tasks: Array.isArray(targetDocument.tasks) ? targetDocument.tasks : [],
         sameMaps: Array.isArray(targetDocument.memberships) ? targetDocument.memberships : []
     };
 }

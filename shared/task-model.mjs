@@ -752,3 +752,27 @@ export function findPisiTaskDependencyCycle(tasks, taskId, dependencyIds) {
     };
     return walk(taskId);
 }
+
+// Fields a copy of a task takes over (docs/task-plan.md §3.3: the editor's
+// copy and paste, the map's note copy). A copy is open, lives where it is put
+// and has no completions, dependencies or order of its own.
+const PISI_TASK_COPY_FIELDS = Object.freeze([
+    'title',
+    'status',
+    'priority',
+    'dueDate',
+    'dueTime',
+    'repeat',
+    'completionOffsetDays',
+    'reminderMode',
+    'reminderAt',
+    'durationMinutes'
+]);
+
+/** The fields of a new task that copies `task`; a done task's copy is `todo`. */
+export function makePisiTaskCopyFields(task) {
+    const fields = {};
+    for (const field of PISI_TASK_COPY_FIELDS) if (task && task[field] !== undefined) fields[field] = task[field];
+    if (fields.status === 'done') fields.status = 'todo';
+    return fields;
+}

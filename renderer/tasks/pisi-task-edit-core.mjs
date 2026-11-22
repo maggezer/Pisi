@@ -3,7 +3,7 @@
 // pisi-task-editing, pisi-task-clipboard) use them and the tests import them
 // directly.
 
-import { PISI_TASK_TITLE_MAX_LENGTH } from '../../shared/task-model.mjs';
+import { PISI_TASK_TITLE_MAX_LENGTH, makePisiTaskCopyFields } from '../../shared/task-model.mjs';
 import { isPisiTaskId } from '../../shared/ids.mjs';
 
 /** The clipboard type that carries the task records of a copied or cut selection. */
@@ -21,20 +21,6 @@ export const PISI_TASK_HISTORY_FIELDS = Object.freeze([
     'reminderMode',
     'reminderAt',
     'completions'
-]);
-
-// Fields a copy of a task takes over (a copy is open and has no completions).
-const COPY_FIELDS = Object.freeze([
-    'title',
-    'status',
-    'priority',
-    'dueDate',
-    'dueTime',
-    'repeat',
-    'completionOffsetDays',
-    'reminderMode',
-    'reminderAt',
-    'durationMinutes'
 ]);
 
 /**
@@ -70,13 +56,8 @@ export function splitPisiTaskTitle(text, offset) {
     return { before: value.slice(0, at), after: value.slice(at) };
 }
 
-/** The fields of a copy of `task` (`task.create.v1`): a done task is copied open. */
-export function makePisiTaskCopyFields(task) {
-    const fields = {};
-    for (const field of COPY_FIELDS) if (task && task[field] !== undefined) fields[field] = task[field];
-    if (fields.status === 'done') fields.status = 'todo';
-    return fields;
-}
+// The fields of a copy of `task` (`task.create.v1`) come from shared/task-model.mjs (one rule with the map's note copy).
+export { makePisiTaskCopyFields };
 
 function pickHistoryFields(task) {
     const fields = {};

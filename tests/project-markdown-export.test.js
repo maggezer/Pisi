@@ -14,6 +14,7 @@ const pisiTestProjectRead = {
     sendPisiProgress: () => true
 };
 const { extractFunction } = require('./source-helper');
+const { expandPisiTaskMarkupForExport } = require('../main/functions/portability-tasks-core.js');
 const source = fs.readFileSync(path.join(__dirname, '../main/functions/portability.js'), 'utf8');
 
 function setup(t) {
@@ -28,6 +29,7 @@ function setup(t) {
         fsPromises: require('node:fs/promises'),
         setImmediate: globalThis.setImmediate,
         modules: { 'main.projectRead': pisiTestProjectRead },
+        expandPisiTaskMarkupForExport,
         fs,
         path,
         dialog: { showOpenDialog: async () => ({ canceled: false, filePaths: [output] }) },
@@ -44,7 +46,8 @@ function setup(t) {
         'getPisiPortableRelativePath',
         'pisiPropertiesFrontmatter',
         'stripPisiUnsafeExportHtml',
-        'stripPisiTaskMetadataHtml',
+        'readPisiExportTaskContext',
+        'withPisiExportTasks',
         'decodePisiHtmlEntities',
         'escapePisiPortableHtml',
         'pisiHtmlToPlainText',

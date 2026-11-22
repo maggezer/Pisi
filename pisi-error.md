@@ -221,31 +221,32 @@ sayısını denetleyen bir koruma.
 
 ## 5h. Görev sistemi: kalan bulgular (G3–G8)
 
-**[Orta · tasks · kısmen çözüldü (G2, G3, G4)]** 21-11-2026 incelemesinin bulguları
+**[Orta · tasks · kısmen çözüldü (G2, G3, G4, G5)]** 21-11-2026 incelemesinin bulguları
 [`docs/task-plan.md`](docs/task-plan.md) Ek A'dadır. G2'de (`tasks.json` sürüm 2, görev servisi)
 GB1–GB9, GB12, GK4, GK5, GK11, GK12 ve GK14, G3'te (editörde görev bloğu) GB14 ve GK2, G4'te (görev paneli, çalışma
-alanı, Quick Add) GK6, GK7 ve GK8 kapandı; not ve günlük artık yalnız görev kimliğini
-taşır, bütün görev yazmaları ana süreçteki görev servisinden geçer ve hiçbir görev işlemi projeyi
-taramaz. Kalanlar (parantez içi kapatacak faz):
+alanı, Quick Add) GK6, GK7 ve GK8, G5'te (takvim, harita, arama, gezinme, dışa/içe aktarma, not kopyası, not
+geçmişi) GB11, GK3, GK9 ve GK10 kapandı; not ve günlük artık yalnız görev kimliğini taşır, bütün görev yazmaları
+ana süreçteki görev servisinden geçer, hiçbir görev işlemi projeyi taramaz ve bütün yüzeyler görevi kayıttan çizer.
+Kalanlar (parantez içi kapatacak faz):
 
 - **GB5 (mobil tarafı):** Telefon sürüm 1 kurallarıyla çalışıyor: `tasks.json`'u `version: 1` diye
   yazıyor, değiştirdiği kayda eski alanları (`todoTag`, `scheduledAt`) ekliyor, tekrar eden görevi
   tamamlayınca yeni kayıt açıyor ve günlüğün görev bölümünü yazmıyor. Notta sürüm 2 görev bloğu
   salt okunur "Görev · Masaüstünde düzenlenir" kartı olarak görünür. Masaüstü bunları okur ve
   korur; Project Integrity günlük bölümünü G8'e kadar yalnız yapı ve bilinmeyen kimlik için
-  denetler. (G8)
-- **GB11:** Notu olmayan görevler aramada görünüyor ama sonuçtan görev ayrıntısına gidilemiyor;
-  arama G5'te tek kayıt üreticisine geçer. (G5)
-- Takvim, harita rozetleri ve arama G5'e kadar görev deposuna en küçük değişiklikle bağlıdır:
-  takvim görevi bitiş gününde sayar (günlük bölümünün gün kuralı G5/G8'de iki platformda birlikte
-  gelir). (G5)
+  denetler. Telefonun takvimi G5'te masaüstüyle aynı gün kuralına geçti; Pisi ve Görevler sekmeleri
+  görevin gününü hâlâ `scheduledAt → dueDate → deadline` sırasıyla okur, bu yüzden telefonda
+  `scheduledAt`'ı `dueDate`'ten farklı olan eski bir kayıt takvimde ve gün görünümünde farklı günde
+  görünebilir. (G8)
 - Arama dizini, kurulduktan sonra "Yeni not" düğmesiyle oluşan notu görmüyor (dosya sistemi
-  yenilemesi bastırıldığı için dizine delta gelmiyor; G4 E2E'sinde doğrulandı). Görev paneli ve
-  ayrıntı penceresi bu yüzden notun yolunu ve başlığını Explorer ağacından da okur; Quick Add'in
-  not listesi de ağacı kullanır. Arama tarafı G5'te tek kayıt üreticisiyle ele alınır. (G5)
+  yenilemesi bastırıldığı için dizine delta gelmiyor; G4 E2E'sinde doğrulandı). Görev tarafı G5'te
+  kapandı: görev kaydı notunu Explorer ağacından da bulur. Notun kendisi (başlığı, içeriği) dizin
+  yeniden kurulana kadar aranamıyor. (arama, faz dışı)
 - 5.000 görevli projede bir tamamlama komutunun ana süreçteki yolu (tasks.json okuma, atomik
   mutation, yazma) panelden tıklamadan ekrana ~0,5 sn sürüyor; renderer çizimi bunun ~30 ms'si.
   Ölçüm `scripts/electron-tasks-panel-e2e.mjs`'te; büyük proje ölçümü G7'dedir. (G7)
+- Kullanılmayan görev vurgu stilleri (`.pisi-todo-source-highlight`, `.pisi-block-highlight`) ve
+  `renderer/tags/pisi-todo-utils.mjs` G7 temizliğinde kalkar. (G7)
 
 ## 6. Güncel doğrulama snapshot’ı
 

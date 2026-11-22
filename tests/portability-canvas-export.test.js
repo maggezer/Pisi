@@ -16,6 +16,7 @@ const pisiTestProjectRead = {
 const zlib = require('node:zlib');
 const test = require('node:test');
 const { extractFunction } = require('./source-helper');
+const { expandPisiTaskMarkupForExport } = require('../main/functions/portability-tasks-core.js');
 const editorAssets = require('../main/functions/editor-asset-store');
 const fileAssets = require('../main/functions/editor-file-asset-store');
 
@@ -26,7 +27,8 @@ const exportFunctions = [
     'decodePisiHtmlEntities',
     'escapePisiPortableHtml',
     'stripPisiUnsafeExportHtml',
-    'stripPisiTaskMetadataHtml',
+    'readPisiExportTaskContext',
+    'withPisiExportTasks',
     'pisiHtmlToPlainText',
     'pisiHtmlToMarkdown',
     'pisiGetExportSheetRows',
@@ -82,6 +84,7 @@ function createExportHarness(format, content, sidecarPath, outputPath) {
         fsPromises: require('node:fs/promises'),
         setImmediate: globalThis.setImmediate,
         modules: { 'main.projectRead': pisiTestProjectRead },
+        expandPisiTaskMarkupForExport,
         Buffer,
         BrowserWindow: FakeBrowserWindow,
         dialog: {
@@ -124,6 +127,7 @@ function createProjectExportHarness(projectRoot, outputFolder, content, sidecarP
         fsPromises: require('node:fs/promises'),
         setImmediate: globalThis.setImmediate,
         modules: { 'main.projectRead': pisiTestProjectRead },
+        expandPisiTaskMarkupForExport,
         Buffer,
         dialog: {
             showOpenDialog: async () => ({ canceled: false, filePaths: [outputFolder] })
@@ -151,7 +155,8 @@ function createProjectExportHarness(projectRoot, outputFolder, content, sidecarP
         'decodePisiHtmlEntities',
         'escapePisiPortableHtml',
         'stripPisiUnsafeExportHtml',
-        'stripPisiTaskMetadataHtml',
+        'readPisiExportTaskContext',
+        'withPisiExportTasks',
         'pisiHtmlToPlainText',
         'pisiHtmlToMarkdown',
         'pisiGetExportSheetRows',

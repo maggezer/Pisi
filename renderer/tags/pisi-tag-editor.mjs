@@ -39,7 +39,6 @@ function bindPisiTagControlsForEditor(editor) {
     if (!editor || editor.dataset.pisiTagsBound === '1') return;
 
     editor.dataset.pisiTagsBound = '1';
-    bindPisiMissionHighlightSanitizer(editor);
 
     editor.addEventListener('input', () => {
         ensurePisiEditorBlocks(editor);

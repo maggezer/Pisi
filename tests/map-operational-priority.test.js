@@ -16,14 +16,14 @@ function node(id, fullPath) {
     };
 }
 
-function task(id, nodePath, priority) {
+function task(id, noteId, priority) {
     return {
         id,
         title: id,
         status: 'todo',
         priority,
         dependencies: [],
-        source: { nodePath }
+        noteId
     };
 }
 
@@ -32,7 +32,7 @@ test('operational Next respects Pisi priority direction: 5 outranks 1', async ()
     const nodes = [node('node_low', '/project/low.node'), node('node_high', '/project/high.node')];
     const states = core.buildPisiOperationalNodeStates(
         nodes,
-        [task('task_low', '/project/low.node', 1), task('task_high', '/project/high.node', 5)],
+        [task('task_low', 'node_low', 1), task('task_high', 'node_high', 5)],
         Date.parse('2026-08-15T12:00:00Z')
     );
 

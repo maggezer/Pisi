@@ -8,16 +8,10 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('node modal open button is removed and open task count stays inside the card', () => {
-    const render = read('renderer/map/pisi-map-operational-render.mjs');
+// The badge itself (open task count, its label) is checked in the real app:
+// scripts/electron-tasks-surfaces-e2e.mjs (docs/task-plan.md G5).
+test('node modal open button is hidden and the open task count badge sits inside the card', () => {
     const css = read('styles/92-compatibility.css');
-
-    assert.match(render, /box\.querySelector\('\.map-node-open'\)\?\.remove\(\)/);
-    assert.match(render, /function makePisiTaskCountBadge\(openCount\)/);
-    assert.match(render, /badge\.className = 'pisi-map-task-count-badge'/);
-    assert.match(render, /badge\.textContent = String\(openCount\)/);
-    assert.match(render, /if \(openCount > 0\)/);
-    assert.doesNotMatch(render, /`\$\{openCount\} open`\s*,\s*'ready'/);
 
     assert.match(css, /\.map-node-box > \.map-node-open\s*\{[\s\S]*?display:\s*none/);
     assert.match(css, /\.pisi-map-task-count-badge\s*\{/);

@@ -399,6 +399,12 @@ function restorePisiNodeHistoryVersionBounded(nodePath, historyId, options = {})
         // Keep current identity, title, sidecar and parentMap after moves/renames;
         // replacing the whole metadata object also avoids reviving removed roles.
         restoredData.pisi = { ...current.metadata, updatedAt: new Date().toISOString() };
+        // The task-aware writer (docs/task-plan.md G5) lets the note's tasks follow the restored blocks.
+        if (typeof options.writeRestoredDocument === 'function') {
+            const written = options.writeRestoredDocument(nodePath, restoredData);
+            if (!written?.ok) return written || { ok: false, error: 'Sürüm geri yüklenemedi.' };
+            return { ok: true, fullPath: nodePath, restoredHistoryId: historyId, tasks: written.tasks || null, deferred: written.deferred || null };
+        }
         const writeDocument = options.writePisiDocument || globalThis.writePisiDocument;
         writeDocument(nodePath, restoredData);
         return { ok: true, fullPath: nodePath, restoredHistoryId: historyId };

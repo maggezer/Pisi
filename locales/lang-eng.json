@@ -1327,6 +1327,18 @@
         "Durum dağılımı": "Status distribution",
         "Öncelik dağılımı": "Priority distribution",
         "Önümüzdeki 30 gün": "Next 30 days",
-        "Hatırlatma": "Reminder"
+        "Hatırlatma": "Reminder",
+        "Hazır": "Ready",
+        "Engelli": "Blocked",
+        "Gecikmiş": "Overdue",
+        "Sıradaki": "Next",
+        "{count} engelli": "{count} blocked",
+        "{count} gecikmiş": "{count} overdue",
+        "sonraki?": "next?",
+        "değişti": "changed",
+        "{count} açık görev": "{count} open tasks",
+        "{title}; {open} açık; {blocked} engelli; {overdue} gecikmiş": "{title}; {open} open; {blocked} blocked; {overdue} overdue",
+        "Açık": "Open",
+        "Görevler okunamadı; görevli not kopyalanamaz.": "Tasks could not be read; a note with tasks cannot be copied."
     }
 }

@@ -149,6 +149,7 @@
             "getPisiNoteDiaryDate",
             "listPisiTasks",
             "createPisiTask",
+            "addPisiNoteTasks",
             "updatePisiTask",
             "batchUpdatePisiTasks",
             "completePisiTaskCommand",
@@ -162,6 +163,7 @@
             "canonicalizePisiTaskBlocks",
             "makePisiTaskCommandContext",
             "savePisiNoteWithTasks",
+            "writePisiRestoredNote",
             "getOrCreatePisiDiaryWithTasks"
         ]
     },
