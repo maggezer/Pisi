@@ -109,7 +109,7 @@ test('domain katmanları kritik feature modüllerinden önce ve IPC hooklarında
     const rendererDomainIndex = bootstrap.indexOf('./domain/pisi-domain-client.mjs');
     assert.ok(rendererDomainIndex >= 0);
     assert.ok(rendererDomainIndex < bootstrap.indexOf('./tasks/pisi-task-store.mjs'));
-    assert.ok(rendererDomainIndex < bootstrap.indexOf('./productivity/pisi-quick-capture.mjs'));
+    assert.ok(rendererDomainIndex < bootstrap.indexOf('./tasks/pisi-task-quick-add.mjs'));
     assert.ok(rendererDomainIndex < bootstrap.indexOf('./map/pisi-map-operational.mjs'));
 });
 

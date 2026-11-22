@@ -226,7 +226,7 @@ function openPisiDiaryRowMenu(button) {
     const day = row?.dataset.pisiDiaryDay;
     const editor = getPisiEditorOfTaskElement(button);
     if (!task || !day) return;
-    const items = [];
+    const items = [{ label: pisiTaskDiaryTranslate('Ayrıntılar…'), run: () => void window.openPisiTaskDetail?.(task.id) }];
     if (task.noteId) items.push({ label: pisiTaskDiaryTranslate('Notu aç'), run: () => void window.openPisiTaskLocation?.(task.id) });
     items.push({
         label: pisiTaskDiaryTranslate('Tarihi değiştir'),

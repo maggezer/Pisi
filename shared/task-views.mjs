@@ -152,6 +152,16 @@ const compareIds = (a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
  * priority), then the day, the higher priority and the id.
  */
 export function getPisiTaskComparator(mode = 'workorder', today) {
+    // A task's day and work order are read once per comparator, not once per comparison.
+    const keys = new Map();
+    const keyOf = (task) => {
+        let key = keys.get(task);
+        if (!key) {
+            key = { order: getPisiTaskWorkOrder(task, today), day: getPisiTaskDay(task) ?? '9999-99-99' };
+            keys.set(task, key);
+        }
+        return key;
+    };
     return (a, b) => {
         const doneA = a.status === 'done';
         if (doneA !== (b.status === 'done')) return doneA ? 1 : -1;
@@ -160,22 +170,16 @@ export function getPisiTaskComparator(mode = 'workorder', today) {
             const orderB = Number.isFinite(b.manualOrder) ? b.manualOrder : Number.POSITIVE_INFINITY;
             if (orderA !== orderB) return orderA < orderB ? -1 : 1;
         }
-        if (mode === 'date') {
-            const dayA = getPisiTaskDay(a) ?? '9999-99-99';
-            const dayB = getPisiTaskDay(b) ?? '9999-99-99';
-            if (dayA !== dayB) return dayA < dayB ? -1 : 1;
-        }
+        const keyA = keyOf(a);
+        const keyB = keyOf(b);
+        if (mode === 'date' && keyA.day !== keyB.day) return keyA.day < keyB.day ? -1 : 1;
         if (mode === 'priority' && priorityOf(a) !== priorityOf(b)) return priorityOf(b) - priorityOf(a);
         if (mode === 'status') {
             const difference = (STATUS_WEIGHT[a.status] ?? 9) - (STATUS_WEIGHT[b.status] ?? 9);
             if (difference) return difference;
         }
-        const orderA = getPisiTaskWorkOrder(a, today);
-        const orderB = getPisiTaskWorkOrder(b, today);
-        if (orderA !== orderB) return orderA < orderB ? -1 : 1;
-        const dayA = getPisiTaskDay(a) ?? '9999-99-99';
-        const dayB = getPisiTaskDay(b) ?? '9999-99-99';
-        if (dayA !== dayB) return dayA < dayB ? -1 : 1;
+        if (keyA.order !== keyB.order) return keyA.order < keyB.order ? -1 : 1;
+        if (keyA.day !== keyB.day) return keyA.day < keyB.day ? -1 : 1;
         return priorityOf(b) - priorityOf(a) || compareIds(a, b);
     };
 }
@@ -255,4 +259,51 @@ export function getPisiTaskProgress(tasks, today) {
         byPriority,
         completedOccurrences: occurrences
     };
+}
+
+export const PISI_TASK_MANUAL_ORDER_STEP = 1024;
+
+/**
+ * The `manualOrder` changes that make `ordered` (tasks in the order the user
+ * left them) the manual order, as `[{ taskId, patch: { manualOrder } }]`.
+ * When the other tasks are already in a strictly rising order only `movedId`
+ * gets a value, between its neighbours; otherwise the list is numbered again
+ * in steps of PISI_TASK_MANUAL_ORDER_STEP and only the values that change are
+ * returned. A list already in its order gives no change.
+ */
+export function getPisiTaskManualOrderUpdates(ordered, movedId = null) {
+    const list = (Array.isArray(ordered) ? ordered : []).filter((task) => task?.id);
+    const value = (task) => (Number.isFinite(task.manualOrder) ? task.manualOrder : null);
+    const rising = (items) => items.every((task, index) => value(task) !== null && (index === 0 || value(task) > value(items[index - 1])));
+    if (rising(list)) return [];
+    const at = movedId ? list.findIndex((task) => task.id === movedId) : -1;
+    if (at >= 0 && rising(list.filter((task) => task.id !== movedId))) {
+        const before = at > 0 ? value(list[at - 1]) : null;
+        const after = at < list.length - 1 ? value(list[at + 1]) : null;
+        let next = null;
+        if (before !== null && after !== null) next = before + (after - before) / 2;
+        else if (before !== null) next = before + PISI_TASK_MANUAL_ORDER_STEP;
+        else if (after !== null) next = after - PISI_TASK_MANUAL_ORDER_STEP;
+        else next = PISI_TASK_MANUAL_ORDER_STEP;
+        if (Number.isFinite(next) && (before === null || next > before) && (after === null || next < after)) {
+            return [{ taskId: movedId, patch: { manualOrder: next } }];
+        }
+    }
+    const updates = [];
+    list.forEach((task, index) => {
+        const next = (index + 1) * PISI_TASK_MANUAL_ORDER_STEP;
+        if (value(task) !== next) updates.push({ taskId: task.id, patch: { manualOrder: next } });
+    });
+    return updates;
+}
+
+/** A copy of `ordered` with the task `taskId` moved `by` places (−1 up, +1 down); null when it cannot move. */
+export function movePisiTaskInOrder(ordered, taskId, by) {
+    const list = Array.isArray(ordered) ? [...ordered] : [];
+    const from = list.findIndex((task) => task?.id === taskId);
+    const to = from + by;
+    if (from < 0 || to < 0 || to >= list.length) return null;
+    const [task] = list.splice(from, 1);
+    list.splice(to, 0, task);
+    return list;
 }

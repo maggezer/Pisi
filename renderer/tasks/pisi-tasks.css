@@ -1,9 +1,8 @@
-/* Tasks drawn from tasks.json (docs/task-plan.md G2, G3): the note's task block, the diary's task section, the
-   chip windows and the interim right-panel list. Loaded by renderer/tasks/pisi-task-block.mjs. */
+/* Tasks drawn from tasks.json (docs/task-plan.md G2, G3): the note's task block, the diary's task section and the
+   chip windows. The task panel's own style is pisi-task-panel.css. Loaded by renderer/tasks/pisi-task-block.mjs. */
 
 .pisi-task-block,
-.pisi-diary-task-row,
-.pisi-task-panel-row {
+.pisi-diary-task-row {
     display: flex;
     align-items: baseline;
     gap: 8px;
@@ -28,8 +27,7 @@
     opacity: 0.6;
 }
 
-.pisi-task-check:focus-visible,
-.pisi-task-panel-open:focus-visible {
+.pisi-task-check:focus-visible {
     outline: 2px solid var(--accent-color, #f39c12);
     outline-offset: 2px;
 }
@@ -206,8 +204,7 @@
 }
 
 .pisi-task-done > .pisi-task-title,
-.pisi-task-done > .pisi-task-title:focus,
-.pisi-task-done .pisi-task-panel-title {
+.pisi-task-done > .pisi-task-title:focus {
     text-decoration: line-through;
     opacity: 0.65;
 }
@@ -248,43 +245,4 @@
     margin-bottom: 8px;
     padding: 4px 8px;
     border-left: 3px solid color-mix(in srgb, #e74c3c 70%, var(--border-color, #555));
-}
-
-.pisi-task-panel-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 6px 4px;
-}
-
-.pisi-task-panel-row {
-    align-items: center;
-    padding: 6px 4px;
-    border-bottom: 1px solid color-mix(in srgb, var(--border-color, #555) 50%, transparent);
-}
-
-.pisi-task-panel-body {
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-.pisi-task-panel-meta {
-    font-size: 0.82em;
-    color: var(--muted-text-color, #aaa);
-}
-
-.pisi-task-overdue .pisi-task-panel-meta {
-    color: #e74c3c;
-}
-
-.pisi-task-panel-open,
-.pisi-task-panel-add {
-    flex: 0 0 auto;
-    padding: 2px 8px;
-    border: 1px solid var(--border-color, #555);
-    border-radius: 6px;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
 }

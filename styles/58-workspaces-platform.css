@@ -1517,6 +1517,10 @@ body.pisi-portability-dialog-open {
     font-weight: 650;
 }
 
+.pisi-quick-add-dialog .pisi-quick-field[hidden] {
+    display: none;
+}
+
 .pisi-quick-add-dialog .pisi-quick-field input,
 .pisi-quick-add-dialog .pisi-quick-field select {
     min-height: 40px;

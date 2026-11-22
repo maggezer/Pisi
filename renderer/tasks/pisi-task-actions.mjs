@@ -74,12 +74,14 @@ function trackPisiFocusedNote(event) {
     if (document) pisiTaskActionState.lastNote = { path: document.path };
 }
 
-/** The path of the note with this id: an open note first, then the search index's documents. */
+/** The path of the note with this id: an open note first, then the Explorer tree, then the search index's documents (§3.5). */
 async function resolvePisiNotePath(noteId) {
     if (!noteId) return null;
     for (const item of getPisiOpenTaskDocuments()) {
         if ((item.node?.metadata?.id || item.node?.item?.metadata?.id) === noteId) return item.path;
     }
+    const treeNode = document.querySelector(`.tree-node[data-pisi-id="${CSS.escape(noteId)}"]`);
+    if (treeNode?.dataset.path && /\.node$/i.test(treeNode.dataset.path)) return treeNode.dataset.path;
     const index = await window.ensurePisiSearchIndex?.();
     if (index?.documents instanceof Map) {
         for (const record of index.documents.values()) {

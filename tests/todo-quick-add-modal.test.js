@@ -8,21 +8,13 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('Tasks sekmesi çalışma merkezinden tamamen kaldırılır ve Quick Add modalda kalır', () => {
-    const capture = read('renderer/productivity/pisi-quick-capture.mjs');
-    const commandCenter = read('renderer/shell/pisi-command-center.mjs');
-    const css = [read('styles/58-workspaces-platform.css'), read('styles/90-themes.css'), read('styles/90-themes.css')].join('\n');
+// Quick Add's behaviour (form, target, date, repeat, reminder) is tested by
+// tests/task-panel-core.test.mjs and scripts/electron-tasks-panel-e2e.mjs (G4).
 
-    assert.match(capture, /function ensurePisiQuickAddModal/);
-    assert.match(capture, /async function openPisiQuickAddModal/);
-    assert.match(capture, /function closePisiQuickAddModal/);
-    assert.match(capture, /setAttribute\('aria-modal', 'true'\)/);
-    assert.match(capture, /event\.key === 'Escape'/);
-    assert.match(capture, /getPisiQuickAddFocusableElements/);
-    assert.doesNotMatch(capture, /id: 'tasks'/);
-    assert.doesNotMatch(capture, /renderPisiTasksPage/);
-    assert.doesNotMatch(capture, /openPisiCommandCenter\('tasks'\)/);
-    assert.doesNotMatch(capture, /renderPisiCommandCenterPage/);
+test('Tasks sekmesi çalışma merkezinden kaldırılmıştır; Quick Add modalda kalır', () => {
+    const commandCenter = read('renderer/shell/pisi-command-center.mjs');
+    const css = [read('styles/58-workspaces-platform.css'), read('styles/90-themes.css')].join('\n');
+
     assert.match(commandCenter, /activePage: ''/);
     assert.doesNotMatch(commandCenter, /activePage: 'tasks'/);
     assert.match(commandCenter, /pages\[0\]\?\.id \|\| ''/);
@@ -30,24 +22,9 @@ test('Tasks sekmesi çalışma merkezinden tamamen kaldırılır ve Quick Add mo
     assert.doesNotMatch(css, /pisi-task-postpone-select/);
 });
 
-test('quick add modülü kayıt sisteminin salt-okunur global bağlarını ezmez', () => {
-    const capture = read('renderer/productivity/pisi-quick-capture.mjs');
-
-    assert.match(capture, /registerModule\('productivity\.quickCapture', moduleApi\)/);
-    assert.doesNotMatch(capture, /window\.openPisiQuickAddModal\s*=/);
-    assert.doesNotMatch(capture, /window\.closePisiQuickAddModal\s*=/);
-});
-
-test('Ctrl+M görev ekleme modalını açar ve kısayol sayfasında okunur görünür', () => {
-    const capture = read('renderer/productivity/pisi-quick-capture.mjs');
+test('kısayol sayfası Ctrl ve ⌘ biçimini kayıtlı komut kısayolundan üretir', () => {
     const commands = read('renderer/core/pisi-command-registry.mjs');
 
-    assert.match(capture, /id: 'pisi\.quick-add'/);
-    assert.match(capture, /defaultShortcut: 'Mod\+M'/);
-    assert.match(capture, /handler: openPisiQuickAddModal/);
-    assert.doesNotMatch(capture, /installPisiQuickAddButton/);
-    assert.doesNotMatch(capture, /pisi-quick-add-button/);
-    assert.doesNotMatch(capture, /Mod\+Shift\+A/);
     assert.match(commands, /function formatPisiShortcutForDisplay/);
     assert.match(commands, /\? '⌘' : 'Ctrl'/);
     assert.match(commands, /formatPisiShortcutForDisplay\([\s\S]*getPisiCommandShortcut\(command\)/);
