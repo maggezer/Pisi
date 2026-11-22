@@ -1,5 +1,19 @@
 # PISI Güncelleme Takip Dosyası
 
+## 22-11-2026 — Görevler: cihazda kabul listesi (G10)
+
+Görev işi (`docs/task-plan.md` G10). Yalnız belge değişikliği; kod ve dosya biçimi değişmedi.
+
+- `docs/task-qa.md` eklendi: gerçek masaüstü, gerçek telefon ve kullanıcının senkron sunucusuyla elle uygulanan kabul
+  listesi. Kapsam: oluşturma yolları (slash komutu, `[ ]`, blok türü, araç çubuğu, Enter, günlükte yazma), Quick Add
+  hedefi (son açık not, açık not yoksa bugünün günlüğü, Inbox oluşmaz), görev paneli ve ayrıntı penceresi, tamamlama,
+  tekrar ve geçmiş günlükler (geri alma, kilitli eski tamamlama, "Tamamlanan günler", geciken tekrar), silme ve geri
+  alma, kes/kopyala/yapıştır ve haritada not kopyası, günlük ve takvim, arama, etiket ve harita rozetleri, masaüstü
+  hatırlatmaları, telefonda açılış (S20) ve düzenleme, iki cihazlı senaryolar ve kapanış bütünlük denetimi. Tekrar ve
+  gecikme maddeleri saat değiştirmeden üç güne yayılır.
+- `CLAUDE.md` Görevler bölümüne listenin yeri ve "arayüz metni değişirse listedeki metin de güncellenir" kuralı yazıldı.
+- Kabul: kullanıcı listeyi uygular; bulunan hata `pisi-error.md`'ye yazılır.
+
 ## 22-11-2026 — Senkron: görev modeliyle birleştirme (G9)
 
 Görev işi ve senkron işi (`docs/task-plan.md` G9, `docs/sync-plan.md` §3.4). Birleştirme kuralı istemcidedir; protokol
