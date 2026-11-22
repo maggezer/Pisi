@@ -1021,7 +1021,7 @@ try {
 
     console.log(`[matris] geçti: ${passed.map((item) => `${item.number} (${Math.round(item.ms / 1000)} sn)`).join(', ')}`);
     console.log(`[matris] 15. her senaryodan sonra iki cihazda Project Integrity yeni bulgu vermedi (${passed.length} denetim)`);
-    if (!only.length) assert(passed.length === 16, 'Matristeki 16 senaryonun hepsi çalıştı', passed);
+    if (!only.length) assert(passed.length === 21, 'Matristeki 21 senaryonun hepsi çalıştı', passed);
     if (process.env.PISI_SYNC_MATRIX_REPORT) {
         await fs.mkdir(path.dirname(path.resolve(process.env.PISI_SYNC_MATRIX_REPORT)), { recursive: true });
         await fs.writeFile(
