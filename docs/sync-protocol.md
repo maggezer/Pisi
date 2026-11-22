@@ -844,5 +844,6 @@ S1, `tests/fixtures/sync-vectors.json` dosyasını üretir. Masaüstü (`node:te
 - Padmé tablosu.
 - Sabit ECDH anahtar çiftleri için `Z`, `KEK`, `proof` ve doğrulama numarası.
 - Geçersiz örnekler: değiştirilmiş etiket, yanlış bağ, bilinmeyen zarf sürümü, güvensiz yollar.
+- `merges` (G9, `docs/task-plan.md`): istemcinin birleştirme kuralları için örnekler: `tasks.json` tamamlamaları (`merges.tasks`) ve günlük görev bölümü ile görev bloklu notun çakışma kopyası (`merges.notes`). Tel biçiminin parçası değildir; iki platformun aynı girdiden aynı sonucu ürettiğini sınar.
 
 Sunucu sözleşme testleri (`npm run test:sync-server`) şifre çözmez; şifreli baytları opak kabul eder ve yalnız SHA-256'yı doğrular.

@@ -21,6 +21,9 @@ import {
 } from '../shared/sync-merge-authority.mjs';
 import { mergePisiSyncGenericJson, mergePisiSyncMap, pisiSyncJsonEqual, serializePisiSyncJson, stableStringify } from '../shared/sync-merge-json.mjs';
 import { mergePisiSyncNode, mergePisiSyncNoteContent, splitPisiSyncNoteUnits } from '../shared/sync-merge-node.mjs';
+import { getPisiSyncCompletionKey, mergePisiSyncTaskCompletions } from '../shared/sync-merge-tasks.mjs';
+import { makePisiTaskBlockHtml, stripPisiTaskBlocks } from '../shared/task-blocks.mjs';
+import { makePisiDiaryTaskSectionHtml, readPisiDiaryTaskSection } from '../shared/task-diary.mjs';
 
 const require = createRequire(import.meta.url);
 
@@ -142,6 +145,48 @@ test('.node: aynı gün iki cihazda yazılan günlük tek dosyada birleşir (ön
     assert.equal(result.value.pisi.id, 'node_desk', 'uzak dosyanın kimliği korunur');
     assert.equal(result.value.content, block('blk_m1', 'Masaüstü satırı') + block('blk_p1', 'Telefon satırı'));
     assert.equal(result.value.pisi.updatedAt, at(2));
+});
+
+// docs/task-plan.md G9: the diary's task section is derived from tasks.json (GV15).
+const section = (ids, day = '2026-11-16') => makePisiDiaryTaskSectionHtml(day, ids);
+const diary = (content, pisi = {}) => note(content, { title: '16-11-2026', parentMap: 'diary', diaryDate: '2026-11-16', ...pisi });
+
+test('.node: günlük görev bölümü iki tarafta farklı → çakışma değil; uzak bölüm son blok olarak kalır', () => {
+    const base = `${block('blk_a', 'Bir')}${block('blk_b', 'İki')}${section(['task_aaaa'])}`;
+    const local = `${block('blk_a', 'Bir telefon')}${block('blk_b', 'İki')}${block('blk_l', 'Yerel yeni')}${section(['task_aaaa', 'task_bbbb'])}`;
+    const remote = `${block('blk_a', 'Bir')}${block('blk_b', 'İki masaüstü')}${section(['task_aaaa', 'task_cccc'])}`;
+    const merged = mergePisiSyncNoteContent(base, local, remote);
+    assert.deepEqual(merged.conflicts, []);
+    assert.equal(
+        merged.content,
+        `${block('blk_a', 'Bir telefon')}${block('blk_b', 'İki masaüstü')}${block('blk_l', 'Yerel yeni')}${section(['task_aaaa', 'task_cccc'])}`
+    );
+    const read = readPisiDiaryTaskSection(merged.content);
+    assert.deepEqual([read.count, read.last], [1, true]);
+
+    // A section only one side changed, or only one side has, follows the usual rule.
+    assert.equal(mergePisiSyncNoteContent(base, base.replace('Bir', 'Bir!'), remote).content, remote.replace('>Bir<', '>Bir!<'));
+    const noSection = `${block('blk_a', 'Bir')}${block('blk_b', 'İki')}`;
+    assert.equal(mergePisiSyncNoteContent(base, noSection, base.replace('İki', 'İki!')).content, noSection.replace('İki', 'İki!'));
+    // A block added after the section on one side does not push the section from the end.
+    const after = mergePisiSyncNoteContent(base, `${base}${block('blk_z', 'Sonra')}`, remote).content;
+    assert.equal(readPisiDiaryTaskSection(after).last, true);
+    assert.equal(mergePisiSyncNode({ base: diary(base), local: diary(local), remote: diary(remote), diary: true }).status, 'merged');
+});
+
+test('.node: iki cihazda oluşan günlük — tek bölüm, boş ilk satır çakışma değil, eski ayraçlar çakışma', () => {
+    const remote = diary(`<div><br></div>${section(['task_cccc'])}`, { id: 'node_desk', updatedAt: at(1) });
+    const local = diary(`<div><br></div>${block('blk_p', 'Telefon')}${section(['task_bbbb'])}`, { id: 'node_phone', updatedAt: at(2) });
+    const result = mergePisiSyncNode({ local, remote, diary: true });
+    assert.equal(result.status, 'merged');
+    assert.equal(result.value.pisi.id, 'node_desk');
+    assert.equal(result.value.content, `<div><br></div>${block('blk_p', 'Telefon')}${section(['task_cccc'])}`);
+    const onlyLocal = mergePisiSyncNode({ local, remote: diary(block('blk_m', 'Masaüstü'), { id: 'node_desk' }), diary: true });
+    assert.equal(onlyLocal.value.content, `${block('blk_m', 'Masaüstü')}${block('blk_p', 'Telefon')}${section(['task_bbbb'])}`, 'tek bölüm yerelden');
+    const text = mergePisiSyncNode({ local: diary(`Yazı${section(['task_bbbb'])}`, { id: 'node_phone' }), remote, diary: true });
+    assert.equal(text.status, 'conflict', 'ilk bloktan önceki metin çakışmadır');
+    const managed = '<!--PISI_DIARY_MANAGED_START--><div class="pisi-diary-managed-block">x</div><!--PISI_DIARY_MANAGED_END-->';
+    assert.equal(mergePisiSyncNode({ local: diary(managed, { id: 'node_p' }), remote: diary(`${managed} `), diary: true }).status, 'conflict');
 });
 
 test('.map: kimlikli diziler kimliğe göre, kamera çakışmasında uzak kazanır, silme kazanır', () => {
@@ -289,6 +334,112 @@ test('tasks.json: kayıtlar kimliğe göre, alanlar ayrı ayrı birleşir; aynı
     );
     assert.equal(tie.value.tasks[0].priority, 2, 'updatedAt eşitse uzak kazanır');
     assert.equal(getPisiSyncAuthorityListKey('.pisi/Properties.json'), 'definitions');
+});
+
+// docs/task-plan.md G9: completions merge by occurrence.
+const repeating = (fields = {}) =>
+    task('task_r', { repeat: 'daily', dueDate: '2026-11-21', reminderAt: '2026-11-21T07:00', completions: [], source: undefined, ...fields });
+const done = (dueDate, minute, date = dueDate) => ({ date, dueDate, at: at(minute) });
+const merge = (base, local, remote) => {
+    const result = mergePisiSyncAuthority('.pisi/tasks.json', { version: 2, tasks: [base] }, { version: 2, tasks: [local] }, { version: 2, tasks: [remote] });
+    return { record: result.value.tasks[0], conflicts: result.conflicts };
+};
+
+test('tasks.json: aynı tekrar iki tarafta tamamlanırsa önce tamamlanan kalır, tek ilerleme', () => {
+    const base = repeating();
+    const { record, conflicts } = merge(
+        base,
+        repeating({ dueDate: '2026-11-22', reminderAt: '2026-11-22T07:00', completions: [done('2026-11-21', 30)], updatedAt: at(30) }),
+        repeating({ dueDate: '2026-11-22', reminderAt: '2026-11-22T07:00', completions: [done('2026-11-21', 10)], updatedAt: at(10) })
+    );
+    assert.deepEqual(record.completions, [done('2026-11-21', 10)]);
+    assert.equal(record.dueDate, '2026-11-22');
+    assert.equal(record.updatedAt, at(30));
+    assert.deepEqual(
+        conflicts.map((c) => [c.field, c.kind, c.winner, c.lost]),
+        [['completions', 'completion', 'remote', done('2026-11-21', 30)]]
+    );
+});
+
+test('tasks.json: farklı tekrarların tamamlamaları birleşir; ilerleme geri gitmez', () => {
+    const base = repeating({ completions: [done('2026-11-20', 1)] });
+    const local = repeating({ title: 'Yeni ad', completions: [done('2026-11-20', 1)], updatedAt: at(50) });
+    const remote = repeating({
+        dueDate: '2026-11-23',
+        reminderAt: '2026-11-23T07:00',
+        completions: [done('2026-11-20', 1), done('2026-11-21', 20), done('2026-11-22', 21)],
+        updatedAt: at(21)
+    });
+    assert.deepEqual(merge(base, local, remote).record.completions, remote.completions, 'yalnız bir taraf değiştirdi');
+
+    const localDone = repeating({
+        dueDate: '2026-11-22',
+        reminderAt: '2026-11-22T07:00',
+        completions: [done('2026-11-20', 1), done('2026-11-21', 40)],
+        updatedAt: at(50)
+    });
+    const { record, conflicts } = merge(base, localDone, remote);
+    assert.deepEqual(record.completions, [done('2026-11-20', 1), done('2026-11-21', 20), done('2026-11-22', 21)], '"at" sırasıyla');
+    assert.deepEqual([record.dueDate, record.reminderAt], ['2026-11-23', '2026-11-23T07:00'], 'tamamlanmış bir tekrara geri dönülmez');
+    assert.deepEqual(
+        conflicts.map((c) => [c.field, c.kind, c.winner]),
+        [
+            ['completions', 'completion', 'remote'],
+            ['dueDate', 'progress', 'remote']
+        ]
+    );
+});
+
+test('tasks.json: geri alınan tamamlama ile öbür taraftaki değişiklik', () => {
+    const base = repeating({ dueDate: '2026-11-22', completions: [done('2026-11-21', 5)], updatedAt: at(5) });
+    const reopened = repeating({ dueDate: '2026-11-21', completions: [], updatedAt: at(8) });
+    const renamed = { ...base, title: 'Telefon adı', updatedAt: at(9) };
+    const one = merge(base, reopened, renamed);
+    assert.deepEqual([one.record.completions, one.record.dueDate, one.record.title], [[], '2026-11-21', 'Telefon adı']);
+    assert.deepEqual(one.conflicts, []);
+
+    // Taken back on one side, completed again later on the other: the record's updatedAt decides.
+    const again = { ...base, completions: [done('2026-11-21', 30)], updatedAt: at(30) };
+    const two = merge(base, reopened, again);
+    assert.deepEqual([two.record.completions, two.record.dueDate], [[done('2026-11-21', 30)], '2026-11-22'], 'tamamlanan tekrara geri dönülmez');
+    assert.deepEqual(
+        two.conflicts.map((c) => [c.field, c.kind, c.winner]),
+        [
+            ['completions', 'completion', 'remote'],
+            ['dueDate', 'progress', 'remote']
+        ]
+    );
+});
+
+test('tasks.json: tekrarsız görev iki tarafta tamamlanırsa önce tamamlanan kalır', () => {
+    const base = task('task_n', { completedOn: null });
+    const { record, conflicts } = merge(
+        base,
+        task('task_n', { status: 'done', completedAt: at(7), completedOn: '2026-11-16', updatedAt: at(40) }),
+        task('task_n', { status: 'done', completedAt: at(9), completedOn: '2026-11-17', updatedAt: at(9) })
+    );
+    assert.deepEqual([record.completedAt, record.completedOn, record.updatedAt], [at(7), '2026-11-16', at(40)]);
+    assert.deepEqual(
+        conflicts.map((c) => [c.field, c.kind, c.winner, c.lost]),
+        [['completedAt', 'completion', 'local', { completedAt: at(9), completedOn: '2026-11-17' }]]
+    );
+});
+
+test('tamamlama anahtarı tekrarın bitiş günüdür; anahtarlanamayan liste bütün olarak birleşir', () => {
+    assert.equal(getPisiSyncCompletionKey(done('2026-11-21', 1, '2026-11-24')), 'due:2026-11-21');
+    assert.equal(getPisiSyncCompletionKey({ date: '2026-11-24', dueDate: null, at: at(1) }), 'day:2026-11-24');
+    assert.equal(getPisiSyncCompletionKey('x'), null);
+    assert.equal(mergePisiSyncTaskCompletions({ base: [], local: [done('2026-11-21', 1), done('2026-11-21', 2)], remote: [] }), null);
+    const { record, conflicts } = merge(
+        repeating(),
+        repeating({ completions: 'bozuk', updatedAt: at(2) }),
+        repeating({ completions: [done('2026-11-21', 1)], updatedAt: at(1) })
+    );
+    assert.equal(record.completions, 'bozuk', 'eski kural: updatedAt büyük olan');
+    assert.deepEqual(
+        conflicts.map((c) => [c.field, c.kind]),
+        [['completions', 'field']]
+    );
 });
 
 test('properties.json: tanımlar kimliğe göre birleşir; boş temelle iki yeni dosya birleşir', () => {
@@ -439,6 +590,23 @@ test('günlük çakışması kökte normal not olur; görev bölümü kopyaya gi
     assert.equal('diaryDate' in copy.document.pisi, false);
     assert.equal(makePisiSyncConflictContent(content), `${block('blk_a', 'Gün')}\n\n`);
     assert.equal(PISI_SYNC_CONFLICT_LABELS.conflict, 'çakışma');
+});
+
+test('çakışma kopyası görev bloklarını ve günlük görev bölümünü almaz (G9)', () => {
+    const content = [
+        block('blk_a', 'Metin'),
+        makePisiTaskBlockHtml({ blockId: 'blk_t', taskId: 'task_aaaa' }),
+        block('blk_b', 'Son'),
+        section(['task_aaaa', 'task_bbbb'], '2026-11-14')
+    ].join('\n');
+    const copy = makePisiSyncConflictCopy({
+        path: 'diary/2026-11-14.node',
+        document: note(content, { id: 'node_day', title: '14-11-2026', parentMap: 'diary', diaryDate: '2026-11-14' }),
+        now: new Date(2026, 10, 16, 9, 0),
+        makeUuid: () => 'u2'
+    });
+    assert.equal(copy.document.content, stripPisiTaskBlocks(content));
+    assert.equal(copy.document.content, `${block('blk_a', 'Metin')}\n\n${block('blk_b', 'Son')}\n`);
 });
 
 test('diğer dosyalarda çakışma kopyasının adı', () => {

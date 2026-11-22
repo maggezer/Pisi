@@ -2,8 +2,10 @@
 // .pisi/tasks.json, .pisi/relationships.json and .pisi/properties.json. Their
 // record lists merge by record id, a record field by field. When both sides
 // changed one field differently, the record with the later `updatedAt` wins
-// (the remote one when equal); a record one side deleted and the other changed
-// stays deleted (deletes only come from the desktop, whose trash keeps it).
+// (the remote one when equal); a task's completions merge by occurrence
+// (shared/sync-merge-tasks.mjs, docs/task-plan.md G9); a record one side
+// deleted and the other changed stays deleted (deletes only come from the
+// desktop, whose trash keeps it).
 // Every value that loses is returned in `conflicts` for the device's conflict
 // log. Unknown records, fields and top-level keys are kept (V3).
 
@@ -16,6 +18,7 @@ import {
     mergePisiSyncOrder,
     pisiSyncJsonEqual
 } from './sync-merge-json.mjs';
+import { resolvePisiSyncTaskFields } from './sync-merge-tasks.mjs';
 
 export const PISI_SYNC_AUTHORITY_LISTS = Object.freeze({
     '.pisi/tasks.json': 'tasks',
@@ -47,15 +50,21 @@ function recordIds(list) {
 
 const read = (object, key) => (isPisiSyncPlainObject(object) && Object.hasOwn(object, key) ? object[key] : PISI_SYNC_ABSENT);
 
-/** Field-level merge of one record present on both sides (base may be absent). */
-function mergeRecord(id, base, local, remote, conflicts) {
+/**
+ * Field-level merge of one record present on both sides (base may be absent).
+ * In tasks.json the task rules (shared/sync-merge-tasks.mjs) decide the
+ * completion and progress fields.
+ */
+function mergeRecord(id, base, local, remote, conflicts, listKey) {
     const keys = mergePisiSyncOrder(Object.keys(local), Object.keys(remote), new Set([...Object.keys(local), ...Object.keys(remote)]));
     const localWinsTies = laterPisiSyncTimestamp(local.updatedAt, remote.updatedAt) === local.updatedAt && local.updatedAt !== remote.updatedAt;
+    const resolved = listKey === 'tasks' ? resolvePisiSyncTaskFields({ recordId: id, base, local, remote, localWins: localWinsTies, conflicts }) : new Map();
     const out = {};
     for (const key of keys) {
         const [b, l, r] = [read(base, key), read(local, key), read(remote, key)];
         let value;
-        if (pisiSyncJsonEqual(l, r) || pisiSyncJsonEqual(r, b)) value = l;
+        if (resolved.has(key)) value = resolved.get(key);
+        else if (pisiSyncJsonEqual(l, r) || pisiSyncJsonEqual(r, b)) value = l;
         else if (pisiSyncJsonEqual(l, b)) value = r;
         else if (key === 'updatedAt') value = laterPisiSyncTimestamp(l, r);
         else {
@@ -74,7 +83,7 @@ function mergeRecord(id, base, local, remote, conflicts) {
     return out;
 }
 
-function mergeRecords(base, local, remote, conflicts) {
+function mergeRecords(base, local, remote, conflicts, listKey) {
     const [baseIds, localIds, remoteIds] = [recordIds(base), recordIds(local), recordIds(remote)];
     if (!baseIds || !localIds || !remoteIds) return null;
     const byId = (list) => new Map((list === PISI_SYNC_ABSENT ? [] : list).map((record) => [record.id, record]));
@@ -83,7 +92,7 @@ function mergeRecords(base, local, remote, conflicts) {
     for (const id of new Set([...remoteIds, ...localIds, ...baseIds])) {
         const [baseRecord, localRecord, remoteRecord] = [b.get(id), l.get(id), r.get(id)];
         if (localRecord && remoteRecord) {
-            merged.set(id, mergeRecord(id, baseRecord ?? PISI_SYNC_ABSENT, localRecord, remoteRecord, conflicts));
+            merged.set(id, mergeRecord(id, baseRecord ?? PISI_SYNC_ABSENT, localRecord, remoteRecord, conflicts, listKey));
             continue;
         }
         const survivor = localRecord || remoteRecord;
@@ -133,7 +142,7 @@ export function mergePisiSyncAuthority(path, base, local, remote) {
     const value = isPisiSyncPlainObject(top.value) ? top.value : {};
 
     const lists = [read(baseValue, listKey), read(local, listKey), read(remote, listKey)];
-    let records = mergeRecords(lists[0], lists[1], lists[2], conflicts);
+    let records = mergeRecords(lists[0], lists[1], lists[2], conflicts, listKey);
     if (!records) {
         records = clonePisiSyncJson(lists[2] === PISI_SYNC_ABSENT ? lists[1] : lists[2]);
         if (!pisiSyncJsonEqual(lists[1], lists[2]))

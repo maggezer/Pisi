@@ -32,6 +32,11 @@ import {
     utf8Encode
 } from '../shared/sync-crypto.mjs';
 import { checkPisiSyncPath, getPisiSyncPathKey } from '../shared/sync-paths.mjs';
+import { mergePisiSyncAuthority } from '../shared/sync-merge-authority.mjs';
+import { mergePisiSyncNode } from '../shared/sync-merge-node.mjs';
+import { makePisiSyncConflictContent } from '../shared/sync-conflict.mjs';
+import { makePisiTaskBlockHtml } from '../shared/task-blocks.mjs';
+import { makePisiDiaryTaskSectionHtml } from '../shared/task-diary.mjs';
 
 const subtle = globalThis.crypto.subtle;
 const target = path.join(import.meta.dirname, '..', 'tests', 'fixtures', 'sync-vectors.json');
@@ -51,6 +56,136 @@ function ecdhKeyPair(label) {
         },
         publicKey: toBase64Url(publicKey)
     };
+}
+
+// ---- Merge vectors (docs/task-plan.md G9) ------------------------------------------
+// The task rules of the tasks.json merge and the diary's task section, so that
+// the desktop and the phone are seen to merge the same input into the same bytes.
+
+const T = (hour, minute = 0) => `2026-11-21T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00.000Z`;
+const done = (date, dueDate, at) => ({ date, dueDate, at });
+
+function vectorTask(fields = {}) {
+    return {
+        id: 'task_9d7c1a20-1b7d-4c55-9a1e-2f9d6c0b8a11',
+        title: 'Spor',
+        tags: [],
+        status: 'todo',
+        priority: 3,
+        dueDate: '2026-11-21',
+        dueTime: '07:30',
+        repeat: 'daily',
+        completionOffsetDays: null,
+        reminderMode: 'none',
+        reminderAt: null,
+        dependencies: [],
+        manualOrder: 1,
+        noteId: null,
+        diaryDate: '2026-11-20',
+        durationMinutes: 0,
+        actualMinutes: 0,
+        completions: [],
+        createdAt: T(6),
+        updatedAt: T(6),
+        completedAt: null,
+        completedOn: null,
+        ...fields
+    };
+}
+
+const store = (task, updatedAt = task.updatedAt) => ({ version: 2, updatedAt, tasks: [task] });
+const vectorBlock = (id, text) => `<div class="pisi-editor-block" data-pisi-block-id="${id}" data-pisi-block-type="paragraph">${text}</div>`;
+const vectorDiary = (id, content, updatedAt = T(6)) => ({
+    pisi: { version: 1, type: 'node', id, title: '22-11-2026', sidecar: 'none', parentMap: 'none', diaryDate: '2026-11-22', createdAt: T(6), updatedAt },
+    content
+});
+const TASK_A = 'task_0a0a0a0a-0000-4000-8000-00000000000a';
+const TASK_B = 'task_0b0b0b0b-0000-4000-8000-00000000000b';
+const TASK_C = 'task_0c0c0c0c-0000-4000-8000-00000000000c';
+
+function mergeVectors() {
+    const base = vectorTask();
+    const tasks = [
+        {
+            name: 'phone-completes-desktop-renames',
+            base: store(base),
+            local: store(vectorTask({ dueDate: '2026-11-22', completions: [done('2026-11-21', '2026-11-21', T(7))], updatedAt: T(7) })),
+            remote: store(vectorTask({ title: 'Spor (masaüstü)', updatedAt: T(8) }))
+        },
+        {
+            name: 'same-occurrence-on-both',
+            base: store(base),
+            local: store(vectorTask({ dueDate: '2026-11-22', completions: [done('2026-11-21', '2026-11-21', T(7, 5))], updatedAt: T(7, 5) })),
+            remote: store(vectorTask({ dueDate: '2026-11-22', completions: [done('2026-11-21', '2026-11-21', T(7, 40))], updatedAt: T(7, 40) }))
+        },
+        {
+            name: 'progress-does-not-go-back',
+            base: store(base),
+            local: store(vectorTask({ title: 'Sabah sporu', dueDate: '2026-11-22', completions: [done('2026-11-21', '2026-11-21', T(7))], updatedAt: T(11) })),
+            remote: store(
+                vectorTask({
+                    dueDate: '2026-11-23',
+                    reminderAt: '2026-11-23T07:00',
+                    completions: [done('2026-11-21', '2026-11-21', T(7, 30)), done('2026-11-22', '2026-11-22', T(9))],
+                    updatedAt: T(9)
+                })
+            )
+        },
+        {
+            name: 'taken-back-and-renamed',
+            base: store(vectorTask({ dueDate: '2026-11-22', completions: [done('2026-11-21', '2026-11-21', T(7))], updatedAt: T(7) })),
+            local: store(vectorTask({ dueDate: '2026-11-21', completions: [], updatedAt: T(8) })),
+            remote: store(
+                vectorTask({ title: 'Spor (telefon)', dueDate: '2026-11-22', completions: [done('2026-11-21', '2026-11-21', T(7))], updatedAt: T(9) })
+            )
+        },
+        {
+            name: 'done-on-both-without-repeat',
+            base: store(vectorTask({ repeat: 'none', dueTime: null })),
+            local: store(vectorTask({ repeat: 'none', dueTime: null, status: 'done', completedAt: T(10), completedOn: '2026-11-21', updatedAt: T(12) })),
+            remote: store(vectorTask({ repeat: 'none', dueTime: null, status: 'done', completedAt: T(9), completedOn: '2026-11-21', updatedAt: T(9) }))
+        }
+    ].map((row) => ({ ...row, path: '.pisi/tasks.json', expected: mergePisiSyncAuthority('.pisi/tasks.json', row.base, row.local, row.remote) }));
+
+    const day = '2026-11-22';
+    const diaryId = 'node_d1a2b3c4-0000-4000-8000-000000000022';
+    const section = (ids) => makePisiDiaryTaskSectionHtml(day, ids);
+    const notes = [
+        {
+            name: 'diary-section-changed-on-both',
+            base: vectorDiary(diaryId, `${vectorBlock('blk_a', 'Sabah')}${section([TASK_A])}`),
+            local: vectorDiary(diaryId, `${vectorBlock('blk_a', 'Sabah yürüyüşü')}${section([TASK_A, TASK_B])}`, T(8)),
+            remote: vectorDiary(diaryId, `${vectorBlock('blk_a', 'Sabah')}${vectorBlock('blk_c', 'Akşam')}${section([TASK_A, TASK_C])}`, T(9))
+        },
+        {
+            name: 'new-diary-on-both',
+            base: null,
+            local: vectorDiary('node_d1a2b3c4-0000-4000-8000-0000000000aa', `<div><br></div>${section([TASK_B])}`, T(8)),
+            remote: vectorDiary(diaryId, `<div><br></div>${section([TASK_C])}`, T(9))
+        },
+        {
+            name: 'conflict-copy-keeps-tasks-in-the-note',
+            base: {
+                pisi: { version: 1, type: 'node', id: 'node_a1a1a1a1-0000-4000-8000-000000000001', title: 'Ortak', sidecar: 'none', parentMap: 'none' },
+                content: vectorBlock('blk_a', 'Bir')
+            },
+            local: {
+                pisi: { version: 1, type: 'node', id: 'node_a1a1a1a1-0000-4000-8000-000000000001', title: 'Ortak', sidecar: 'none', parentMap: 'none' },
+                content: `${vectorBlock('blk_a', 'Bir telefon')}${makePisiTaskBlockHtml({ blockId: 'blk_t', taskId: TASK_A })}`
+            },
+            remote: {
+                pisi: { version: 1, type: 'node', id: 'node_a1a1a1a1-0000-4000-8000-000000000001', title: 'Ortak', sidecar: 'none', parentMap: 'none' },
+                content: vectorBlock('blk_a', 'Bir masaüstü')
+            }
+        }
+    ]
+        .map((row) => ({ ...row, path: row.name.startsWith('conflict') ? 'Ortak.node' : `diary/${day}.node` }))
+        .map((row) => {
+            const expected = mergePisiSyncNode({ base: row.base, local: row.local, remote: row.remote, diary: row.path.startsWith('diary/') });
+            // The content of the conflict copy of the losing (local) side: no task block, no task section.
+            return { ...row, expected, copyContent: expected.status === 'conflict' ? makePisiSyncConflictContent(row.local.content) : null };
+        });
+    return { tasks, notes };
 }
 
 async function build() {
@@ -264,7 +399,8 @@ async function build() {
         },
         envelopes,
         invalidEnvelopes,
-        unsafePaths
+        unsafePaths,
+        merges: mergeVectors()
     };
 }
 

@@ -26,6 +26,9 @@ import {
     toHex
 } from '../../shared/sync-crypto.mjs';
 import { checkPisiSyncPath, getPisiSyncPathKey } from '../../shared/sync-paths.mjs';
+import { makePisiSyncConflictContent } from '../../shared/sync-conflict.mjs';
+import { mergePisiSyncAuthority } from '../../shared/sync-merge-authority.mjs';
+import { mergePisiSyncNode } from '../../shared/sync-merge-node.mjs';
 
 const vectors = JSON.parse(readFileSync(join(import.meta.dirname, '..', '..', 'tests', 'fixtures', 'sync-vectors.json'), 'utf8'));
 const subtle = globalThis.crypto?.subtle ?? webcrypto.subtle;
@@ -113,5 +116,14 @@ describe('senkron test vektörleri', () => {
         expect(toHex(await derivePisiSyncPairingKek(subtle, shared, pairingId, pairing.desktop.publicKey, pairing.device.publicKey))).toBe(pairing.kekHex);
         expect(await computePisiSyncPairingProof(subtle, fromHex(pairing.secretHex), pairingId, pairing.device.publicKey)).toBe(pairing.proof);
         expect(await computePisiSyncSas(subtle, shared, pairingId, pairing.desktop.publicKey, pairing.device.publicKey)).toBe(pairing.sas);
+    });
+
+    // docs/task-plan.md G9: the phone merges the same input into the same value as the desktop.
+    it('birleştirme vektörleri: tasks.json tamamlamaları ve günlük görev bölümü', () => {
+        for (const row of vectors.merges.tasks) expect(mergePisiSyncAuthority(row.path, row.base, row.local, row.remote)).toEqual(row.expected);
+        for (const row of vectors.merges.notes) {
+            expect(mergePisiSyncNode({ base: row.base, local: row.local, remote: row.remote, diary: row.path.startsWith('diary/') })).toEqual(row.expected);
+            expect(row.expected.status === 'conflict' ? makePisiSyncConflictContent(row.local.content) : null).toBe(row.copyContent);
+        }
     });
 });

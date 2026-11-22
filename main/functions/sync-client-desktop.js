@@ -34,7 +34,7 @@ import { modules, registerMainModule } from '../module-registry.js';
 import { openPisiSyncSpaceKeys } from '../../shared/sync-crypto.mjs';
 import { normalizePisiSyncServerUrl } from '../../shared/sync-meta.mjs';
 import { makePisiSyncConflictCopy } from '../../shared/sync-conflict.mjs';
-import { getPisiSyncFileClass, getPisiSyncPathKey } from '../../shared/sync-paths.mjs';
+import { getPisiSyncDiaryDate, getPisiSyncFileClass, getPisiSyncPathKey } from '../../shared/sync-paths.mjs';
 import { createPisiSyncEngine } from './sync-client-engine.js';
 import { createPisiSyncProjectFiles } from './sync-client-files.js';
 import { createPisiSyncHttp } from './sync-client-http.js';
@@ -77,6 +77,8 @@ const runtime = {
     context: null,
     // tasks.json as it was before the running turn wrote it (null when the turn does not write it).
     tasksBeforeApply: null,
+    // The diary days the running turn wrote: their task section is written again from the rule (G9).
+    diaryDaysWritten: new Set(),
     running: null,
     queued: null,
     lastTurnAt: 0,
@@ -169,6 +171,7 @@ function getPisiSyncContext() {
         run: (operation) => {
             runtime.applying = true;
             runtime.tasksBeforeApply = null;
+            runtime.diaryDaysWritten = new Set();
             try {
                 return atomicMutation.runPisiAtomicMutation(projectRoot, 'sync.apply.v1', () => {
                     const result = operation();
@@ -178,12 +181,16 @@ function getPisiSyncContext() {
             } finally {
                 runtime.applying = false;
                 runtime.tasksBeforeApply = null;
+                runtime.diaryDaysWritten = new Set();
             }
         },
         writeFile: (absolute, bytes) => {
-            if (path.relative(projectRoot, absolute).split(path.sep).join('/') === '.pisi/tasks.json' && runtime.tasksBeforeApply === null) {
+            const relative = path.relative(projectRoot, absolute).split(path.sep).join('/');
+            if (relative === '.pisi/tasks.json' && runtime.tasksBeforeApply === null) {
                 runtime.tasksBeforeApply = readPisiSyncTaskRecords(absolute);
             }
+            const diaryDay = getPisiSyncDiaryDate(relative);
+            if (diaryDay) runtime.diaryDaysWritten.add(diaryDay);
             filesystemCore.writeFileAtomic(absolute, bytes, { backup: false });
         },
         beforeWrite: makePisiSyncFaultHook()
@@ -198,6 +205,9 @@ function getPisiSyncContext() {
 // task change back. When a turn writes tasks.json, the diary sections of the
 // days whose tasks changed are written from the merged records in the same
 // atomic mutation (GV15); a diary with unsaved edits is left to the editor.
+// The section of every diary the turn wrote is written from the rule too: the
+// merge keeps a stand-in section when the two sides differ (docs/task-plan.md
+// G9), and a pulled diary may carry a section older than the records.
 
 function readPisiSyncTaskRecords(absolute) {
     try {
@@ -209,14 +219,16 @@ function readPisiSyncTaskRecords(absolute) {
 }
 
 function rewritePisiSyncedTaskDiarySections(projectRoot) {
-    const before = runtime.tasksBeforeApply;
-    if (before === null) return;
+    const tasksWritten = runtime.tasksBeforeApply !== null;
+    const diaryDays = [...runtime.diaryDaysWritten].sort();
+    if (!tasksWritten && !diaryDays.length) return;
     const taskStore = modules['main.taskStore'];
-    taskStore.forgetPisiTaskStoreCache(projectRoot);
-    const state = taskStore.readPisiTaskStoreState(projectRoot, { fresh: true });
+    if (tasksWritten) taskStore.forgetPisiTaskStoreCache(projectRoot);
+    const state = taskStore.readPisiTaskStoreState(projectRoot, { fresh: tasksWritten });
     if (state.readOnly) return;
+    const before = tasksWritten ? runtime.tasksBeforeApply : state.tasks;
     const service = modules['main.taskService'];
-    const rewritten = service.rewritePisiDiarySectionsForTaskChange(projectRoot, before, state.tasks, { openPaths: [...runtime.dirty] });
+    const rewritten = service.rewritePisiDiarySectionsForTaskChange(projectRoot, before, state.tasks, { openPaths: [...runtime.dirty], days: diaryDays });
     const beforeById = new Map(before.map((task) => [task.id, JSON.stringify(task)]));
     const afterIds = new Set(state.tasks.map((task) => task.id));
     service.emitPisiTasksChanged(projectRoot, {

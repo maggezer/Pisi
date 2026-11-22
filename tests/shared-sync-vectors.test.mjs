@@ -33,6 +33,11 @@ import {
     verifyPisiSyncPairingProof
 } from '../shared/sync-crypto.mjs';
 import { checkPisiSyncPath, getPisiSyncPathKey } from '../shared/sync-paths.mjs';
+import { makePisiSyncConflictContent } from '../shared/sync-conflict.mjs';
+import { mergePisiSyncAuthority } from '../shared/sync-merge-authority.mjs';
+import { mergePisiSyncNode } from '../shared/sync-merge-node.mjs';
+import { listPisiNoteTaskIds } from '../shared/task-blocks.mjs';
+import { readPisiDiaryTaskSection } from '../shared/task-diary.mjs';
 
 const subtle = globalThis.crypto.subtle;
 const vectors = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'fixtures', 'sync-vectors.json'), 'utf8'));
@@ -240,4 +245,42 @@ test('UTF-8 ve base64url kodlamaları Node ile aynı, bozuk girdi reddedilir', (
     }
     for (const bad of [[0xc3], [0xed, 0xa0, 0x80], [0xff], [0xc0, 0x80]]) assert.throws(() => utf8Decode(Uint8Array.from(bad)), /UTF-8/);
     for (const bad of ['a', 'ab=', 'a+b', 'AB']) assert.throws(() => fromBase64Url(bad), /base64url/);
+});
+
+// docs/task-plan.md G9: the same input merges into the same value on both platforms
+// (mobile/tests/sync-vectors.test.mjs reads the same rows).
+test('birleştirme vektörleri: tasks.json tamamlamaları ve günlük görev bölümü', () => {
+    for (const row of vectors.merges.tasks) assert.deepEqual(mergePisiSyncAuthority(row.path, row.base, row.local, row.remote), row.expected, row.name);
+    for (const row of vectors.merges.notes) {
+        const diary = row.path.startsWith('diary/');
+        assert.deepEqual(mergePisiSyncNode({ base: row.base, local: row.local, remote: row.remote, diary }), row.expected, row.name);
+        assert.equal(row.copyContent, row.expected.status === 'conflict' ? makePisiSyncConflictContent(row.local.content) : null, row.name);
+    }
+
+    // What the rows say, read independently of the code that wrote them.
+    const byName = Object.fromEntries(vectors.merges.tasks.map((row) => [row.name, row.expected]));
+    const only = (name) => byName[name].value.tasks[0];
+    assert.equal(only('phone-completes-desktop-renames').title, 'Spor (masaüstü)');
+    assert.equal(only('phone-completes-desktop-renames').completions.length, 1);
+    assert.deepEqual(byName['phone-completes-desktop-renames'].conflicts, []);
+    assert.equal(only('same-occurrence-on-both').completions.length, 1, 'tek tamamlama');
+    assert.equal(only('same-occurrence-on-both').completions[0].at, '2026-11-21T07:05:00.000Z', 'önce tamamlanan kalır');
+    assert.equal(only('same-occurrence-on-both').dueDate, '2026-11-22', 'tek ilerleme');
+    assert.equal(only('progress-does-not-go-back').dueDate, '2026-11-23');
+    assert.equal(only('progress-does-not-go-back').reminderAt, '2026-11-23T07:00');
+    assert.equal(only('progress-does-not-go-back').title, 'Sabah sporu');
+    assert.deepEqual(only('taken-back-and-renamed').completions, []);
+    assert.equal(only('taken-back-and-renamed').dueDate, '2026-11-21');
+    assert.equal(only('done-on-both-without-repeat').completedAt, '2026-11-21T09:00:00.000Z');
+    const notes = Object.fromEntries(vectors.merges.notes.map((row) => [row.name, row]));
+    for (const name of ['diary-section-changed-on-both', 'new-diary-on-both']) {
+        assert.equal(notes[name].expected.status, 'merged', `${name}: bölüm çakışma değildir`);
+        assert.equal(readPisiDiaryTaskSection(notes[name].expected.value.content).count, 1, `${name}: tek bölüm`);
+        assert.equal(readPisiDiaryTaskSection(notes[name].expected.value.content).last, true, `${name}: bölüm son blok`);
+    }
+    assert.equal(notes['new-diary-on-both'].expected.value.pisi.id, notes['new-diary-on-both'].remote.pisi.id, 'uzak günlüğün kimliği kalır');
+    const copy = notes['conflict-copy-keeps-tasks-in-the-note'];
+    assert.deepEqual(listPisiNoteTaskIds(copy.expected.value.content), ['task_0a0a0a0a-0000-4000-8000-00000000000a'], 'görev asıl notta kalır');
+    assert.deepEqual(listPisiNoteTaskIds(copy.copyContent), [], 'kopyada görev bloğu yok');
+    assert.ok(copy.copyContent.includes('Bir telefon'), 'kopyada yerel metin');
 });
