@@ -243,20 +243,46 @@ try {
 
     // ---- 5. Ctrl+click on [[Hedef]] in the title opens the note.
     {
-        const point = await run(`(() => {
-            const field = ${EDITOR}.querySelector('[data-pisi-task-title="${task.id}"]');
-            const text = field.firstChild;
-            const start = text.nodeValue.indexOf('[[Hedef]]') + 3;
-            const range = document.createRange();
-            range.setStart(text, start);
-            range.setEnd(text, start + 2);
-            const rect = range.getBoundingClientRect();
-            return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-        })()`);
-        for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) {
+        // Hovering the row shows its empty chips, which narrows the title: in a narrow window
+        // (1024 px on Windows CI) the link moves to the next line. So the pointer moves onto the
+        // row first, as a user's does, and the link is measured after that layout.
+        const measure = () =>
+            run(`new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => {
+                const field = ${EDITOR}.querySelector('[data-pisi-task-title="${task.id}"]');
+                const walker = document.createTreeWalker(field, NodeFilter.SHOW_TEXT);
+                let text = null;
+                while (walker.nextNode()) if (walker.currentNode.nodeValue.includes('[[Hedef]]')) text = walker.currentNode;
+                if (!text) return resolve({ missing: field.textContent });
+                const start = text.nodeValue.indexOf('[[Hedef]]') + 3;
+                const range = document.createRange();
+                range.setStart(text, start);
+                range.setEnd(text, start + 2);
+                const rect = range.getBoundingClientRect();
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height / 2;
+                resolve({ x, y, onTitle: field.contains(document.elementFromPoint(x, y)) });
+            })))`);
+        const move = (point) => app.cdp.request('Input.dispatchMouseEvent', { type: 'mouseMoved', x: point.x, y: point.y, modifiers: 2 });
+        await run(`(${EDITOR}.querySelector('[data-pisi-task-title="${task.id}"]').scrollIntoView({ block: 'center' }), true)`);
+        let point = await measure();
+        assert(!point.missing, 'the title has the link text', point);
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            await move(point);
+            const next = await measure();
+            const settled = Math.abs(next.x - point.x) < 1 && Math.abs(next.y - point.y) < 1;
+            point = next;
+            if (settled && point.onTitle) break;
+        }
+        assert(point.onTitle, 'the link text is under the pointer', point);
+        for (const type of ['mousePressed', 'mouseReleased']) {
             await app.cdp.request('Input.dispatchMouseEvent', { type, x: point.x, y: point.y, button: 'left', clickCount: 1, modifiers: 2 });
         }
-        await waitUntil('Hedef opened by Ctrl+click', () => run(`window.activeCenterNode?.path === ${json(target.path)}`));
+        await waitUntil('Hedef opened by Ctrl+click', () => run(`window.activeCenterNode?.path === ${json(target.path)}`)).catch(async (error) => {
+            const state = await run(
+                `({ active: window.activeCenterNode?.path || null, chooser: Boolean(document.querySelector('.pisi-wiki-chooser')), viewport: [innerWidth, innerHeight] })`
+            );
+            throw new Error(error.message + '\n' + JSON.stringify({ ...state, point, target: target.path }));
+        });
     }
 
     // ---- 6. The links panel of Hedef counts the task as a backlink.
@@ -285,7 +311,10 @@ try {
         })`);
         assert(shown.tags === '#acil' && shown.link === 'Hedef', 'the card draws tags and the link', shown);
         await run(`${card}.querySelector('.pisi-task-card-link').click()`);
-        await waitUntil('Hedef opened from the card', () => run(`window.activeCenterNode?.path === ${json(target.path)}`));
+        await waitUntil('Hedef opened from the card', () => run(`window.activeCenterNode?.path === ${json(target.path)}`)).catch(async (error) => {
+            const state = await run(`({ active: window.activeCenterNode?.path || null, chooser: Boolean(document.querySelector('.pisi-wiki-chooser')) })`);
+            throw new Error(error.message + '\n' + JSON.stringify({ ...state, target: target.path }));
+        });
     }
     await assertIntegrityClean(app, 'link surfaces');
 

@@ -315,7 +315,8 @@ try {
         if (!(await run(`window.activeMapPath === ${json(mapPath)}`))) await openMap(mapPath);
         const badgeState = () =>
             run(`(() => {
-                const box = document.querySelector('#map-board .map-node-box[data-node-path=${json(mapNote.path)}]');
+                // Compared as a value: a Windows path's backslashes would be CSS escapes in a selector.
+                const box = Array.from(document.querySelectorAll('#map-board .map-node-box[data-node-path]')).find((item) => item.dataset.nodePath === ${json(mapNote.path)});
                 const count = box?.querySelector('.pisi-map-task-count-badge');
                 return {
                     count: count?.textContent || null,

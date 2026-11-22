@@ -25,7 +25,8 @@ import { getPisiTodayIsoDate } from '../shared/task-model.mjs';
 // task-scale-timing.json in the system temp folder). The limits it checks are
 // coarse (a slow CI machine must pass); the numbers are the report.
 
-const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'pisi-tasks-scale-e2e-'));
+// The real path: on Windows os.tmpdir() can be a short 8.3 name (RUNNER~1), the app opens the long one.
+const tempRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'pisi-tasks-scale-e2e-')));
 const projectPath = path.join(tempRoot, 'project');
 const outputPath = path.resolve(process.env.PISI_TASK_SCALE_OUTPUT || path.join(os.tmpdir(), 'task-scale-timing.json'));
 const SIZE = { notes: 2000, perMap: 250, tasks: 5000, diaryDays: 60, heavyNoteTasks: 200 };

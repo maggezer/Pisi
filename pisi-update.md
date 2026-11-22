@@ -1,5 +1,21 @@
 # PISI Güncelleme Takip Dosyası
 
+## 22-11-2026 — CI: senkron matrisi ve Windows Electron E2E düzeltmeleri
+
+Yalnız test betikleri değişti; uygulama davranışı aynı.
+
+- Sync server iş akışı G3'ten beri matrisin 4. senaryosunda ("aynı gün iki cihaz günlük yazar") düşüyordu:
+  `scripts/sync-e2e/desktop.mjs` `typeAtEditorEnd` imleci editörün son öğesine koyuyordu; günlüğün son bloğu
+  görev bölümü (`contenteditable="false"`) olduğundan masaüstü metni hiç kaydedilmiyordu. İmleç artık son
+  düzenlenebilir bloğa konur; 16 senaryonun hepsi yerelde geçti.
+- Electron E2E Windows'ta G5'ten beri düşüyordu:
+  `electron-tasks-surfaces-e2e.mjs` harita kutusunu Windows yolunu CSS seçicisine koyarak arıyordu (ters bölüler
+  kaçış sayılır); kutu artık yol değeriyle bulunur. `electron-tasks-scale-e2e.mjs` geçici klasörü `realpath` ile
+  çözmüyordu (Windows'ta kısa 8.3 yolu, uygulama uzun yolu açar). `electron-tasks-links-e2e.mjs` Ctrl+tıklama
+  adımında Windows penceresi 1024 px olduğundan satırın üstüne gelince görünen boş çipler başlığı daraltıyor,
+  `[[Hedef]]` alt satıra inip tıklama çipe düşüyordu; fare önce satıra getirilir, bağlantı yerleşim durulunca
+  ölçülür (1024 × 720 öykünmesiyle yerelde üretildi ve doğrulandı). Hover'daki kayma `pisi-error.md` §5i.
+
 ## 22-11-2026 — Görev bütünlüğü onarımları, büyük proje ölçümü ve temizlik (G7)
 
 Görev işi (`docs/task-plan.md` G7). Kapanan bulgular: GK1, GK13, GK15.
