@@ -37,7 +37,10 @@ const PISI_INTEGRITY_UI = {
         critical: 'kritik',
         errors: 'hata',
         warnings: 'uyarı',
-        safeRepairs: 'güvenli onarım'
+        safeRepairs: 'güvenli onarım',
+        repairOne: 'Onar',
+        confirmTaskRepair:
+            'Bu görev onarımı uygulansın mı? Görev kayıtları ve gerekiyorsa not ya da günlük değişir; işlem tek atomic transaction içinde yapılır.'
     },
     eng: {
         title: 'Project Integrity',
@@ -75,7 +78,9 @@ const PISI_INTEGRITY_UI = {
         critical: 'critical',
         errors: 'errors',
         warnings: 'warnings',
-        safeRepairs: 'safe repairs'
+        safeRepairs: 'safe repairs',
+        repairOne: 'Repair',
+        confirmTaskRepair: 'Apply this task repair? Task records and, when needed, a note or diary change inside one atomic transaction.'
     }
 };
 
@@ -121,7 +126,12 @@ function repairSafetyLabel(safety) {
     return integrityText(['safe', 'review', 'manual'].includes(safety) ? safety : 'manual');
 }
 
-function makeIssueRow(issue) {
+/** A task finding's repair ('review', docs/task-plan.md G7): the user starts it from its row. */
+function isPisiTaskRepair(repair) {
+    return repair?.safety === 'review' && /^task-/.test(String(repair.action || ''));
+}
+
+function makeIssueRow(issue, { onRepair = null } = {}) {
     const row = document.createElement('article');
     row.className = 'pisi-integrity-issue-row';
     row.dataset.severity = issue.severity || 'warning';
@@ -152,6 +162,14 @@ function makeIssueRow(issue) {
         const copy = document.createElement('span');
         copy.textContent = issue.repair.description || issue.repair.action;
         repair.append(badge, copy);
+        if (onRepair && isPisiTaskRepair(issue.repair)) {
+            const button = makeButton(integrityText('repairOne'));
+            button.classList.add('pisi-integrity-repair-one');
+            button.dataset.repairId = issue.repair.id;
+            button.dataset.repairAction = issue.repair.action;
+            button.addEventListener('click', () => void onRepair(issue, button));
+            repair.appendChild(button);
+        }
         row.appendChild(repair);
     }
     return row;
@@ -187,7 +205,7 @@ function makeRepairPlan(report) {
     return section;
 }
 
-function renderIntegrityReport(root, report) {
+function renderIntegrityReport(root, report, { onRepair = null } = {}) {
     root.replaceChildren();
     const status = document.createElement('div');
     status.className = 'pisi-integrity-status';
@@ -226,7 +244,7 @@ function renderIntegrityReport(root, report) {
 
     const issues = document.createElement('div');
     issues.className = 'pisi-integrity-issues expanded';
-    for (const issue of report.issues || []) issues.appendChild(makeIssueRow(issue));
+    for (const issue of report.issues || []) issues.appendChild(makeIssueRow(issue, { onRepair }));
     root.append(status, metrics, authorities, makeRepairPlan(report), issues);
 }
 
@@ -274,6 +292,43 @@ function buildPisiExpandedIntegritySection(container) {
         repair.disabled = !(currentReport?.repairPlan?.safe || []).length;
     };
 
+    const render = (report) => renderIntegrityReport(reportRoot, report, { onRepair: repairTaskIssue });
+
+    // One task repair (G7): the documents open in the editor are named, the editor makes their part (GV9).
+    async function repairTaskIssue(issue, button) {
+        const confirmed = await window.pisiConfirm?.(
+            `${integrityText('confirmTaskRepair')}\n\n• ${issue.repair.description}${issue.path ? ` (${issue.path})` : ''}`,
+            {
+                title: integrityText('title'),
+                confirmText: integrityText('repairOne'),
+                cancelText: window.pisiT?.('Vazgeç') || 'Vazgeç'
+            }
+        );
+        if (!confirmed) return;
+        audit.disabled = repair.disabled = rebuild.disabled = true;
+        button.disabled = true;
+        try {
+            const result = await window.pisiDomain.command('integrity.repair.v1', {
+                projectFolder: window.currentProjectFolder,
+                repairIds: [issue.repair.id],
+                openPaths: window.getPisiOpenDocumentPaths?.() || []
+            });
+            if (!result?.ok) throw new Error(result?.error || integrityText('repairFailed'));
+            const deferred = result.deferred || {};
+            await window.applyPisiTaskDeferred?.(deferred);
+            // An open document changed in the editor after the repair's own audit: audit again once it is saved.
+            const editorChanged = (deferred.notes || []).length > 0 || (deferred.diaryDays || []).length > 0;
+            currentReport = editorChanged ? null : result.after || null;
+            if (currentReport) render(currentReport);
+            else await auditProject();
+        } catch (error) {
+            window.pisiNotifyError?.(error?.message || integrityText('repairFailed'));
+            button.disabled = false;
+        } finally {
+            setButtons();
+        }
+    }
+
     const auditProject = async () => {
         if (!window.currentProjectFolder) return null;
         audit.disabled = true;
@@ -283,7 +338,7 @@ function buildPisiExpandedIntegritySection(container) {
             const result = await runIntegrityTransport('audit');
             if (!result?.ok) throw new Error(result?.error || integrityText('auditFailed'));
             currentReport = result;
-            renderIntegrityReport(reportRoot, result);
+            render(result);
             return result;
         } catch (error) {
             currentReport = null;
@@ -307,7 +362,7 @@ function buildPisiExpandedIntegritySection(container) {
             );
             if (!result?.ok) throw new Error(result?.error || integrityText('repairFailed'));
             currentReport = result.after || null;
-            if (currentReport) renderIntegrityReport(reportRoot, currentReport);
+            if (currentReport) render(currentReport);
             else await auditProject();
             await window.reloadPisiWorkspaceAfterExternalChange?.();
         } catch (error) {
@@ -328,7 +383,7 @@ function buildPisiExpandedIntegritySection(container) {
             const result = await runIntegrityTransport('rebuild-derived');
             if (!result?.ok) throw new Error(result?.error || integrityText('rebuildFailed'));
             currentReport = result.report || null;
-            if (currentReport) renderIntegrityReport(reportRoot, currentReport);
+            if (currentReport) render(currentReport);
             await window.reloadPisiWorkspaceAfterExternalChange?.();
         } catch (error) {
             reportRoot.textContent = error?.message || integrityText('rebuildFailed');
@@ -359,6 +414,7 @@ const moduleApi = {
     PISI_INTEGRITY_UI,
     integrityText,
     runIntegrityTransport,
+    isPisiTaskRepair,
     makeIssueRow,
     makeRepairPlan,
     renderIntegrityReport,

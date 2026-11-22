@@ -455,6 +455,24 @@ try {
         await closeEditors();
     }
     await assertIntegrityClean(app, 'S19');
+
+    // A task title that is also an interface text stays the user's text in English (G7: the page
+    // translator skips task titles and note names in the panel and the views).
+    {
+        const today = await run('window.getPisiTaskToday()');
+        await run(`window.runPisiTaskCommand('task.create.v1', { task: { title: 'Görev ekle' }, target: { diaryDate: ${json(today)} } })`);
+        await run(`window.pisiI18n.setLanguage('eng')`);
+        await waitUntil('english interface', () => run(`document.documentElement.lang === 'en'`));
+        await waitUntil('the card keeps the title', () =>
+            run(`Array.from(document.querySelectorAll('#pisi-missions-list .pisi-task-card-title')).some((item) => item.textContent === 'Görev ekle')`)
+        );
+        assert(
+            !(await run(`Array.from(document.querySelectorAll('#pisi-missions-list .pisi-task-card-title')).some((item) => item.textContent === 'Add task')`)),
+            'the title is not translated'
+        );
+        await run(`window.pisiI18n.setLanguage('tr')`);
+        await waitUntil('turkish interface', () => run(`document.documentElement.lang === 'tr'`));
+    }
     const errors = await run('window.__pisiPanelErrors');
     assert(Array.isArray(errors) && errors.length === 0, 'no page errors', errors);
     await pisi.stop();

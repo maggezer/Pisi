@@ -101,7 +101,6 @@ test('light palette son CSS katmanında ana Pisi yüzeylerini kapsar', () => {
     assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] #center-node-editor-content/);
     assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-editor-toolbar/);
     assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-command-center-dialog/);
-    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-mission-card/);
 });
 
 test('map node varsayılanı iki yönde tema ile değişir, açık kullanıcı rengi korunur', () => {

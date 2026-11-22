@@ -422,12 +422,7 @@ html[data-pisi-theme='light'] .pisi-color-input {
 }
 
 html[data-pisi-theme='light'] #pisi-tag-picker-button,
-html[data-pisi-theme='light'] .pisi-tag-picker-menu,
-html[data-pisi-theme='light'] .pisi-missions-filter-trigger,
-html[data-pisi-theme='light'] .pisi-mission-status,
-html[data-pisi-theme='light'] .pisi-missions-status-filter,
-html[data-pisi-theme='light'] .pisi-missions-sort,
-html[data-pisi-theme='light'] .pisi-mission-repeat {
+html[data-pisi-theme='light'] .pisi-tag-picker-menu {
     background: var(--pisi-theme-surface-alt);
     color: var(--pisi-theme-text);
     border-color: var(--pisi-theme-border-strong);
@@ -436,33 +431,26 @@ html[data-pisi-theme='light'] .pisi-mission-repeat {
 
 html[data-pisi-theme='light'] #pisi-tag-picker-button:hover,
 html[data-pisi-theme='light'] .pisi-tag-picker-option:hover,
-html[data-pisi-theme='light'] .pisi-tag-picker-option.active,
-html[data-pisi-theme='light'] .pisi-missions-filter-option:hover,
-html[data-pisi-theme='light'] .pisi-missions-filter-option.active {
+html[data-pisi-theme='light'] .pisi-tag-picker-option.active {
     background: var(--pisi-theme-hover);
 }
 
-html[data-pisi-theme='light'] .pisi-tag-picker-option,
-html[data-pisi-theme='light'] .pisi-missions-filter-option {
+html[data-pisi-theme='light'] .pisi-tag-picker-option {
     color: var(--pisi-theme-text);
 }
 
-html[data-pisi-theme='light'] .pisi-tag-picker-menu,
-html[data-pisi-theme='light'] .pisi-missions-filter-popover {
+html[data-pisi-theme='light'] .pisi-tag-picker-menu {
     background: var(--pisi-theme-surface);
     border-color: var(--pisi-theme-border-strong);
     box-shadow: 0 14px 38px var(--pisi-theme-shadow);
 }
 
-html[data-pisi-theme='light'] .pisi-mission-card,
-html[data-pisi-theme='light'] .pisi-todo-workspace-card,
 html[data-pisi-theme='light'] .pisi-third-kanban-card {
     background: var(--pisi-theme-surface);
     color: var(--pisi-theme-text);
     border-color: var(--pisi-theme-border);
 }
 
-html[data-pisi-theme='light'] .pisi-mission-drag-handle,
 html[data-pisi-theme='light'] .pisi-calendar-icon-btn,
 html[data-pisi-theme='light'] .pisi-calendar-today-btn {
     background: var(--pisi-theme-surface-alt);
@@ -1528,48 +1516,6 @@ html[data-pisi-theme='light'] body .pisi-markdown-source-textarea {
 }
 
 /* Light Theme: Missions and Todo Controls */
-html[data-pisi-theme='light'] body .pisi-mission-add-child,
-html[data-pisi-theme='light'] body .pisi-mission-drag-handle {
-    border-color: #cbd0d6;
-    background: #ffffff;
-    color: #4b525d;
-}
-
-html[data-pisi-theme='light'] body .pisi-mission-add-child:hover:not(:disabled),
-html[data-pisi-theme='light'] body .pisi-mission-drag-handle:hover {
-    border-color: #f39c12;
-    color: #9a5a00;
-    background: #f4eadb;
-}
-
-html[data-pisi-theme='light'] body .pisi-missions-filter-trigger-count,
-html[data-pisi-theme='light'] body .pisi-missions-filter-count {
-    background: #e2e5e9;
-    color: #444b55;
-}
-
-html[data-pisi-theme='light'] body .pisi-mission-compact-card .pisi-mission-status-icon {
-    border-color: #cbd0d6;
-    background-color: #ffffff;
-}
-
-html[data-pisi-theme='light'] body .pisi-mission-compact-card .pisi-mission-status-icon > option {
-    background: #ffffff;
-    color: #202124;
-}
-
-html[data-pisi-theme='light'] body .pisi-todo-date-input {
-    border-color: #cbd0d6;
-    background: #ffffff;
-    color: #202124;
-    color-scheme: light;
-}
-
-html[data-pisi-theme='light'] body .pisi-todo-picker-actions button {
-    border-color: #cbd0d6;
-    background: #f1f2f4;
-    color: #202124;
-}
 
 /* Light Theme: Number inputs, language select and tabs */
 html[data-pisi-theme='light'] body .pisi-number-input {

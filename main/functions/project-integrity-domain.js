@@ -15,6 +15,19 @@ function assertIntegrityProjectRoot(projectFolder) {
     return safeProjectFolder;
 }
 
+/** The documents open in the editor, as the renderer names them; only paths inside the project are kept (GV9). */
+function normalizeIntegrityOpenPaths(openPaths) {
+    const paths = [];
+    for (const item of Array.isArray(openPaths) ? openPaths.slice(0, 64) : []) {
+        try {
+            paths.push(electronIpc.assertProjectPath(item));
+        } catch {
+            // Not a path of the project: not open here.
+        }
+    }
+    return paths;
+}
+
 function installPisiIntegrityDomainContracts() {
     domain.registerPisiDomainQuery('integrity.audit.v1', (payload) => {
         // Documents are read off the main thread; progress goes to the renderer.
@@ -26,7 +39,8 @@ function installPisiIntegrityDomainContracts() {
     domain.registerPisiDomainCommand('integrity.repair.v1', (payload) => {
         return projectIntegrity.repairPisiProjectIntegrity(
             assertIntegrityProjectRoot(payload.projectFolder),
-            Array.isArray(payload.repairIds) ? payload.repairIds : []
+            Array.isArray(payload.repairIds) ? payload.repairIds : [],
+            { openPaths: normalizeIntegrityOpenPaths(payload.openPaths) }
         );
     });
 
@@ -79,6 +93,7 @@ bindPisiIntegrityCompatibilityIpc();
 
 const moduleApi = {
     assertIntegrityProjectRoot,
+    normalizeIntegrityOpenPaths,
     normalizeIntegrityTransportRequest,
     installPisiIntegrityDomainContracts,
     bindPisiIntegrityCompatibilityIpc

@@ -9,8 +9,10 @@ import { getPisiDiaryNodeFileName, normalizePisiDiaryIsoDate, PISI_DIARY_FOLDER 
 
 // Project Integrity for tasks (docs/task-plan.md G2 step 5, GV14). The audit
 // is the one task operation that reads every note: the user starts it and it
-// writes nothing. Repairs come in G7. A task without a place (a version 1
-// record, written by the phone until G8) is not a finding (§3.1).
+// writes nothing. A finding a task repair can fix carries it (G7,
+// task-repair.js); those repairs are 'review': the user starts each one. A
+// task without a place (a version 1 record, written by the phone until G8)
+// is not a finding (§3.1).
 
 const STORE_PATH = '.pisi/tasks.json';
 // Version 2 fields a record may hold only in their valid form.
@@ -29,8 +31,12 @@ const CHECKED_FIELDS = [
     'dependencies'
 ];
 
-function taskIssue(context, code, severity, message, extra = {}) {
-    shared.issue(context, { severity, code, domain: 'tasks', path: extra.path || STORE_PATH, entityId: extra.entityId || '', message });
+function taskIssue(context, code, severity, message, extra = {}, repair = null) {
+    shared.issue(
+        context,
+        { severity, code, domain: 'tasks', path: extra.path || STORE_PATH, entityId: extra.entityId || '', message },
+        repair ? { safety: 'review', ...repair } : null
+    );
 }
 
 function readTaskRecords(projectFolder, context) {
@@ -93,14 +99,37 @@ function auditTaskDependencies(context, byId) {
         const raw = Array.isArray(task.dependencies) ? task.dependencies : [];
         for (const dependencyId of raw) {
             if (!byId.has(dependencyId))
-                taskIssue(context, 'task-dependency-missing', 'error', `Bağımlı olunan görev yok: ${dependencyId}`, { entityId: task.id });
+                taskIssue(
+                    context,
+                    'task-dependency-missing',
+                    'error',
+                    `Bağımlı olunan görev yok: ${dependencyId}`,
+                    { entityId: task.id },
+                    {
+                        action: 'task-remove-dependency',
+                        description: 'Olmayan göreve bağımlılığı kaldır.',
+                        payload: { taskId: task.id, dependencyId }
+                    }
+                );
         }
         const cycle = findPisiTaskDependencyCycle(tasks, task.id, raw);
         if (cycle) {
             const key = [...new Set(cycle)].sort().join('|');
             if (reportedCycles.has(key)) continue;
             reportedCycles.add(key);
-            taskIssue(context, 'task-dependency-cycle', 'error', `Görev bağımlılıkları döngü oluşturuyor: ${cycle.join(' → ')}`, { entityId: task.id });
+            // The loop closes again through the task's first step; that dependency goes.
+            taskIssue(
+                context,
+                'task-dependency-cycle',
+                'error',
+                `Görev bağımlılıkları döngü oluşturuyor: ${cycle.join(' → ')}`,
+                { entityId: task.id },
+                {
+                    action: 'task-remove-dependency',
+                    description: 'Döngüyü kapatan bağımlılığı kaldır.',
+                    payload: { taskId: task.id, dependencyId: cycle[1] }
+                }
+            );
         }
     }
 }
@@ -113,7 +142,13 @@ function getDiaryDateOfDoc(projectFolder, doc) {
     return compare(expected) === compare(doc.filePath) ? day : null;
 }
 
-function auditTaskBlocks(context, inventory, byId) {
+const noteRef = (projectFolder, doc) => ({
+    notePath: doc.storedPath,
+    noteId: doc.metadata?.id || null,
+    diaryDate: getDiaryDateOfDoc(projectFolder, doc)
+});
+
+function auditTaskBlocks(projectFolder, context, inventory, byId) {
     const occurrences = new Map();
     for (const doc of inventory.docs) {
         if (doc.type !== 'node' || !doc.metadata) continue;
@@ -125,40 +160,114 @@ function auditTaskBlocks(context, inventory, byId) {
             if (!list.includes(doc)) list.push(doc);
         }
     }
+    let trashed = null;
+    const isTrashed = (taskId) => {
+        trashed ??= modules['main.trashStore'].listPisiTrashedTaskIds(projectFolder);
+        return trashed.has(taskId);
+    };
+    // A task whose only block is in another note gets the move repair, not a second block (GV7).
+    const movedHere = new Set();
     for (const [taskId, docs] of occurrences) {
         const task = byId.get(taskId);
         if (!task) {
+            const restore = isTrashed(taskId);
             for (const doc of docs) {
-                taskIssue(context, 'task-block-orphan', 'warning', `Notta kaydı olmayan bir görev bloğu var: ${taskId}`, {
-                    path: doc.storedPath,
-                    entityId: taskId
-                });
+                taskIssue(
+                    context,
+                    'task-block-orphan',
+                    'warning',
+                    `Notta kaydı olmayan bir görev bloğu var: ${taskId}`,
+                    { path: doc.storedPath, entityId: taskId },
+                    restore && docs.length === 1
+                        ? {
+                              action: 'task-restore-orphan',
+                              description: 'Görevi çöp kutusundan geri getir; yeri bu not olur.',
+                              payload: { taskId, ...noteRef(projectFolder, doc) }
+                          }
+                        : {
+                              action: 'task-remove-orphan-block',
+                              description: 'Görev bloğunu nottan kaldır.',
+                              payload: { taskId, ...noteRef(projectFolder, doc) }
+                          }
+                );
             }
             continue;
         }
         if (docs.length > 1) {
-            taskIssue(context, 'task-duplicate-reference', 'warning', `Görevin bloğu birden çok notta: ${docs.map((doc) => doc.storedPath).join(', ')}`, {
-                entityId: taskId
-            });
+            const notes = docs
+                .map((doc) => noteRef(projectFolder, doc))
+                .filter((note) => note.noteId)
+                .sort((a, b) => Number(b.noteId === task.noteId) - Number(a.noteId === task.noteId) || a.notePath.localeCompare(b.notePath));
+            taskIssue(
+                context,
+                'task-duplicate-reference',
+                'warning',
+                `Görevin bloğu birden çok notta: ${docs.map((doc) => doc.storedPath).join(', ')}`,
+                { entityId: taskId },
+                notes.length > 1
+                    ? {
+                          action: 'task-split-duplicate',
+                          description: `${notes[0].notePath} dışındaki bloklar yeni görevlere (kopya) çevrilir.`,
+                          payload: { taskId, notes }
+                      }
+                    : null
+            );
             continue;
         }
         const location = getPisiTaskLocation(task);
         if (location && (location.kind !== 'note' || docs[0].metadata?.id !== location.noteId)) {
-            taskIssue(context, 'task-block-misplaced', 'warning', 'Görevin bloğu görevin yeri olmayan bir notta.', {
-                path: docs[0].storedPath,
-                entityId: taskId
-            });
+            movedHere.add(taskId);
+            taskIssue(
+                context,
+                'task-block-misplaced',
+                'warning',
+                'Görevin bloğu görevin yeri olmayan bir notta.',
+                { path: docs[0].storedPath, entityId: taskId },
+                docs[0].metadata?.id
+                    ? {
+                          action: 'task-move-to-block',
+                          description: 'Görevin yeri bloğun bulunduğu not olsun.',
+                          payload: { taskId, ...noteRef(projectFolder, docs[0]) }
+                      }
+                    : null
+            );
         }
     }
     for (const task of byId.values()) {
         if (!task.noteId) continue;
         const note = inventory.nodeById.get(task.noteId);
         if (!note) {
-            taskIssue(context, 'task-note-missing', 'error', `Görevin notu yok: ${task.noteId}`, { entityId: task.id });
+            taskIssue(
+                context,
+                'task-note-missing',
+                'error',
+                `Görevin notu yok: ${task.noteId}`,
+                { entityId: task.id },
+                movedHere.has(task.id)
+                    ? null
+                    : {
+                          action: 'task-place-in-today-diary',
+                          description: 'Görevi bugünün günlüğüne bağla.',
+                          payload: { taskId: task.id, noteId: task.noteId }
+                      }
+            );
             continue;
         }
         if (!(occurrences.get(task.id) || []).some((doc) => doc.filePath === note.filePath)) {
-            taskIssue(context, 'task-homeless', 'warning', 'Görevin notunda görev bloğu yok.', { path: note.storedPath, entityId: task.id });
+            taskIssue(
+                context,
+                'task-homeless',
+                'warning',
+                'Görevin notunda görev bloğu yok.',
+                { path: note.storedPath, entityId: task.id },
+                movedHere.has(task.id)
+                    ? null
+                    : {
+                          action: 'task-append-block',
+                          description: 'Görev bloğunu notun sonuna ekle.',
+                          payload: { taskId: task.id, notePath: note.storedPath, noteId: task.noteId }
+                      }
+            );
         }
     }
 }
@@ -185,7 +294,14 @@ function auditDiarySections(projectFolder, context, inventory, byId) {
         const unknown = section.taskIds.filter((id) => !byId.has(id));
         const fits = section.count === 1 && section.last && section.blockId === `blk_diary-tasks-${day}` && !unknown.length;
         if (!fits) {
-            taskIssue(context, 'diary-task-section-mismatch', 'warning', 'Günlüğün görev bölümü kurala uymuyor.', { path: doc.storedPath });
+            taskIssue(
+                context,
+                'diary-task-section-mismatch',
+                'warning',
+                'Günlüğün görev bölümü kurala uymuyor.',
+                { path: doc.storedPath },
+                { action: 'task-rebuild-diary-section', description: 'Görev bölümünü görev kayıtlarından yeniden üret.', payload: { diaryDate: day } }
+            );
         }
     }
 }
@@ -195,7 +311,7 @@ function auditPisiTasks(projectFolder, context, inventory) {
     if (!read.ok) return { tasks: [], byId: new Map() };
     const byId = auditTaskRecords(context, read.records);
     auditTaskDependencies(context, byId);
-    auditTaskBlocks(context, inventory, byId);
+    auditTaskBlocks(projectFolder, context, inventory, byId);
     auditDiarySections(projectFolder, context, inventory, byId);
     return { tasks: [...byId.values()], byId };
 }

@@ -13,8 +13,6 @@ const PISI_SUPPLEMENTAL_USER_CONTENT_SELECTOR = [
     '.center-tab-title',
     '.pisi-tag-result-text',
     '.pisi-tag-result-node',
-    '.pisi-mission-text',
-    '.pisi-mission-node',
     '[data-pisi-user-content]'
 ].join(', ');
 

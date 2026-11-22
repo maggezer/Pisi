@@ -288,8 +288,6 @@ const PISI_USER_CONTENT_SELECTOR = [
     '.center-tab-title',
     '.pisi-tag-result-text',
     '.pisi-tag-result-node',
-    '.pisi-mission-text',
-    '.pisi-mission-node',
     '[data-pisi-user-content]'
 ].join(', ');
 
@@ -472,10 +470,19 @@ function pisiApplyToRoot(root = document) {
             }
         }
 
-        document.documentElement.lang = pisiLanguage === 'eng' ? 'en' : 'tr';
-        document.title = 'Pisi';
-
-        for (const image of document.querySelectorAll('#window-logo, .modal-logo-row img')) {
+        // The page-wide part runs on the whole-document pass (start, language change). An added
+        // subtree only looks at its own logos: a document query for every added node made opening a
+        // note with many blocks slow (docs/task-plan.md G7 measurement).
+        const logos = '#window-logo, .modal-logo-row img';
+        let images = [];
+        if (root.nodeType === Node.DOCUMENT_NODE) {
+            document.documentElement.lang = pisiLanguage === 'eng' ? 'en' : 'tr';
+            document.title = 'Pisi';
+            images = [...document.querySelectorAll(logos)];
+        } else if (root.nodeType === Node.ELEMENT_NODE) {
+            images = [...(root.matches(logos) ? [root] : []), ...root.querySelectorAll(logos)];
+        }
+        for (const image of images) {
             image.src = pisiIcons?.brand || 'assets/pisi.png';
             image.alt = 'Pisi';
         }

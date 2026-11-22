@@ -683,6 +683,21 @@ function takePisiTasksFromTrash(projectFolder, taskIds) {
     return { tasks, dependencyRefs };
 }
 
+/** The ids of the tasks in the Trash's task items (read only; Project Integrity's orphan blocks). */
+function listPisiTrashedTaskIds(projectFolder) {
+    const ids = new Set();
+    const projectRoot = path.resolve(projectFolder);
+    const itemsRoot = getPisiTrashItemsRoot(projectRoot);
+    if (!fs.existsSync(itemsRoot)) return ids;
+    for (const entry of fs.readdirSync(itemsRoot, { withFileTypes: true })) {
+        if (!entry.isDirectory() || !normalizePisiTrashId(entry.name)) continue;
+        const read = readPisiTrashManifest(projectRoot, entry.name);
+        if (!read.ok || read.manifest.kind !== 'task') continue;
+        for (const task of Array.isArray(read.manifest.references?.tasks) ? read.manifest.references.tasks : []) if (task?.id) ids.add(task.id);
+    }
+    return ids;
+}
+
 function permanentlyDeletePisiTrashItem(projectFolder, trashId) {
     try {
         const projectRoot = path.resolve(projectFolder);
@@ -752,6 +767,7 @@ const moduleApi = {
     restorePisiTrashItem,
     createPisiTaskTrashItem,
     takePisiTasksFromTrash,
+    listPisiTrashedTaskIds,
     permanentlyDeletePisiTrashItem,
     emptyPisiTrash,
     preflightPisiTrashRestore

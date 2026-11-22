@@ -54,10 +54,6 @@ function closePisiTaskWorkspace() {
     return true;
 }
 
-function isPisiTaskWorkspaceOpen() {
-    return pisiTaskWorkspaceState.open;
-}
-
 /** Adds the workspace's tab to the tab bar while it is open (the only active tab then). Returns whether it did. */
 function renderPisiTaskWorkspaceTab(tabsElement) {
     if (!pisiTaskWorkspaceState.open || !tabsElement) return false;
@@ -83,7 +79,6 @@ const moduleApi = {
     pisiTaskWorkspaceState,
     openPisiTaskWorkspace,
     closePisiTaskWorkspace,
-    isPisiTaskWorkspaceOpen,
     renderPisiTaskWorkspaceTab
 };
 

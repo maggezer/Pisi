@@ -111,6 +111,15 @@ function insertPisiTaskBlockIntoEditor(editor, change) {
     return true;
 }
 
+/** The block stays where it is and names another task (an Integrity repair of a double reference). */
+function retagPisiTaskBlockInEditor(editor, change) {
+    const block = editor.querySelector(`.pisi-task-block[data-pisi-task-id="${CSS.escape(change.taskId)}"]`);
+    if (!block || !change.newTaskId) return false;
+    block.dataset.pisiTaskId = change.newTaskId;
+    window.drawPisiTaskBlock?.(block);
+    return true;
+}
+
 function removePisiTaskBlockFromEditor(editor, change) {
     const blocks = editor.querySelectorAll(`.pisi-task-block[data-pisi-task-id="${CSS.escape(change.taskId)}"]`);
     blocks.forEach((block) => block.remove());
@@ -129,7 +138,8 @@ async function applyPisiTaskDeferred(deferred, { save = true } = {}) {
     for (const change of Array.isArray(deferred.notes) ? deferred.notes : []) {
         const open = findPisiOpenTaskDocument(change.notePath);
         if (!open) continue;
-        const changed = change.op === 'insert' ? insertPisiTaskBlockIntoEditor(open.editor, change) : removePisiTaskBlockFromEditor(open.editor, change);
+        const apply = { insert: insertPisiTaskBlockIntoEditor, retag: retagPisiTaskBlockInEditor }[change.op] || removePisiTaskBlockFromEditor;
+        const changed = apply(open.editor, change);
         if (changed) touched.add(open.editor);
     }
     for (const day of Array.isArray(deferred.diaryDays) ? deferred.diaryDays : []) {

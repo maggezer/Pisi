@@ -161,9 +161,10 @@ function writePisiTaskNoteContent(notePath, content, reason) {
 }
 
 /**
- * Inserts or removes a task block in a note. An open note is left alone and
- * reported in `deferred.notes`; a closed one is written (with a history
- * snapshot, it is user content). Returns `{ ok, blockId?, afterBlockId? }`.
+ * Inserts, removes or retags (`newTaskId`) a task block in a note. An open
+ * note is left alone and reported in `deferred.notes`; a closed one is written
+ * (with a history snapshot, it is user content). Returns
+ * `{ ok, blockId?, afterBlockId? }`.
  * @returns {any}
  */
 function applyPisiTaskNoteChange(projectFolder, change, context) {
@@ -187,6 +188,15 @@ function applyPisiTaskNoteChange(projectFolder, change, context) {
         return { ok: true, blockId: change.blockId };
     }
     const index = blocks.findIndex((block) => block.taskId === change.taskId);
+    if (change.op === 'retag') {
+        // The block stays where it is and names another task (an Integrity repair of a double reference).
+        if (index < 0) return { ok: true, retagged: false };
+        const block = blocks[index];
+        const next = content.slice(0, block.start) + makePisiTaskBlockHtml({ blockId: block.blockId, taskId: change.newTaskId }) + content.slice(block.end);
+        writePisiTaskNoteContent(note.notePath, next, 'task-block');
+        context.writtenNotes.push(note.notePath);
+        return { ok: true, retagged: true, blockId: block.blockId };
+    }
     if (index < 0) return { ok: true, removed: false };
     const afterBlockId = findPisiBlockIdBefore(content, blocks[index].start);
     const next = removePisiTaskBlock(content, change.taskId);
@@ -257,6 +267,11 @@ function writePisiDiarySectionsForChanges(projectFolder, tasks, pairs, context) 
     return [...days].sort();
 }
 
+/** The service's clock (tests and the E2E fix it). */
+function getPisiTaskServiceNow() {
+    return pisiTaskServiceClock();
+}
+
 function makePisiTaskCommandContext(payload = {}) {
     return {
         openPaths: makePisiOpenPathSet(payload.openPaths),
@@ -307,8 +322,10 @@ function emitPisiTasksChanged(projectFolder, { changed = [], removedIds = [], so
             }
         }
     };
-    // Inside a larger mutation (a batch, a note save) the event waits for it to end.
-    if (modules['main.atomicMutation']?.getActivePisiAtomicMutation?.()) globalThis.setImmediate(send);
+    // Inside a mutation (a command, a batch, a note save, a rename) the event waits until it is
+    // committed and goes after the command's answer; a mutation that rolls back sends nothing.
+    const atomic = modules['main.atomicMutation'];
+    if (atomic?.getActivePisiAtomicMutation?.()) atomic.onPisiAtomicMutationCommit(() => globalThis.setImmediate(send));
     else send();
 }
 
@@ -941,6 +958,10 @@ function getOrCreatePisiDiaryWithTasks(projectFolder, isoDate) {
 const moduleApi = {
     setPisiTaskServiceClock,
     setPisiTaskServiceFaultHook,
+    getPisiTaskServiceNow,
+    readPisiWritableTaskState,
+    applyPisiTaskNoteChange,
+    writePisiDiarySectionsForChanges,
     onPisiTasksChanged,
     emitPisiTasksChanged,
     getPisiNoteDiaryDate,

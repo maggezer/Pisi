@@ -43,18 +43,12 @@ test('Project Integrity audits every canonical and recovery authority', () => {
     assert.match(documents, /auditNodeProperties/);
 });
 
-test('Project Integrity detects identity reference task and hierarchy corruption classes', () => {
+// Task findings and their repairs are behaviour tests: tests/project-integrity-tasks.test.mjs and
+// tests/task-repair.test.mjs (docs/task-plan.md G7).
+test('Project Integrity detects identity reference and hierarchy corruption classes', () => {
     assert.match(documents, /const type = .*'node'.*'map'/);
     assert.match(documents, /code: `\$\{type\}-duplicate-id`/);
     for (const code of [
-        'task-duplicate-id',
-        'task-note-missing',
-        'task-block-orphan',
-        'task-homeless',
-        'task-duplicate-reference',
-        'task-dependency-missing',
-        'task-dependency-cycle',
-        'diary-task-section-mismatch',
         'relationship-duplicate-id',
         'relationship-endpoint-missing',
         'relationship-semantic-duplicate',

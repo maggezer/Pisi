@@ -312,14 +312,6 @@
     background: transparent;
 }
 
-.pisi-task-duration-badge {
-    padding: 2px 6px;
-    color: #bfd0ff;
-    background: rgb(73 109 224 / 16%);
-    border-radius: 999px;
-    font-size: 10px;
-}
-
 .pisi-properties-editor,
 .pisi-bases,
 .pisi-portable-section {

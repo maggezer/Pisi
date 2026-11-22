@@ -21,7 +21,7 @@ import { parseTaskDraft } from '../mobile/src/screens/pisi/day-model.mjs';
 import { getTaskChoicePatch, getTaskDatePatch, getTaskReminderPatch, getTaskTimePatch, limitTaskPatch } from '../mobile/src/screens/tasks/task-edit.mjs';
 import { buildTaskLists } from '../mobile/src/screens/tasks/view-model.mjs';
 import { getCalendarTaskSummaryByDate } from '../renderer/calendar/pisi-calendar-ui.mjs';
-import { matchesPisiTodoFilter, parsePisiTodoTagValue } from '../renderer/tags/pisi-todo-utils.mjs';
+import { matchesPisiTodoFilter, parsePisiTodoTagValue } from '../shared/task-views.mjs';
 import { collectPisiCollapsedHubNodeIds, isPisiMapEdgeHiddenByCollapsedHub } from '../shared/map-view.mjs';
 import { normalizePisiTaskRecord, readPisiTask } from '../shared/task-model.mjs';
 import { filterPisiTasks, getPisiTaskTodoTag } from '../shared/task-views.mjs';

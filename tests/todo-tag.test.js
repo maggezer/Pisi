@@ -9,7 +9,11 @@ const { pathToFileURL } = require('node:url');
 const root = path.resolve(__dirname, '..');
 const read = (filePath) => fs.readFileSync(path.join(root, filePath), 'utf8');
 const readJson = (filePath) => JSON.parse(read(filePath));
-const utilsPromise = import(pathToFileURL(path.join(root, 'renderer/tags/pisi-todo-utils.mjs')).href);
+// The version 1 todo grammar (shared/task-model.mjs, shared/task-views.mjs): the phone writes it until G8.
+const utilsPromise = Promise.all([
+    import(pathToFileURL(path.join(root, 'shared/task-model.mjs')).href),
+    import(pathToFileURL(path.join(root, 'shared/task-views.mjs')).href)
+]).then(([model, views]) => ({ ...model, ...views }));
 
 test('todo önem dereceleri 1-5 ve mevcut sözdizimi korunur', async () => {
     const { PISI_TODO_PRIORITY_OPTIONS, formatPisiTodoTag } = await utilsPromise;

@@ -37,6 +37,8 @@ function makePisiTaskViewTaskButton(task, className, { blocked = false } = {}) {
     const title = getPisiTaskTitleReadingText(task.title) || t('Başlıksız görev');
     const button = createPisiTaskPanelButton(className, title, { onClick: () => openPisiTaskDetailFor(task.id) });
     button.dataset.pisiTaskViewTask = task.id;
+    // The user's text: not for the page translator.
+    if (task.title) button.dataset.pisiUserContent = '';
     button.dataset.status = task.status;
     button.dataset.priority = String(task.priority || 3);
     button.setAttribute('aria-label', `${title} · ${t('Ayrıntılar')}`);

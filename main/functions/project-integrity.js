@@ -94,17 +94,26 @@ async function auditPisiProjectIntegrityAsync(projectFolder, options = {}) {
     return step.value;
 }
 
-function repairPisiProjectIntegrity(projectFolder, repairIds = []) {
+/**
+ * Applies repairs of a fresh audit. Without `repairIds` every safe repair
+ * runs; with them, the named ones, which may also be task repairs ('review',
+ * docs/task-plan.md G7) the user started one by one. Changes of documents
+ * open in the editor (`openPaths`) come back in `deferred` (GV9).
+ */
+function repairPisiProjectIntegrity(projectFolder, repairIds = [], { openPaths = [] } = {}) {
     const before = auditPisiProjectIntegrity(projectFolder);
     const requested = new Set((Array.isArray(repairIds) ? repairIds : []).map(String));
     const safe = before.repairPlan?.safe || [];
-    const selected = requested.size ? safe.filter((repair) => requested.has(repair.id)) : safe;
+    const taskReview = (before.repairPlan?.review || []).filter((repair) => modules['main.taskRepair'].isPisiTaskRepairAction(repair.action));
+    const selected = requested.size ? [...safe, ...taskReview].filter((repair) => requested.has(repair.id)) : safe;
+    const deferred = { notes: [], diaryDays: [] };
 
     if (!selected.length) {
         return {
             ok: true,
             applied: 0,
             results: [],
+            deferred,
             before,
             after: before
         };
@@ -112,7 +121,7 @@ function repairPisiProjectIntegrity(projectFolder, repairIds = []) {
 
     const results = [];
     for (const repair of selected) {
-        const result = repairs.applySafeRepair(projectFolder, repair);
+        const result = repairs.applyRepair(projectFolder, repair, { openPaths });
         results.push({
             repairId: repair.id,
             action: repair.action,
@@ -121,18 +130,21 @@ function repairPisiProjectIntegrity(projectFolder, repairIds = []) {
         if (!result?.ok) {
             return {
                 ok: false,
-                code: 'INTEGRITY_REPAIR_FAILED',
+                code: result?.code || 'INTEGRITY_REPAIR_FAILED',
                 error: result?.error || `Repair başarısız: ${repair.action}`,
                 applied: results.filter((item) => item.result?.ok).length,
                 results
             };
         }
+        deferred.notes.push(...(result.deferred?.notes || []));
+        for (const day of result.deferred?.diaryDays || []) if (!deferred.diaryDays.includes(day)) deferred.diaryDays.push(day);
     }
 
     return {
         ok: true,
         applied: results.length,
         results,
+        deferred,
         before,
         after: auditPisiProjectIntegrity(projectFolder)
     };

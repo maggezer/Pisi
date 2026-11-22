@@ -340,6 +340,8 @@ function makePisiTaskCard(state, task, { today, blocked, manual, readOnly }) {
     if (task.title) appendPisiTaskTitleParts(name, task.title);
     else name.textContent = title;
     name.dataset.pisiTaskRole = 'title';
+    // A task's title is the user's text: the page translator leaves it alone (a task called "Görev ekle" stays so in English).
+    name.dataset.pisiUserContent = '';
     name.setAttribute('aria-label', `${title} · ${t('Ayrıntılar')}`);
     body.appendChild(name);
     const meta = makePisiTaskPanelElement('div', 'pisi-task-card-meta');
@@ -357,10 +359,16 @@ function makePisiTaskCard(state, task, { today, blocked, manual, readOnly }) {
     meta.appendChild(priority);
     if (task.repeat && task.repeat !== 'none') meta.appendChild(makePisiTaskPanelElement('span', 'pisi-task-card-repeat', '↻'));
     if (blocked) meta.appendChild(makePisiTaskPanelElement('span', 'pisi-task-card-blocked', t('Bağımlılık bekliyor')));
-    if (task.tags?.length) meta.appendChild(makePisiTaskPanelElement('span', 'pisi-task-card-tags', formatPisiTaskTags(task.tags)));
+    if (task.tags?.length) {
+        const tags = makePisiTaskPanelElement('span', 'pisi-task-card-tags', formatPisiTaskTags(task.tags));
+        tags.dataset.pisiUserContent = '';
+        meta.appendChild(tags);
+    }
     meta.append(...makePisiTaskTitleLinkButtons(task.title));
     body.appendChild(meta);
-    body.appendChild(makePisiTaskPanelElement('div', 'pisi-task-card-place', getPisiTaskPlaceLabel(task)));
+    const place = makePisiTaskPanelElement('div', 'pisi-task-card-place', getPisiTaskPlaceLabel(task));
+    if (task.noteId) place.dataset.pisiUserContent = '';
+    body.appendChild(place);
     card.appendChild(body);
 
     const side = makePisiTaskPanelElement('div', 'pisi-task-card-side');
