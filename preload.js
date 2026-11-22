@@ -131,7 +131,7 @@ contextBridge.exposeInMainWorld('pisiProject', {
     importMarkdownFolder: (projectFolder) => ipcRenderer.invoke('project:import-markdown', projectFolder),
     listNodeHistory: (nodePath) => ipcRenderer.invoke('project:list-node-history', nodePath),
     getNodeHistoryVersion: (nodePath, historyId) => ipcRenderer.invoke('project:get-node-history-version', nodePath, historyId),
-    restoreNodeHistory: (nodePath, historyId) => ipcRenderer.invoke('project:restore-node-history', nodePath, historyId),
+    restoreNodeHistory: (nodePath, historyId, openPaths = []) => ipcRenderer.invoke('project:restore-node-history', nodePath, historyId, openPaths),
     auditIntegrity: (projectFolder) => ipcRenderer.invoke('project:audit-integrity', projectFolder),
     listBackups: (projectFolder, filePath) => ipcRenderer.invoke('project:list-backups', projectFolder, filePath || null),
     restoreBackup: (projectFolder, backupId) => ipcRenderer.invoke('project:restore-backup', projectFolder, backupId),

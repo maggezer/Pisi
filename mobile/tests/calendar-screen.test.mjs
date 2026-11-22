@@ -25,10 +25,9 @@ const TASKS = [
     task(2, { dueDate: '2026-11-12', status: 'done', completedAt: new Date(2026, 10, 12, 18).toISOString() }),
     // A day with one open and one done task counts as open.
     task(3, { dueDate: '2026-11-20', status: 'done' }),
-    task(4, { scheduledAt: '2026-11-20T10:00' }),
-    // The scheduled day wins over the due date, as on the desktop.
-    task(5, { dueDate: '2026-11-25', scheduledAt: '2026-11-03T08:00' }),
-    task(6, { deadline: '2026-12-02T17:00', status: 'waiting' }),
+    task(4, { dueDate: '2026-11-20' }),
+    task(5, { dueDate: '2026-11-03' }),
+    task(6, { dueDate: '2026-12-02', status: 'waiting' }),
     task(7)
 ];
 const FILES = {
@@ -37,16 +36,33 @@ const FILES = {
     'diary/2026-11-12.node': noteFile({ id: 'node_d2', title: '12-11-2026' })
 };
 
-describe('takvim noktaları (masaüstü takvim kuralı)', () => {
+describe('takvim noktaları (masaüstü takvim kuralı: günlük bölümünün gün kuralı)', () => {
     it('tarihli her görev gününü işaretler; açık görevi olan gün ile hepsi biten gün ayrılır', () => {
         const marks = getCalendarMarks(TASKS, ['2026-11-10', '2026-11-12']);
         expect([...marks.tasks].sort()).toEqual(['2026-11-03', '2026-11-14', '2026-11-20', '2026-12-02']);
         expect([...marks.tasksDone]).toEqual(['2026-11-12']);
         expect([...marks.diary]).toEqual(['2026-11-10', '2026-11-12']);
         // Bilinmeyen ya da büyük harfli durumlar masaüstündeki gibi okunur: yalnız "done" bitmiş sayılır.
-        expect([...getCalendarMarks([task(8, { dueDate: TODAY, status: 'DONE' })], []).tasksDone]).toEqual([TODAY]);
+        expect([...getCalendarMarks([task(8, { dueDate: TODAY, status: 'DONE' })], []).tasks]).toEqual([TODAY]);
         expect([...getCalendarMarks([task(9, { dueDate: TODAY, status: undefined })], []).tasks]).toEqual([TODAY]);
+        // Eski alanlar (scheduledAt, deadline) okunmaz: görevin günü yalnız dueDate'tir (GK1).
+        expect([...getCalendarMarks([task(10, { scheduledAt: '2026-11-20T10:00', deadline: '2026-11-21' })], []).tasks]).toEqual([]);
         expect(monthOf('2026-11-14')).toBe('2026-11');
+    });
+
+    it('gün, o günün günlük bölümündeki görevlerdir: günlükte yaşayan, o gün biten ve o gün tamamlanan görevler', () => {
+        const repeating = task(11, {
+            dueDate: '2026-11-22',
+            repeat: 'daily',
+            completions: [{ date: '2026-11-21', dueDate: '2026-11-21', at: '2026-11-21T06:00:00.000Z' }]
+        });
+        const lateDone = task(12, { dueDate: '2026-11-10', status: 'done', completedOn: '2026-11-16', completedAt: '2026-11-16T08:00:00.000Z' });
+        const living = task(13, { diaryDate: '2026-11-05', dueDate: '2026-11-28' });
+        const marks = getCalendarMarks([repeating, lateDone, living], []);
+        // 21: tamamlanan tekrar (☑); 22: sonraki tekrar açık; 10 ve 16: geç tamamlanan görev ikisinde de bitmiş.
+        expect([...marks.tasksDone].sort()).toEqual(['2026-11-10', '2026-11-16', '2026-11-21']);
+        // 5: görevin günlüğü (başka güne tarihli, kendi durumuyla açık); 28: bitiş günü.
+        expect([...marks.tasks].sort()).toEqual(['2026-11-05', '2026-11-22', '2026-11-28']);
     });
 
     it('noktalar ve günün adı: açık görev dolu nokta, biten görevler ayrı tonda nokta, günlük halka', () => {

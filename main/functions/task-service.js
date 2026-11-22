@@ -394,6 +394,43 @@ function createPisiTask(projectFolder, payload = {}) {
     return finishPisiTaskCommand(projectFolder, context, { task: readPisiTask(task), blockId, created: true }, { changed: [task] });
 }
 
+/**
+ * New tasks of notes that the caller writes in the same mutation, their
+ * blocks already in those notes (docs/task-plan.md G5: a Markdown import, the
+ * map's note copy): `[{ id, noteId, task }]`, `task` the fields of a new task.
+ * One tasks.json write; the diary sections of their days are written and a
+ * diary a task joins is created (GV5, GV15).
+ */
+function addPisiNoteTasks(projectFolder, entries = [], payload = {}) {
+    const read = readPisiWritableTaskState(projectFolder);
+    if (read.error) return read.error;
+    const tasks = read.state.tasks.slice();
+    const known = new Set(tasks.map((task) => task?.id));
+    const now = pisiTaskServiceClock();
+    const added = [];
+    for (const entry of Array.isArray(entries) ? entries : []) {
+        if (!entry || !isPisiTaskId(entry.id) || known.has(entry.id)) return makePisiTaskServiceError('TASK_ID_EXISTS', 'Bu görev kimliği zaten var.');
+        /** @type {any} */
+        const fields = { ...pickPisiTaskFields(entry.task || {}, PISI_TASK_CREATE_FIELDS), id: entry.id, noteId: entry.noteId };
+        if (fields.title === undefined) fields.title = '';
+        const normalized = normalizePisiTask(fields, null, { now, makeUuid: () => crypto.randomUUID() });
+        if (!normalized.ok) return formatPisiTaskValidationError(normalized);
+        known.add(normalized.task.id);
+        added.push(normalized.task);
+    }
+    if (!added.length) return { ok: true, tasks: [] };
+    const nextTasks = [...tasks, ...added];
+    taskStore.writePisiTaskStore(projectFolder, read.state, nextTasks, { now });
+    const context = makePisiTaskCommandContext(payload);
+    writePisiDiarySectionsForChanges(
+        projectFolder,
+        nextTasks,
+        added.map((task) => ({ before: null, after: task })),
+        context
+    );
+    return finishPisiTaskCommand(projectFolder, context, { tasks: added.map(readPisiTask) }, { changed: added });
+}
+
 /** One field change of a stored task; `{ ok, before, after, changed }` or an error. */
 function preparePisiTaskUpdate(tasks, taskId, patch, now) {
     const index = findPisiTaskIndex(tasks, taskId);
@@ -682,21 +719,37 @@ function saveNoteContent(nodePath, content) {
 }
 
 /**
- * The editor's save of a note. Task blocks are stored in their bare form
- * (GV2) and a diary's task section is the one the rule gives (GV15). When the
- * save takes task blocks out of the note or brings ids back, the tasks follow
- * in the same atomic mutation: a task whose place is this note and whose block
- * is gone goes to the Trash (one item for the save); an id that is in the
- * Trash comes back and lives in this note. A live task of another note is left
- * alone (Integrity reports it). Sync never runs this (it writes notes itself).
+ * Writes a note whose task blocks may have changed and lets the tasks follow
+ * in the same atomic mutation (§3.3). Task blocks are stored in their bare
+ * form (GV2) and a diary's task section is the one the rule gives (GV15).
+ * When the new content takes task blocks out of the note or brings ids back,
+ * a task whose place is this note and whose block is gone goes to the Trash
+ * (one item); an id that is in the Trash comes back and lives in this note. A
+ * live task of another note is left alone (Integrity reports it), unless
+ * `dropForeign` is set (a history restore): then its block is not brought
+ * back, so no task gets a second block (GV7). `write(content)` writes the note.
+ *
+ * @param {string} projectFolder
+ * @param {string} nodePath
+ * @param {any} current
+ * @param {string} content
+ * @param {{ write: (html: string) => any, openPaths?: string[], dropForeign?: boolean }} options
+ * @returns {any}
  */
-function savePisiNoteWithTasks(projectFolder, nodePath, content, options = {}) {
-    const current = documentStore.ensurePisiFileMetadata(nodePath);
-    if (!current.ok) return current;
+function writePisiNoteWithTasks(projectFolder, nodePath, current, content, { write, openPaths = [], dropForeign = false }) {
     const before = String(current.data?.content || '');
-    const next = canonicalizePisiTaskBlocks(String(content ?? ''));
+    let next = canonicalizePisiTaskBlocks(String(content ?? ''));
     const diaryDate = getPisiNoteDiaryDate(projectFolder, nodePath, current.data);
     const state = taskStore.readPisiTaskStoreState(projectFolder);
+    const noteId = current.metadata?.id;
+    if (dropForeign && !state.readOnly) {
+        const byId = new Map(state.tasks.map((task) => [task?.id, task]));
+        const added = diffPisiTaskMembership(before, next)?.added || [];
+        for (const id of added) {
+            const task = byId.get(id);
+            if (task && (diaryDate || task.noteId !== noteId)) next = removePisiTaskBlock(next, id) ?? next;
+        }
+    }
     const diff = state.readOnly ? null : diffPisiTaskMembership(before, next);
     const changesTasks = Boolean(diff && (diff.added.length || diff.removed.length));
 
@@ -705,12 +758,11 @@ function savePisiNoteWithTasks(projectFolder, nodePath, content, options = {}) {
         const ids = listPisiDiaryTaskIds(diaryDate, tasks.map(readPisiTask).filter(Boolean));
         return replacePisiDiaryTaskSection(html, diaryDate, ids) ?? html;
     };
-    if (!changesTasks) return saveNoteContent(nodePath, normalizeSection(next, state.tasks));
+    if (!changesTasks) return write(normalizeSection(next, state.tasks));
 
     return modules['main.atomicMutation'].runPisiAtomicMutation(projectFolder, 'note.save-tasks', () => {
         const fresh = taskStore.readPisiTaskStore(projectFolder);
         const tasks = fresh.tasks.slice();
-        const noteId = current.metadata?.id;
         const byId = new Map(tasks.map((task) => [task?.id, task]));
         const removedIds = diff.removed.filter((id) => byId.get(id)?.noteId === noteId);
         const comingBack = diff.added.filter((id) => !byId.has(id));
@@ -757,12 +809,11 @@ function savePisiNoteWithTasks(projectFolder, nodePath, content, options = {}) {
         }
         if (out.removed.length || restored.length || fromTrash.dependencyRefs.length) taskStore.writePisiTaskStore(projectFolder, fresh, nextTasks, { now });
 
-        let content = next;
-        if (diaryDate) for (const task of restored) content = removePisiTaskBlock(content, task.id) ?? content;
-        const saved = saveNoteContent(nodePath, normalizeSection(content, nextTasks));
+        let written = next;
+        if (diaryDate) for (const task of restored) written = removePisiTaskBlock(written, task.id) ?? written;
+        const saved = write(normalizeSection(written, nextTasks));
         if (!saved?.ok) return saved;
-        const openPaths = [nodePath, ...(Array.isArray(options.openPaths) ? options.openPaths : [])];
-        const rewritten = rewritePisiDiarySectionsForTaskChange(projectFolder, tasks, nextTasks, { openPaths });
+        const rewritten = rewritePisiDiarySectionsForTaskChange(projectFolder, tasks, nextTasks, { openPaths: [nodePath, ...openPaths] });
         const touched = new Set([
             ...restored.map((task) => task.id),
             ...out.dependencyRefs.map((ref) => ref.taskId),
@@ -777,6 +828,42 @@ function savePisiNoteWithTasks(projectFolder, nodePath, content, options = {}) {
             tasks: { removed: out.removed.map((task) => task.id), restored: restored.map((task) => task.id), trashId },
             deferred: rewritten.context.deferred
         };
+    });
+}
+
+/**
+ * The editor's save of a note (§3.3): the tasks follow the blocks the save
+ * takes out and brings back (writePisiNoteWithTasks). Sync never runs this (it
+ * writes notes itself).
+ */
+function savePisiNoteWithTasks(projectFolder, nodePath, content, options = {}) {
+    const current = documentStore.ensurePisiFileMetadata(nodePath);
+    if (!current.ok) return current;
+    return writePisiNoteWithTasks(projectFolder, nodePath, current, content, {
+        write: (html) => saveNoteContent(nodePath, html),
+        openPaths: Array.isArray(options.openPaths) ? options.openPaths : []
+    });
+}
+
+/**
+ * A note's history restore (§3.3, G5): the restored document is written with
+ * its tasks following the restored blocks. A block whose task is live and
+ * lives in this note stays; a block whose task is in the Trash brings it
+ * back; a block whose task is nowhere stays and shows "Görev bulunamadı"; a
+ * block of a task that lives elsewhere is not brought back; tasks whose
+ * blocks the restore takes out go to the Trash. A diary's task section is not
+ * restored but made from the rule.
+ */
+function writePisiRestoredNote(projectFolder, nodePath, data, options = {}) {
+    const current = documentStore.ensurePisiFileMetadata(nodePath, { ensureSidecar: false });
+    if (!current.ok) return current;
+    return writePisiNoteWithTasks(projectFolder, nodePath, current, data?.content || '', {
+        write: (html) => {
+            globalThis.writePisiDocument(nodePath, { ...data, content: html });
+            return { ok: true };
+        },
+        openPaths: Array.isArray(options.openPaths) ? options.openPaths : [],
+        dropForeign: true
     });
 }
 
@@ -805,6 +892,7 @@ const moduleApi = {
     getPisiNoteDiaryDate,
     listPisiTasks,
     createPisiTask,
+    addPisiNoteTasks,
     updatePisiTask,
     batchUpdatePisiTasks,
     completePisiTaskCommand,
@@ -818,6 +906,7 @@ const moduleApi = {
     canonicalizePisiTaskBlocks,
     makePisiTaskCommandContext,
     savePisiNoteWithTasks,
+    writePisiRestoredNote,
     getOrCreatePisiDiaryWithTasks
 };
 

@@ -163,11 +163,21 @@ function highlightPisiSearchEditorTarget(result) {
     return false;
 }
 
+async function openPisiSearchTaskDetail(taskId) {
+    if (typeof window.openPisiTaskDetail !== 'function') return false;
+    await window.openPisiTaskDetail(taskId);
+    return true;
+}
+
+async function openPisiSearchTaskResult(result, options = {}) {
+    if (options.detail || result.opensDetail) return openPisiSearchTaskDetail(result.taskId);
+    return (await window.openPisiTaskLocation?.(result.taskId)) === true;
+}
+
 async function openPisiSearchSource(result) {
-    // A task opens its place (note or diary) by its id (renderer/tasks/pisi-task-actions.mjs).
-    if (result?.kind === 'task' && result?.taskId && typeof window.openPisiTaskLocation === 'function') {
-        return (await window.openPisiTaskLocation(result.taskId)) === true;
-    }
+    // A task opens its place (note or diary) by its id (renderer/tasks/pisi-task-actions.mjs);
+    // a task whose place cannot be opened opens its detail window (docs/task-plan.md G5).
+    if (result?.kind === 'task' && result?.taskId) return openPisiSearchTaskResult(result);
     const nodeItem = getPisiSearchNodeItem(result);
     if (!nodeItem) return false;
     const opened = await window.openPisiFileTab?.(nodeItem);
@@ -212,6 +222,8 @@ async function openPisiSearchResult(result, options = {}) {
     let opened = false;
     if (result.kind === 'map') {
         opened = Boolean(await window.openPisiFileTab?.(getPisiSearchMapItem(result)));
+    } else if (result.kind === 'task' && result.taskId && options.detail) {
+        opened = await openPisiSearchTaskResult(result, options);
     } else if (options.mapOnly) {
         opened = await showPisiSearchResultOnMap(result);
     } else {

@@ -442,6 +442,43 @@ alanıyla çizer; bunların hiçbiri dosyaya yazılmaz. Eski günlüklerdeki
 `PISI_DIARY_MANAGED_START…END` bölümleri
 dönüştürülmez; sıradan içerik olarak kalır.
 
+Takvim (`docs/task-plan.md` G5) aynı gün kuralını kullanır: bir gün, günlük
+bölümünün listelediği görevlerle işaretlenir ve her görev o gündeki durumuyla
+sayılır (`getPisiTaskCalendarSummary`, `shared/task-diary.mjs`; mobil takvim de
+aynı fonksiyonu çalıştırır). Açık görevi olan gün ile görevlerinin hepsi biten
+gün ayrılır; güne tıklamak o günün günlüğünü açar (yoksa oluşturur). Görev
+değişince takvim yalnız işaretleri yerinde günceller ve hiçbir dosyaya yazmaz.
+
+### Görevleri gösteren öteki yüzeyler
+
+`docs/task-plan.md` G5'ten beri bütün yüzeyler görevi `tasks.json`'dan okur ve
+hiçbiri okurken ya da gezinirken dosya yazmaz:
+
+- Harita rozetleri ve bağımlılık katmanı görevi notuna `noteId` ile bağlar;
+  günlükteki ve yeri olmayan görev hiçbir karta düşmez. Gecikme yalnız
+  `dueDate`'e ve yerel güne göredir.
+- Arama her görev için tek bir kayıt üretir
+  (`renderer/search/pisi-search-task-records.mjs`): nottaki, günlükteki ve yeri
+  olmayan (telefonun sürüm 1 kaydı) görevler. Notlar görev için okunmaz; eski
+  `todo.` işareti sıradan etikettir. Sonuç görevin yerini açar; yeri olmayan ya
+  da notu bulunmayan görevde (ya da Shift+Enter ile) görev ayrıntısı açılır.
+- Gezinme kesindir: etiket ve arama sonucu notu yoluyla, bloğu kimliğiyle açar
+  (`renderer/navigation/pisi-block-navigation.mjs`); metin ya da etiket
+  benzerliğiyle blok aranmaz, yazma yapılmaz. Görev, kimliği ve yeriyle açılır.
+- Hatırlatma panelinde "Tamamlandı" `task.complete.v1`, "Aç" görevin yeridir.
+- Dışa aktarma görev bloğunu ve günlük bölümünü kayıttan yazar: Markdown'da
+  `- [ ] Başlık` / `- [x] Başlık`, HTML, PDF ve DOCX'te kutulu satır; günlük
+  bölümü "Görevler" başlığıyla (uygulamanın dilinde) ve her görevin o gündeki
+  durumuyla. Kaydı olmayan blok "Görev bulunamadı" yazar.
+- Markdown içe aktarmada `- [ ] Başlık` satırı içe aktarılan notun görevi olur
+  (blok ve kayıt aynı atomik mutation'da, `tasks.json` tek yazmada).
+  Tamamlanma günü bilinmediği için `- [x]` satırı "☑ Başlık" metni olarak kalır.
+- Haritada not kopyalama her görevi yeni kimlikle ve yeri kopya not olarak
+  kopyalar (kopya kuralı `makePisiTaskCopyFields`, `shared/task-model.mjs`);
+  kaydı olmayan blok ve günlüğün görev bölümü kopyaya girmez.
+- Not sürüm geçmişinden geri yükleme görevleri geri gelen bloklara uydurur (aşağıda
+  Version History).
+
 ## Paint ve Sheet sidecar asset modeli
 
 Paint ve Sheet ağır verisi kalıcı node HTML'ine base64/JSON olarak gömülmez.
@@ -601,7 +638,14 @@ Kurallar:
 - content-identical save yeni version üretmez;
 - restore öncesi `before-restore` snapshot alınır;
 - history başka node kimliğine restore edilemez;
-- history canonical task/relationship/property store'un yerine kullanılmaz.
+- history canonical task/relationship/property store'un yerine kullanılmaz;
+- restore notun görevlerini geri gelen bloklara uydurur (`docs/task-plan.md`
+  §3.3, G5): görevi bu notta yaşayan blok kalır, görevi çöp kutusunda olan blok
+  görevi geri getirir, görevi hiçbir yerde olmayan blok kalır ("Görev
+  bulunamadı"), başka bir notta yaşayan görevin bloğu geri gelmez (bir görevin
+  tek bloğu olur); restore'un nottan çıkardığı görevler çöp kutusuna gider.
+  Günlüğün görev bölümü geri yüklenmez, kuraldan üretilir. Hepsi tek atomik
+  mutation'dır.
 
 Atomic sibling `.pisi-backup` dosyası Version History'den ayrı recovery
 mekanizmasıdır.

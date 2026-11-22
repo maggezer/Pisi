@@ -1327,6 +1327,18 @@
         "Durum dağılımı": "Durum dağılımı",
         "Öncelik dağılımı": "Öncelik dağılımı",
         "Önümüzdeki 30 gün": "Önümüzdeki 30 gün",
-        "Hatırlatma": "Hatırlatma"
+        "Hatırlatma": "Hatırlatma",
+        "Hazır": "Hazır",
+        "Engelli": "Engelli",
+        "Gecikmiş": "Gecikmiş",
+        "Sıradaki": "Sıradaki",
+        "{count} engelli": "{count} engelli",
+        "{count} gecikmiş": "{count} gecikmiş",
+        "sonraki?": "sonraki?",
+        "değişti": "değişti",
+        "{count} açık görev": "{count} açık görev",
+        "{title}; {open} açık; {blocked} engelli; {overdue} gecikmiş": "{title}; {open} açık; {blocked} engelli; {overdue} gecikmiş",
+        "Açık": "Açık",
+        "Görevler okunamadı; görevli not kopyalanamaz.": "Görevler okunamadı; görevli not kopyalanamaz."
     }
 }

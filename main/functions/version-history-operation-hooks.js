@@ -1,5 +1,6 @@
 import { ipcMain } from '../electron-bridge.js';
 import * as history from './version-history-core.js';
+import { modules } from '../module-registry.js';
 
 function rebindPisiVersionHistoryIpc() {
     ipcMain.removeHandler('project:save-node-content');
@@ -41,7 +42,7 @@ function rebindPisiVersionHistoryIpc() {
     });
 
     ipcMain.removeHandler('project:restore-node-history');
-    ipcMain.handle('project:restore-node-history', (_event, nodePath, historyId) => {
+    ipcMain.handle('project:restore-node-history', (_event, nodePath, historyId, openPaths = []) => {
         return asyncProjectOperation(async () => {
             const safeNodePath = assertProjectPath(nodePath, {
                 type: 'file',
@@ -50,7 +51,14 @@ function rebindPisiVersionHistoryIpc() {
             const projectFolder = globalThis.activeProjectFolder;
             return await Promise.resolve(
                 runPisiAtomicMutation(projectFolder, 'version-history.restore.v1', () =>
-                    history.restorePisiNodeHistoryVersionBounded(safeNodePath, historyId, { projectFolder })
+                    history.restorePisiNodeHistoryVersionBounded(safeNodePath, historyId, {
+                        projectFolder,
+                        // The note's tasks follow the restored blocks; open diaries are left to the editor (GV9).
+                        writeRestoredDocument: (filePath, data) =>
+                            modules['main.taskService'].writePisiRestoredNote(projectFolder, filePath, data, {
+                                openPaths: Array.isArray(openPaths) ? openPaths.filter((item) => typeof item === 'string') : []
+                            })
+                    })
                 )
             );
         });

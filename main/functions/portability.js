@@ -2,9 +2,13 @@ import { app, BrowserWindow, dialog } from '../electron-bridge.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as fsPromises from 'node:fs/promises';
+import * as crypto from 'node:crypto';
 import { modules, registerMainModule } from '../module-registry.js';
 import * as editorAssets from './editor-asset-store.js';
 import * as fileAssets from './editor-file-asset-store.js';
+import { expandPisiTaskMarkupForExport, readPisiMarkdownTaskLine } from './portability-tasks-core.js';
+import { makePisiTaskBlockHtml } from '../../shared/task-blocks.mjs';
+import { formatPisiBlockId } from '../../shared/ids.mjs';
 import {
     snapshotPisiNodeVersionBounded as snapshotPisiNodeVersion,
     saveNodeContentWithBoundedHistory as saveNodeContentWithHistory,
@@ -43,11 +47,23 @@ function decodePisiHtmlEntities(value = '') {
         .replace(/&amp;/gi, '&');
 }
 
-function stripPisiTaskMetadataHtml(value = '') {
-    return String(value || '').replace(
-        /<span\b(?=[^>]*(?:class=["'][^"']*pisi-task-metadata[^"']*["']|data-pisi-tag=["'](?:todo\.[^"']+|done)["']))[^>]*>[\s\S]*?<\/span>/gi,
-        ''
-    );
+/**
+ * What an export draws tasks with (docs/task-plan.md G5): the records of
+ * tasks.json, read once per export, and the user's language. Notes hold only
+ * task ids; the old `todo.` markup of an old note is ordinary text (§3.2.1).
+ */
+function readPisiExportTaskContext(projectFolder) {
+    const store = modules?.['main.taskStore'];
+    const translate = (value) => modules?.['main.i18n']?.translatePisiMain?.(value) ?? value;
+    if (!store || !projectFolder) return { tasks: [], readOnly: false, translate };
+    const state = store.readPisiTaskStoreState(projectFolder);
+    return { tasks: state.tasks || [], readOnly: state.readOnly === true, translate };
+}
+
+/** A document for export with its task blocks and diary task section drawn from the records. */
+function withPisiExportTasks(info, taskContext) {
+    if (!info?.ok || !taskContext) return info;
+    return { ...info, data: { ...info.data, content: expandPisiTaskMarkupForExport(info.data.content || '', taskContext) } };
 }
 
 function pisiGetExportSheetRows(tableHtml) {
@@ -125,7 +141,7 @@ function pisiTransformSheetTablesForExport(content = '') {
 
 function pisiHtmlToPlainText(html = '') {
     return decodePisiHtmlEntities(
-        stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(html))
+        stripPisiUnsafeExportHtml(html)
             .replace(/<table\b[^>]*data-pisi-sheet-export=["']1["'][^>]*>[\s\S]*?<\/table>/gi, pisiExportSheetTableToPlainText)
             .replace(/<br\s*\/?>/gi, '\n')
             .replace(/<\/(?:p|div|h[1-6]|li|blockquote|tr|table)>/gi, '\n')
@@ -139,7 +155,7 @@ function pisiHtmlToPlainText(html = '') {
 }
 
 function pisiHtmlToMarkdown(html = '') {
-    let value = stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(pisiTransformSheetTablesForExport(html)));
+    let value = stripPisiUnsafeExportHtml(pisiTransformSheetTablesForExport(html));
     value = value.replace(/<table\b[^>]*data-pisi-sheet-export=["']1["'][^>]*>[\s\S]*?<\/table>/gi, pisiExportSheetTableToMarkdown);
     value = value.replace(
         /<(div|p|blockquote|pre)\b[^>]*data-pisi-block-type=["'](bullet|number|task|quote|code)["'][^>]*>([\s\S]*?)<\/\1>/gi,
@@ -183,7 +199,13 @@ function pisiHtmlToMarkdown(html = '') {
         .trim();
 }
 
-function pisiMarkdownToHtml(markdown = '') {
+/**
+ * Markdown to note HTML. A `- [ ] Title` line becomes the block that
+ * `makeTaskBlock(title)` gives (a task of the imported note, docs/task-plan.md
+ * G5); without it, and for a `- [x]` line (its completion day is not known),
+ * the line stays as text with its box.
+ */
+function pisiMarkdownToHtml(markdown = '', { makeTaskBlock = null } = {}) {
     const lines = String(markdown || '')
         .replace(/\r\n?/g, '\n')
         .split('\n');
@@ -198,12 +220,16 @@ function pisiMarkdownToHtml(markdown = '') {
     for (const rawLine of lines) {
         const line = rawLine.trimEnd();
         const heading = line.match(/^(#{1,6})\s+(.+)$/);
-        const list = line.match(/^[-*+]\s+(.+)$/);
+        const taskLine = readPisiMarkdownTaskLine(line);
+        const list = taskLine ? null : line.match(/^[-*+]\s+(.+)$/);
         if (!list && listOpen) {
             output.push('</ul>');
             listOpen = false;
         }
-        if (heading) {
+        if (taskLine) {
+            const block = !taskLine.done && typeof makeTaskBlock === 'function' ? makeTaskBlock(taskLine.title) : null;
+            output.push(block || `<p>${taskLine.done ? '☑' : '☐'} ${inline(taskLine.title)}</p>`);
+        } else if (heading) {
             const level = heading[1].length;
             output.push(`<h${level}>${inline(heading[2])}</h${level}>`);
         } else if (list) {
@@ -396,7 +422,7 @@ function pisiExportHtmlDocument(info, attachmentDirectory = null) {
     const title = escapePisiPortableHtml(info.metadata.title || 'Pisi');
     const withFiles = pisiTransformFileBlocks(info.data.content || '', info.sidecarPath, attachmentDirectory);
     const content = pisiEmbedImageBlocksForExport(
-        pisiEmbedPaintImagesForExport(stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(pisiTransformSheetTablesForExport(withFiles)))),
+        pisiEmbedPaintImagesForExport(stripPisiUnsafeExportHtml(pisiTransformSheetTablesForExport(withFiles))),
         info.sidecarPath
     );
     return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${title}</title><style>body{font:16px/1.6 system-ui;max-width:900px;margin:40px auto;padding:0 24px;color:#202124}table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:6px}img,canvas{max-width:100%}blockquote{border-left:3px solid #888;padding-left:16px;color:#555}</style></head><body><h1>${title}</h1>${content}</body></html>`;
@@ -500,7 +526,7 @@ function makePisiDocxBuffer(info) {
 
 /** The print/PDF document of a note: the same HTML template as the PDF export. */
 function buildPisiNodePrintHtml(nodePath) {
-    const info = getPisiDocument(nodePath, { hydrateEditorAssets: true });
+    const info = withPisiExportTasks(getPisiDocument(nodePath, { hydrateEditorAssets: true }), readPisiExportTaskContext(globalThis.activeProjectFolder));
     if (!info.ok) return info;
     return { ok: true, title: info.metadata.title || 'Pisi', html: pisiExportHtmlDocument(info) };
 }
@@ -509,7 +535,7 @@ async function exportPisiNodeDocument(nodePath, format) {
     const normalized = String(format || '').toLowerCase();
     const extension = { markdown: 'md', md: 'md', html: 'html', pdf: 'pdf', docx: 'docx' }[normalized];
     if (!extension) return { ok: false, error: 'Desteklenmeyen dışa aktarma biçimi.' };
-    const info = getPisiDocument(nodePath, { hydrateEditorAssets: true });
+    const info = withPisiExportTasks(getPisiDocument(nodePath, { hydrateEditorAssets: true }), readPisiExportTaskContext(globalThis.activeProjectFolder));
     if (!info.ok) return info;
     const result = await dialog.showSaveDialog(globalThis.mainWindow, {
         title: 'Pisi dışa aktar',
@@ -669,13 +695,14 @@ async function exportPisiProjectMarkdown(projectFolder) {
         : walkPisiFiles(projectFolder, (_filePath, name) => /\.(?:node|map)$/i.test(name));
     let exported = 0;
     const createdFolders = new Set();
+    const taskContext = readPisiExportTaskContext(projectFolder);
     // Documents in groups of 20: one short synchronous read each, then the
     // group's writes run in parallel (fs/promises) before the next group.
     for (let offset = 0; offset < files.length; offset += 20) {
         reader?.sendPisiProgress('export', offset, files.length);
         const writes = [];
         for (const filePath of files.slice(offset, offset + 20)) {
-            const info = getPisiDocument(filePath, { hydrateEditorAssets: true });
+            const info = withPisiExportTasks(getPisiDocument(filePath, { hydrateEditorAssets: true }), taskContext);
             if (!info.ok) continue;
             const isNode = info.metadata.type === 'node';
             const relative = getPisiPortableRelativePath(projectFolder, filePath, isNode ? 'md' : 'map.json');
@@ -716,34 +743,57 @@ function stripPisiMarkdownFrontmatter(markdown) {
     return { body: String(markdown || '').slice(match[0].length), properties };
 }
 
+/**
+ * Imports a folder of Markdown files as notes of a new project folder. Its
+ * `- [ ]` lines become tasks of their notes (docs/task-plan.md G5): the notes,
+ * their task blocks and the records are written in one atomic mutation, the
+ * records through the task service in one tasks.json write (GV4, GV8).
+ */
 async function importPisiMarkdownFolder(projectFolder) {
-    const result = await dialog.showOpenDialog(globalThis.mainWindow, {
-        title: 'Markdown klasörü içe aktar',
-        properties: ['openDirectory']
-    });
+    // Test-only: E2E runs import from a fixed folder instead of asking.
+    const testFolder = !app.isPackaged ? String(process.env.PISI_TEST_IMPORT_DIR || '') : '';
+    const result = testFolder
+        ? { canceled: false, filePaths: [testFolder] }
+        : await dialog.showOpenDialog(globalThis.mainWindow, {
+              title: 'Markdown klasörü içe aktar',
+              properties: ['openDirectory']
+          });
     if (result.canceled || !result.filePaths?.[0]) return { ok: true, canceled: true };
     const source = result.filePaths[0];
-    const destination = getUniqueDirectoryPath(projectFolder, `İçe Aktarılan ${path.basename(source)}`);
-    fs.mkdirSync(destination, { recursive: true });
     const markdownFiles = walkPisiFiles(source, (_filePath, name) => /\.md$/i.test(name), { maxFiles: 10000 });
-    const created = [];
-    for (const markdownPath of markdownFiles) {
-        const relativeDirectory = path.dirname(path.relative(source, markdownPath));
-        const targetDirectory = path.join(destination, relativeDirectory === '.' ? '' : relativeDirectory);
-        fs.mkdirSync(targetDirectory, { recursive: true });
-        const title = sanitizePisiBaseName(path.basename(markdownPath, path.extname(markdownPath)));
-        const id = generatePisiId('.node');
-        const nodePath = getUniquePisiPhysicalPath(targetDirectory, title, '.node', id);
-        const parsed = stripPisiMarkdownFrontmatter(fs.readFileSync(markdownPath, 'utf8'));
-        const data = createPisiDocumentData({ ext: '.node', title, id });
-        data.content = pisiMarkdownToHtml(parsed.body);
-        data.properties = parsed.properties;
-        data.pisi.importedFrom = path.relative(source, markdownPath).split(path.sep).join('/');
-        writePisiDocument(nodePath, data);
-        ensurePisiSidecar(nodePath, data.pisi);
-        created.push(nodePath);
-    }
-    return { ok: true, destination, imported: created.length, created };
+    const write = () => {
+        const destination = getUniqueDirectoryPath(projectFolder, `İçe Aktarılan ${path.basename(source)}`);
+        fs.mkdirSync(destination, { recursive: true });
+        const created = [];
+        const tasks = [];
+        for (const markdownPath of markdownFiles) {
+            const relativeDirectory = path.dirname(path.relative(source, markdownPath));
+            const targetDirectory = path.join(destination, relativeDirectory === '.' ? '' : relativeDirectory);
+            fs.mkdirSync(targetDirectory, { recursive: true });
+            const title = sanitizePisiBaseName(path.basename(markdownPath, path.extname(markdownPath)));
+            const id = generatePisiId('.node');
+            const nodePath = getUniquePisiPhysicalPath(targetDirectory, title, '.node', id);
+            const parsed = stripPisiMarkdownFrontmatter(fs.readFileSync(markdownPath, 'utf8'));
+            const data = createPisiDocumentData({ ext: '.node', title, id });
+            const makeTaskBlock = (taskTitle) => {
+                const taskId = `task_${crypto.randomUUID()}`;
+                tasks.push({ id: taskId, noteId: id, task: { title: taskTitle } });
+                return makePisiTaskBlockHtml({ blockId: formatPisiBlockId(crypto.randomUUID()), taskId });
+            };
+            data.content = pisiMarkdownToHtml(parsed.body, { makeTaskBlock });
+            data.properties = parsed.properties;
+            data.pisi.importedFrom = path.relative(source, markdownPath).split(path.sep).join('/');
+            writePisiDocument(nodePath, data);
+            ensurePisiSidecar(nodePath, data.pisi);
+            created.push(nodePath);
+        }
+        if (tasks.length) {
+            const added = modules['main.taskService'].addPisiNoteTasks(projectFolder, tasks);
+            if (!added.ok) throw Object.assign(new Error(added.error || 'Görevler içe aktarılamadı.'), { code: added.code });
+        }
+        return { ok: true, destination, imported: created.length, created, tasks: tasks.length };
+    };
+    return modules['main.atomicMutation'].runPisiAtomicMutation(projectFolder, 'portability.import-markdown', write);
 }
 
 function listPisiAtomicBackups(projectFolder, filePath = null) {

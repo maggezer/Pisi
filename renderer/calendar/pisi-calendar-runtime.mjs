@@ -6,7 +6,8 @@ import {
     ensureCalendarDom,
     renderCalendar,
     setCalendarDock,
-    setPisiCalendarDateOpenHandler
+    setPisiCalendarDateOpenHandler,
+    updateCalendarTaskMarks
 } from './pisi-calendar-ui.mjs';
 
 configurePisiCalendarDiary({ renderCalendar });
@@ -66,8 +67,9 @@ document.addEventListener('pisi:language-changed', () => {
     }
 });
 
+// A task change touches only the marks: the drawn days are updated in place (§3.5).
 document.addEventListener('pisi:task-store-updated', () => {
-    if (document.getElementById('pisi-calendar')) {
+    if (document.getElementById('pisi-calendar') && !updateCalendarTaskMarks()) {
         renderCalendar();
     }
 });

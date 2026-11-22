@@ -115,7 +115,7 @@ function makePisiRightSearchResult(state, result, index) {
         selectPisiRightSearchResult(state, index, false);
     });
     row.addEventListener('click', (event) => {
-        void openPisiSearchResult(result, { mapOnly: event.altKey });
+        void openPisiSearchResult(result, { mapOnly: event.altKey, detail: event.shiftKey });
     });
     return row;
 }
@@ -173,7 +173,7 @@ function handlePisiRightSearchKeydown(state, event) {
         const result = state.matches[state.selectedIndex];
         if (!result) return;
         event.preventDefault();
-        void openPisiSearchResult(result, { mapOnly: event.altKey });
+        void openPisiSearchResult(result, { mapOnly: event.altKey, detail: event.shiftKey });
         return;
     }
     if (event.key === 'Escape') {

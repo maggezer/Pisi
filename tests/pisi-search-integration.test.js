@@ -48,9 +48,11 @@ test('indeks içerik türlerini korur ve node property değerlerini projection o
     const enhanced = read('renderer/search/pisi-search-enhanced-index.mjs');
     const adapter = read('renderer/search/pisi-search-index-adapter.mjs');
 
-    for (const kind of ["'node'", "'map'", "'content'", "'task'", "'tag'", "'table'"]) {
+    for (const kind of ["'node'", "'map'", "'content'", "'tag'", "'table'"]) {
         assert.match(source, new RegExp('kind: ' + kind));
     }
+    // Task records come from tasks.json only (tests/search-task-records.test.mjs, docs/task-plan.md G5).
+    assert.doesNotMatch(source, /kind: 'task'/);
     assert.match(source, /listFolder/);
     assert.match(source, /listMapNodes/);
     assert.match(source, /getPisiDocument/);

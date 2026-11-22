@@ -1,5 +1,49 @@
 # PISI Güncelleme Takip Dosyası
 
+## 22-11-2026 — Görevleri gösteren öteki yüzeyler (G5)
+
+Görev işi (`docs/task-plan.md` G5). Kapanan bulgular: GB11, GK3, GK9, GK10.
+
+- Takvim günleri günlük bölümünün gün kuralıyla işaretler (`getPisiTaskCalendarSummary`,
+  `shared/task-diary.mjs`): yeri o günün günlüğü olan, o gün biten ve o gün tamamlanan görevler, her biri o
+  gündeki durumuyla. Görev değişince ızgara yeniden kurulmaz, yalnız işaretler yerinde güncellenir. Telefonun
+  takvimi (`mobile/src/screens/calendar/calendar-model.mjs`) aynı fonksiyonu çalıştırır; eski `scheduledAt` ve
+  `deadline` alanları takvimde okunmaz.
+- Harita rozetleri ve bağımlılık katmanı görevi notuna `noteId` ile bağlar (önce sahte bir not yolu
+  üretiliyordu); gecikme yalnız `dueDate` ve yerel güne göredir. Rozet ve erişilebilirlik metinleri TR ve ENG.
+- Arama: her görev için tek kayıt üreticisi (`renderer/search/pisi-search-task-records.mjs`); günlükteki ve
+  telefonda yazılan yersiz görevler de bulunur. Temel dizin artık notlardaki eski `todo.` işaretinden görev
+  çıkarmaz; eski işaret sıradan etikettir. Sonuç görevin yerini açar; yeri olmayan ya da notu bulunmayan görevde
+  görev ayrıntısı açılır, Shift+Enter (Shift+tıklama) her görevde ayrıntıyı açar. Dizinden sonra oluşan notun
+  görevi notunu Explorer ağacından bulur. Bağlantılar panelindeki "Bu node'dan üretilen görevler" görev
+  deposundan gelir.
+- Gezinme: `renderer/tags/pisi-todo-navigation.mjs` ve `renderer/navigation/pisi-navigation-core.mjs`
+  (metin ve etiket benzerliğiyle blok seçimi) kalktı. `renderer/navigation/pisi-block-navigation.mjs` notu
+  yoluyla, bloğu yalnız kimliğiyle açar; bulamazsa tahmin etmez (`BLOCK_NOT_FOUND`). `openPisiTaskLocation`
+  açılamayan yerde görev ayrıntısını açar; hatırlatma panelinin "Aç" düğmesi de bunu kullanır.
+- Dışa aktarma (Markdown, HTML, PDF, DOCX, yazdırma) görev bloğunu ve günlüğün görev bölümünü `tasks.json`'dan
+  yazar (`main/functions/portability-tasks-core.js`): Markdown'da `- [ ] Başlık` / `- [x] Başlık`, günlükte
+  "Görevler" başlığı uygulamanın dilinde. Eski `todo.`/`done` etiketleri artık süzülmez, metin olarak çıkar.
+- Markdown içe aktarma `- [ ]` satırlarını içe aktarılan notun görevi yapar; notlar, bloklar ve kayıtlar tek
+  atomik mutation'dır (`task-service.js` `addPisiNoteTasks`, `tasks.json` tek yazma). `- [x]` satırı
+  "☑ Başlık" metni olarak kalır (tamamlanma günü bilinmez). Testte klasör `PISI_TEST_IMPORT_DIR` ile verilir.
+- Haritada not kopyalama (`map.nodes.duplicate.v1`) her görevi yeni kimlikle ve yeri kopya not olarak kopyalar
+  (`copyPisiNoteTasks`; kopya kuralı `makePisiTaskCopyFields` `shared/task-model.mjs`'e taşındı, editörün
+  panosu da onu kullanır). Kaydı olmayan blok ve günlüğün görev bölümü kopyaya girmez; tarihli kopya gününün
+  günlüğüne girer.
+- Not sürüm geçmişinden geri yükleme görevleri geri gelen bloklara uydurur (`writePisiRestoredNote`): bu notta
+  yaşayan görevin bloğu kalır, çöp kutusundaki görev geri gelir, başka notta yaşayan görevin bloğu geri gelmez,
+  restore'un nottan çıkardığı görev çöp kutusuna gider; günlük bölümü kuraldan üretilir. Not kaydı ve geri
+  yükleme aynı yardımcıyı kullanır (`writePisiNoteWithTasks`).
+- Testler: `tests/calendar-task-marks.test.mjs`, `tests/map-operational-tasks.test.mjs`,
+  `tests/search-task-records.test.mjs`, `tests/portability-tasks-core.test.mjs`,
+  `tests/map-node-copy-core.test.mjs`, `tests/task-service-surfaces.test.mjs`, mobil
+  `calendar-screen.test.mjs` ve `scripts/electron-tasks-surfaces-e2e.mjs` (S10, S16, takvim işaretleri ve
+  günlük bölümleri, kesin etiket gezinmesi, harita rozetleri, dışa ve içe aktarma, not geçmişi; okurken yazma
+  yok, her senaryodan sonra Integrity temiz). Kaynak okuyan `node-task-block-navigation.test.js` ve
+  `task-source-visibility.test.js` silindi; takvim ve harita rozeti regex denetimleri davranış testlerine
+  taşındı.
+
 ## 21-11-2026 — Görev paneli, çalışma alanı ve Quick Add (G4)
 
 Görev işi (`docs/task-plan.md` G4). Kapanan bulgular: GK6, GK7, GK8 ve `pisi-error.md` §5e.

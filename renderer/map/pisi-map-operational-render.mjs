@@ -30,15 +30,18 @@ function setPisiRelationshipLabelsPreference(enabled) {
 }
 
 /**
- * The tasks of the map's notes from the task store (tasks.json). A task lives in a
- * note by `noteId` (docs/task-plan.md §3.1); the operational core still matches
- * notes by path, so each task carries its note's path here. G5 moves the core to ids.
+ * The tasks of the map's notes from the task store (tasks.json). A task lives
+ * in a note by `noteId` (docs/task-plan.md §3.1); the operational core matches
+ * it to the map node with that id (G5). Nothing is written (GV3).
  */
 function getPisiOperationalTasks() {
-    const tasks = window.getPisiTasks?.() || [];
-    const nodes = Array.isArray(window.activeMapNodes) ? window.activeMapNodes : [];
-    const pathById = new Map(nodes.map((node) => [node?.metadata?.id || node?.id, node?.fullPath]));
-    return tasks.map((task) => ({ ...task, source: { nodePath: (task.noteId && pathById.get(task.noteId)) || null } }));
+    return window.getPisiTasks?.() || [];
+}
+
+/** A badge or status text in the user's language, with `{name}` values filled in. */
+function pisiOperationalText(source, values = {}) {
+    const text = window.pisiT?.(source) ?? String(source);
+    return Object.entries(values).reduce((result, [name, value]) => result.split(`{${name}}`).join(String(value)), text);
 }
 
 function clearPisiOperationalBadges(box) {
@@ -51,16 +54,16 @@ function clearPisiOperationalBadges(box) {
 function makePisiOperationalStatusDot(state, isNext) {
     const dot = document.createElement('span');
     dot.className = 'pisi-map-status-dot';
-    let label = 'Ready';
+    let label = pisiOperationalText('Hazır');
     if (state.blocked) {
         dot.classList.add('blocked');
-        label = 'Blocked';
+        label = pisiOperationalText('Engelli');
     } else if (state.overdue) {
         dot.classList.add('overdue');
-        label = 'Overdue';
+        label = pisiOperationalText('Gecikmiş');
     } else if (isNext) {
         dot.classList.add('next');
-        label = 'Next';
+        label = pisiOperationalText('Sıradaki');
     }
     dot.title = label;
     dot.setAttribute('aria-label', label);
@@ -78,7 +81,7 @@ function makePisiTaskCountBadge(openCount) {
     const badge = document.createElement('span');
     badge.className = 'pisi-map-task-count-badge';
     badge.textContent = String(openCount);
-    badge.setAttribute('aria-label', `${openCount} open task${openCount === 1 ? '' : 's'}`);
+    badge.setAttribute('aria-label', pisiOperationalText('{count} açık görev', { count: openCount }));
     return badge;
 }
 
@@ -105,7 +108,15 @@ function syncPisiOperationalNodeDecorations(nodeStates, visibleNodeIds, display,
         const openCount = state.openTasks?.length || 0;
         const blockedCount = state.blockedTasks?.length || 0;
         const overdueCount = state.overdueTasks?.length || 0;
-        box.setAttribute('aria-label', `${title}; ${openCount} open; ${blockedCount} blocked; ${overdueCount} overdue`);
+        box.setAttribute(
+            'aria-label',
+            pisiOperationalText('{title}; {open} açık; {blocked} engelli; {overdue} gecikmiş', {
+                title,
+                open: openCount,
+                blocked: blockedCount,
+                overdue: overdueCount
+            })
+        );
 
         if (openCount > 0) {
             box.appendChild(makePisiTaskCountBadge(openCount));
@@ -115,16 +126,16 @@ function syncPisiOperationalNodeDecorations(nodeStates, visibleNodeIds, display,
         const badges = document.createElement('div');
         badges.className = 'pisi-map-work-badges';
         if (blockedCount > 0) {
-            badges.appendChild(makePisiOperationalBadge(`${blockedCount} blocked`, 'blocked'));
+            badges.appendChild(makePisiOperationalBadge(pisiOperationalText('{count} engelli', { count: blockedCount }), 'blocked'));
         }
         if (overdueCount > 0) {
-            badges.appendChild(makePisiOperationalBadge(`${overdueCount} overdue`, 'overdue'));
+            badges.appendChild(makePisiOperationalBadge(pisiOperationalText('{count} gecikmiş', { count: overdueCount }), 'overdue'));
         }
         if (state.missingNextAction) {
-            badges.appendChild(makePisiOperationalBadge('next?', 'gap'));
+            badges.appendChild(makePisiOperationalBadge(pisiOperationalText('sonraki?'), 'gap'));
         }
         if (state.changedSinceReview) {
-            badges.appendChild(makePisiOperationalBadge('changed', 'gap'));
+            badges.appendChild(makePisiOperationalBadge(pisiOperationalText('değişti'), 'gap'));
         }
         if (badges.childElementCount) box.appendChild(badges);
     }

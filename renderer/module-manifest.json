@@ -691,9 +691,9 @@
         "bindings": ["ensurePisiTagsPanelDom", "renderPisiTagsPanel"]
     },
     {
-        "module": "tags.todoNavigation",
-        "path": "renderer/tags/pisi-todo-navigation.mjs",
-        "bindings": ["openPisiTagBlockResult", "highlightPisiEditorBlock", "bindPisiMissionHighlightSanitizer"]
+        "module": "navigation.block",
+        "path": "renderer/navigation/pisi-block-navigation.mjs",
+        "bindings": ["openPisiTagBlockResult", "highlightPisiEditorBlock", "findPisiEditorBlockById"]
     },
     {
         "module": "tags.editor",

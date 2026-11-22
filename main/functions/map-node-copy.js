@@ -2,7 +2,10 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { modules, registerMainModule } from '../module-registry.js';
 import { collectPisiEditorAssetReferences } from './editor-asset-store.js';
-import { makePisiCopyTitle, stripPisiCopiedTaskIdentity } from './map-node-copy-core.js';
+import * as crypto from 'node:crypto';
+import { copyPisiNoteTasks, makePisiCopyTitle } from './map-node-copy-core.js';
+import { readPisiTask } from '../../shared/task-model.mjs';
+import { listPisiNoteTaskIds } from '../../shared/task-blocks.mjs';
 
 // "Paste as a copy" for maps (Alt+Mod+V, Mod+D): each source note becomes a new
 // note in the target map's folder with a new id, its content, properties and
@@ -10,8 +13,10 @@ import { makePisiCopyTitle, stripPisiCopiedTaskIdentity } from './map-node-copy-
 // recreated between the copies. The ordinary paste never copies notes; it adds
 // map references (map.reference.attach.v1).
 //
-// Task markup keeps its text and status but loses data-pisi-task-id, so one
-// canonical task is never linked to two notes and no new task is created.
+// Each task of a copied note is copied too, with a new id and the copy as its
+// place (docs/task-plan.md §3.3, G5): one task is never linked to two notes.
+// The copies go into tasks.json through the task service in the same atomic
+// command (GV4, GV8).
 
 const domain = modules['main.domainCommandQuery'];
 const documentStore = modules['main.documentStore'];
@@ -39,7 +44,7 @@ function copyPisiSidecarAssets(sourceSidecar, targetSidecar, content) {
     return copied;
 }
 
-function duplicatePisiNodeIntoMap(mapPath, sourcePath, layout = {}) {
+function duplicatePisiNodeIntoMap(mapPath, sourcePath, layout = {}, taskCopy = { tasksById: new Map(), entries: [], readOnly: false }) {
     const safeSource = electronIpc.assertProjectPath(sourcePath, { type: 'file', extensions: ['.node'] });
     const source = documentStore.ensurePisiFileMetadata(safeSource);
     if (!source.ok) return source;
@@ -48,8 +53,15 @@ function duplicatePisiNodeIntoMap(mapPath, sourcePath, layout = {}) {
     const target = documentStore.ensurePisiFileMetadata(created.node.fullPath);
     if (!target.ok) return target;
     const content = String(source.data.content || '');
+    // Tasks cannot be copied while tasks.json cannot be read (GV11): the copy is refused rather than made without them.
+    if (taskCopy.readOnly && listPisiNoteTaskIds(content)?.length !== 0) {
+        return { ok: false, code: 'TASK_STORE_READ_ONLY', error: 'Görevler okunamadı; görevli not kopyalanamaz.' };
+    }
     const assets = copyPisiSidecarAssets(source.sidecarPath, target.sidecarPath, content);
-    target.data.content = stripPisiCopiedTaskIdentity(content);
+    const copied = copyPisiNoteTasks(content, { tasksById: taskCopy.tasksById, makeTaskId: () => `task_${crypto.randomUUID()}` });
+    if (!copied) return { ok: false, code: 'NOTE_UNREADABLE', error: 'Notun içeriği izlenemiyor; kopyalanamadı.' };
+    target.data.content = copied.content;
+    for (const copy of copied.copies) taskCopy.entries.push({ id: copy.id, noteId: created.node.id, task: copy.task });
     if (source.data.properties && typeof source.data.properties === 'object') target.data.properties = JSON.parse(JSON.stringify(source.data.properties));
     target.data.pisi.updatedAt = new Date().toISOString();
     filesystemCore.writePisiDocument(created.node.fullPath, target.data);
@@ -71,7 +83,8 @@ function duplicatePisiNodeIntoMap(mapPath, sourcePath, layout = {}) {
 
 /**
  * payload: { mapPath, nodes: [{ sourcePath, layout: { x, y, width, height } }],
- *            edges: [{ sourceIndex, targetIndex, type, sourcePort, targetPort, customization }] }
+ *            edges: [{ sourceIndex, targetIndex, type, sourcePort, targetPort, customization }],
+ *            openPaths: the documents open in the editor (an open diary a copied task joins is left to the editor, GV9) }
  */
 function duplicatePisiMapNodes(payload = {}) {
     const mapPath = electronIpc.assertProjectPath(payload.mapPath, { type: 'file', extensions: ['.map'] });
@@ -80,11 +93,31 @@ function duplicatePisiMapNodes(payload = {}) {
         return { ok: false, code: 'INVALID_COPY', error: `Tek seferde 1 ile ${PISI_MAP_COPY_LIMIT} not kopyalanabilir.` };
     }
     const nodes = [];
+    const projectFolder = globalThis.activeProjectFolder;
+    const taskState = modules['main.taskStore'].readPisiTaskStoreState(projectFolder, { fresh: true });
+    const taskCopy = {
+        tasksById: new Map(
+            taskState.tasks
+                .map(readPisiTask)
+                .filter(Boolean)
+                .map((task) => [task.id, task])
+        ),
+        entries: [],
+        readOnly: taskState.readOnly === true
+    };
     for (const item of requested) {
-        const copied = duplicatePisiNodeIntoMap(mapPath, item?.sourcePath, item?.layout || {});
+        const copied = duplicatePisiNodeIntoMap(mapPath, item?.sourcePath, item?.layout || {}, taskCopy);
         // Failing here rolls back the whole atomic command.
         if (!copied.ok) return copied;
         nodes.push(copied);
+    }
+    let copiedTasks = 0;
+    let deferred = null;
+    if (taskCopy.entries.length) {
+        const added = modules['main.taskService'].addPisiNoteTasks(projectFolder, taskCopy.entries, { openPaths: payload.openPaths });
+        if (!added.ok) return added;
+        copiedTasks = added.tasks.length;
+        deferred = added.deferred;
     }
     const edges = [];
     for (const edge of Array.isArray(payload.edges) ? payload.edges : []) {
@@ -107,7 +140,7 @@ function duplicatePisiMapNodes(payload = {}) {
         if (createdEdge) edges.push(createdEdge);
     }
     const projection = mapSemanticOperations.getPisiMapSemanticProjection(mapPath);
-    return { ok: true, nodes, edges, allEdges: projection.ok ? projection.edges : [] };
+    return { ok: true, nodes, edges, allEdges: projection.ok ? projection.edges : [], tasks: copiedTasks, deferred };
 }
 
 function installPisiMapNodeCopyContracts() {

@@ -200,6 +200,7 @@ test('metin, map ve bağlantısız bahsetme ilişkileri birlikte kurulur', () =>
     assert.equal(model.outbound.length, 1);
     assert.deepEqual(new Set(model.outbound[0].types), new Set(['text', 'map']));
     assert.equal(model.unlinked[0].path, mentionPath);
-    assert.equal(model.tasks[0].text, 'Numuneyi hazırla');
+    // Görevler nottan okunmaz; bağlantılar panelindeki görevler görev deposundan gelir (docs/task-plan.md G5).
+    assert.equal(model.tasks, undefined);
     assert.equal(model.sameMaps[0].mapTitle, 'Araştırma');
 });

@@ -26,7 +26,8 @@ const PISI_GLOBAL_SEARCH_LOCAL_TEXT = {
         page: 'Sayfa',
         firstLast: 'İlk/Son',
         direct: 'Kaynağı aç',
-        map: 'Mapte göster'
+        map: 'Mapte göster',
+        detail: 'Görev ayrıntısı'
     },
     eng: {
         all: 'All',
@@ -36,7 +37,8 @@ const PISI_GLOBAL_SEARCH_LOCAL_TEXT = {
         page: 'Page',
         firstLast: 'First/Last',
         direct: 'Open source',
-        map: 'Show on map'
+        map: 'Show on map',
+        detail: 'Task details'
     }
 };
 
@@ -189,6 +191,7 @@ function makePisiSearchDialog() {
         ['Home/End', pisiSearchLocalText('firstLast')],
         ['Enter', pisiSearchLocalText('direct')],
         ['Alt+Enter', pisiSearchLocalText('map')],
+        ['Shift+Enter', pisiSearchLocalText('detail')],
         ['Esc', 'Kapat']
     ].forEach(([key, label]) => {
         const hint = makePisiSearchElement('span', 'pisi-global-search-hint');
@@ -304,7 +307,7 @@ function renderPisiSearchResults(state) {
         row.append(icon, body);
         row.addEventListener('mouseenter', () => setPisiSearchSelectedIndex(state, index, false));
         row.addEventListener('click', (event) => {
-            void executePisiSearchResult(state, result, { mapOnly: event.altKey });
+            void executePisiSearchResult(state, result, { mapOnly: event.altKey, detail: event.shiftKey });
         });
         fragment.appendChild(row);
     });
@@ -356,7 +359,7 @@ function handlePisiSearchInputKeydown(state, event) {
     if (event.key === 'Enter' && result) {
         event.preventDefault();
         event.stopPropagation();
-        void executePisiSearchResult(state, result, { mapOnly: event.altKey });
+        void executePisiSearchResult(state, result, { mapOnly: event.altKey, detail: event.shiftKey });
         return;
     }
     if (event.key === 'Escape') {

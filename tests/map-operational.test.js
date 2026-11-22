@@ -28,7 +28,7 @@ function node(id, title, fullPath, properties = {}) {
     };
 }
 
-function task(id, nodePath, options = {}) {
+function task(id, noteId, options = {}) {
     return {
         id,
         title: options.title || id,
@@ -36,7 +36,7 @@ function task(id, nodePath, options = {}) {
         priority: options.priority || 3,
         dueDate: options.dueDate || null,
         dependencies: options.dependencies || [],
-        source: { nodePath, blockId: `block_${id}` }
+        noteId
     };
 }
 
@@ -44,11 +44,11 @@ test('blocked ve overdue durumları canonical task dependencylerinden node seviy
     const core = await loadCore();
     const nodes = [node('node_A', 'A', '/project/A.node'), node('node_B', 'B', '/project/B.node')];
     const tasks = [
-        task('task_A', '/project/A.node', {
+        task('task_A', 'node_A', {
             dueDate: '2026-08-20',
             priority: 2
         }),
-        task('task_B', '/project/B.node', {
+        task('task_B', 'node_B', {
             dueDate: '2026-08-10',
             dependencies: ['task_A'],
             priority: 1
@@ -67,10 +67,10 @@ test('task dependency overlay yalnız unresolved cross-node dependencyleri üret
     const core = await loadCore();
     const nodes = [node('node_A', 'A', '/project/A.node'), node('node_B', 'B', '/project/B.node'), node('node_C', 'C', '/project/C.node')];
     const tasks = [
-        task('task_A', '/project/A.node'),
-        task('task_B', '/project/B.node', { dependencies: ['task_A'] }),
-        task('task_C', '/project/C.node', { status: 'done' }),
-        task('task_B2', '/project/B.node', { dependencies: ['task_C'] })
+        task('task_A', 'node_A'),
+        task('task_B', 'node_B', { dependencies: ['task_A'] }),
+        task('task_C', 'node_C', { status: 'done' }),
+        task('task_B2', 'node_B', { dependencies: ['task_C'] })
     ];
     const visible = new Set(['node_A', 'node_B', 'node_C']);
     const projections = core.buildPisiTaskDependencyProjections(nodes, tasks, visible);
@@ -104,8 +104,8 @@ test('operational scope blocked, overdue, next-action ve query filtrelerini tek 
     const core = await loadCore();
     const nodes = [node('node_A', 'Alpha', '/project/A.node'), node('node_B', 'Beta', '/project/B.node'), node('node_C', 'Gamma', '/project/C.node')];
     const tasks = [
-        task('task_A', '/project/A.node'),
-        task('task_B', '/project/B.node', {
+        task('task_A', 'node_A'),
+        task('task_B', 'node_B', {
             dueDate: '2026-08-10',
             dependencies: ['task_A']
         })
@@ -158,9 +158,9 @@ test('sıradaki çalışma önerisi blocked nodeu dışlar ve overdue/priority i
     const core = await loadCore();
     const nodes = [node('node_A', 'Alpha', '/project/A.node'), node('node_B', 'Beta', '/project/B.node'), node('node_C', 'Gamma', '/project/C.node')];
     const tasks = [
-        task('task_A', '/project/A.node', { priority: 4 }),
-        task('task_B', '/project/B.node', { priority: 1, dependencies: ['task_A'] }),
-        task('task_C', '/project/C.node', { priority: 2, dueDate: '2026-08-10' })
+        task('task_A', 'node_A', { priority: 4 }),
+        task('task_B', 'node_B', { priority: 1, dependencies: ['task_A'] }),
+        task('task_C', 'node_C', { priority: 2, dueDate: '2026-08-10' })
     ];
     const states = core.buildPisiOperationalNodeStates(nodes, tasks, Date.parse('2026-08-15T12:00:00Z'));
     const ranked = core.rankPisiOperationalNextNodes(nodes, states);

@@ -151,11 +151,14 @@ function pastePisiMapCopies(clip, origin, label = 'paste') {
             targetRole: edge.targetRole,
             customization: edge.customization
         }));
-        const result = await window.pisiDomain?.command?.('map.nodes.duplicate.v1', { mapPath, nodes, edges });
+        const openPaths = window.getPisiOpenDocumentPaths?.() || [];
+        const result = await window.pisiDomain?.command?.('map.nodes.duplicate.v1', { mapPath, nodes, edges, openPaths });
         if (!result?.ok) {
             pisiNotifyError(result?.error || pisiMapClipboardTranslate('Kopya oluşturulamadı.'));
             return result || { ok: false };
         }
+        // The copies' tasks: an open diary they joined is brought up to date in the editor (docs/task-plan.md G5).
+        if (result.deferred) await window.applyPisiTaskDeferred?.(result.deferred);
         // Node steps first, edges last: undo deletes the edges, then sends the copies to Trash.
         const steps = [
             ...result.nodes.map((node) => makePisiMapNodeStep(mapPath, 'node-create', { nodeId: node.id, nodePath: node.fullPath })),
