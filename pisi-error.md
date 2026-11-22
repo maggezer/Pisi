@@ -219,13 +219,13 @@ denetlendi. Çözüm önerisi: testlerde logger'ın süreç
 yakalayıcılarını kurmaması (ör. bir ortam bayrağı) ya da bu dosyaların test
 sayısını denetleyen bir koruma.
 
-## 5h. Görev sistemi: kalan bulgular (G3–G8)
+## 5h. Görev sistemi: kalan bulgular (G7–G8)
 
-**[Orta · tasks · kısmen çözüldü (G2, G3, G4, G5)]** 21-11-2026 incelemesinin bulguları
+**[Orta · tasks · kısmen çözüldü (G2, G3, G4, G5, G6)]** 21-11-2026 incelemesinin bulguları
 [`docs/task-plan.md`](docs/task-plan.md) Ek A'dadır. G2'de (`tasks.json` sürüm 2, görev servisi)
 GB1–GB9, GB12, GK4, GK5, GK11, GK12 ve GK14, G3'te (editörde görev bloğu) GB14 ve GK2, G4'te (görev paneli, çalışma
 alanı, Quick Add) GK6, GK7 ve GK8, G5'te (takvim, harita, arama, gezinme, dışa/içe aktarma, not kopyası, not
-geçmişi) GB11, GK3, GK9 ve GK10 kapandı; not ve günlük artık yalnız görev kimliğini taşır, bütün görev yazmaları
+geçmişi) GB11, GK3, GK9 ve GK10 kapandı; G6'da etiketler (`tags`) ve başlıktaki not bağlantıları kayıt üzerinden geri geldi; not ve günlük artık yalnız görev kimliğini taşır, bütün görev yazmaları
 ana süreçteki görev servisinden geçer, hiçbir görev işlemi projeyi taramaz ve bütün yüzeyler görevi kayıttan çizer.
 Kalanlar (parantez içi kapatacak faz):
 
@@ -245,6 +245,12 @@ Kalanlar (parantez içi kapatacak faz):
 - 5.000 görevli projede bir tamamlama komutunun ana süreçteki yolu (tasks.json okuma, atomik
   mutation, yazma) panelden tıklamadan ekrana ~0,5 sn sürüyor; renderer çizimi bunun ~30 ms'si.
   Ölçüm `scripts/electron-tasks-panel-e2e.mjs`'te; büyük proje ölçümü G7'dedir. (G7)
+- Telefon görev etiketlerini göstermiyor ve düzenleyemiyor; başlıktaki `[[Not]]` bağlantısı telefonda düz
+  metin olarak görünür. Telefon kaydı yazarken `tags` alanını korur. (G8)
+- Yeniden adlandırma onayındaki "Güncellenecek bağlantı" sayısı yalnız notlardaki bağlantıları sayar; görevler
+  ayrı satırda ("Etkilenecek görev") yazar. Yeniden adlandırma mutation'ı görev başlıkları yazıldıktan sonra geri
+  alınırsa renderer'daki görev deposu yeni başlığı bir sonraki listelemeye kadar gösterir (görev olayı mutation
+  bitince gönderilir; bu durum yalnız dosya hareketi sonrası bir yazma hatasında oluşur). (G7)
 - Kullanılmayan görev vurgu stilleri (`.pisi-todo-source-highlight`, `.pisi-block-highlight`) ve
   `renderer/tags/pisi-todo-utils.mjs` G7 temizliğinde kalkar. (G7)
 

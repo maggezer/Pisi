@@ -26,6 +26,8 @@ import {
     savePisiTaskPanelPrefs
 } from './pisi-task-panel-dom.mjs';
 import { renderPisiTaskAlternativeView } from './pisi-task-views.mjs';
+import { appendPisiTaskTitleParts, getPisiTaskTitleReadingText, makePisiTaskTitleLinkButtons } from './pisi-task-title-links.mjs';
+import { formatPisiTaskTags } from './pisi-task-view.mjs';
 
 // The task panel (docs/task-plan.md G4.1). The right panel and the task
 // workspace are one component (`surface`: 'side' or 'workspace'); the side
@@ -304,7 +306,7 @@ function renderPisiTaskList(state, model, tasks, today) {
 
 function makePisiTaskCard(state, task, { today, blocked, manual, readOnly }) {
     const done = task.status === 'done';
-    const title = task.title || t('Başlıksız görev');
+    const title = getPisiTaskTitleReadingText(task.title) || t('Başlıksız görev');
     const card = makePisiTaskPanelElement('div', 'pisi-task-card');
     card.setAttribute('role', 'listitem');
     card.dataset.pisiTaskCard = task.id;
@@ -334,7 +336,9 @@ function makePisiTaskCard(state, task, { today, blocked, manual, readOnly }) {
     card.appendChild(check);
 
     const body = makePisiTaskPanelElement('div', 'pisi-task-card-body');
-    const name = createPisiTaskPanelButton('pisi-task-card-title', title, { onClick: () => void window.openPisiTaskDetail?.(task.id) });
+    const name = createPisiTaskPanelButton('pisi-task-card-title', '', { onClick: () => void window.openPisiTaskDetail?.(task.id) });
+    if (task.title) appendPisiTaskTitleParts(name, task.title);
+    else name.textContent = title;
     name.dataset.pisiTaskRole = 'title';
     name.setAttribute('aria-label', `${title} · ${t('Ayrıntılar')}`);
     body.appendChild(name);
@@ -353,6 +357,8 @@ function makePisiTaskCard(state, task, { today, blocked, manual, readOnly }) {
     meta.appendChild(priority);
     if (task.repeat && task.repeat !== 'none') meta.appendChild(makePisiTaskPanelElement('span', 'pisi-task-card-repeat', '↻'));
     if (blocked) meta.appendChild(makePisiTaskPanelElement('span', 'pisi-task-card-blocked', t('Bağımlılık bekliyor')));
+    if (task.tags?.length) meta.appendChild(makePisiTaskPanelElement('span', 'pisi-task-card-tags', formatPisiTaskTags(task.tags)));
+    meta.append(...makePisiTaskTitleLinkButtons(task.title));
     body.appendChild(meta);
     body.appendChild(makePisiTaskPanelElement('div', 'pisi-task-card-place', getPisiTaskPlaceLabel(task)));
     card.appendChild(body);

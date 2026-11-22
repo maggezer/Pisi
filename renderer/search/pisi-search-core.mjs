@@ -1,4 +1,5 @@
 import { normalizePisiSearchText, tokenizePisiSearchQuery } from '../../shared/search-text.mjs';
+import { hasPisiWikiTextLinkTo, listPisiWikiTextLinks, normalizePisiWikiTitle } from '../../shared/wiki-link-core.mjs';
 
 const PISI_SEARCH_FIELD_WEIGHTS = Object.freeze({
     title: 120,
@@ -253,7 +254,35 @@ function makeNodeRelationship(documentRecord, membership, types) {
     };
 }
 
-export function buildPisiRelationshipModel(index, targetPath) {
+/**
+ * Note links in task titles (docs/task-plan.md G6). `inboundTasks`: tasks
+ * whose title has [[target title]], except the target's own tasks.
+ * `outbound`: notes the target's own tasks (its note tasks, or a diary's
+ * tasks) link to, as `task` relationships. Titles resolve with the link rule
+ * (normalizePisiWikiTitle); several notes of one title give the first.
+ */
+function addPisiTaskLinkRelations(documents, targetDocument, tasks, outbound) {
+    const targetId = targetDocument.metadata?.id || null;
+    const diaryDate = targetDocument.metadata?.diaryDate || null;
+    const own = (task) => (targetId && task.noteId === targetId) || (diaryDate && task.diaryDate === diaryDate);
+    const inboundTasks = tasks.filter((task) => task && !own(task) && hasPisiWikiTextLinkTo(task.title, targetDocument.title));
+    const byTitle = new Map();
+    for (const documentRecord of documents.values()) {
+        const key = normalizePisiWikiTitle(documentRecord.title);
+        if (key && !byTitle.has(key)) byTitle.set(key, documentRecord);
+    }
+    for (const task of tasks) {
+        if (!task || !own(task)) continue;
+        for (const link of listPisiWikiTextLinks(task.title)) {
+            const linked = byTitle.get(normalizePisiWikiTitle(link.title));
+            if (!linked || linked.path === targetDocument.path) continue;
+            addRelationship(outbound, pisiSearchPathKey(linked.path), makeNodeRelationship(linked, linked.memberships?.[0] || null, ['task']));
+        }
+    }
+    return inboundTasks;
+}
+
+export function buildPisiRelationshipModel(index, targetPath, { tasks = [] } = {}) {
     const documents = index?.documents instanceof Map ? index.documents : new Map();
     const maps = Array.isArray(index?.maps) ? index.maps : [];
     const targetKey = pisiSearchPathKey(targetPath);
@@ -269,6 +298,7 @@ export function buildPisiRelationshipModel(index, targetPath) {
             inbound: [],
             outbound: [],
             unlinked: [],
+            inboundTasks: [],
             tasks: [],
             sameMaps: []
         };
@@ -384,9 +414,12 @@ export function buildPisiRelationshipModel(index, targetPath) {
         }
     }
 
+    const inboundTasks = addPisiTaskLinkRelations(documents, targetDocument, Array.isArray(tasks) ? tasks : [], outbound);
+
     return {
         target: targetDocument,
         inbound: Array.from(inbound.values()),
+        inboundTasks,
         outbound: Array.from(outbound.values()),
         unlinked: Array.from(unlinked.values()),
         sameMaps: Array.isArray(targetDocument.memberships) ? targetDocument.memberships : []

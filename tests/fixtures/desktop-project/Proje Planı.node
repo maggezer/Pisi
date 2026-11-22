@@ -2,12 +2,12 @@
   "pisi": {
     "version": 1,
     "type": "node",
-    "id": "node_96396783-2c65-4fe3-acc1-86e55649274b",
+    "id": "node_6b1f4641-ced1-4209-9f5e-bd293355a74d",
     "title": "Proje Planı",
-    "sidecar": "inv_Proje Planı__node_96396783-2c65-4fe3-acc1-86e55649274b",
-    "createdAt": "2026-11-21T09:30:45.962Z",
-    "updatedAt": "2026-11-21T09:30:46.955Z",
+    "sidecar": "inv_Proje Planı__node_6b1f4641-ced1-4209-9f5e-bd293355a74d",
+    "createdAt": "2026-11-22T03:29:06.353Z",
+    "updatedAt": "2026-11-22T03:29:07.186Z",
     "parentMap": "none"
   },
-  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_016e658d-93cd-444e-ae51-819c703bd876\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Proje planının ilk paragrafı.</div><div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_b0ec5113-77c6-4366-889a-e4db71f47c2e\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">İkinci paragraf: takvim ve kapsam.</div><div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_227d2d39-afb2-4bd2-a7ea-a7d91763fded\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Üçüncü paragraf: riskler.</div><div class=\"pisi-editor-block pisi-task-block\" data-pisi-block-id=\"blk_b68a1d19-7152-49cb-99d9-dd2eed455071\" data-pisi-block-type=\"task\" data-pisi-task-id=\"task_777d976c-fdcd-4244-8744-5886c284291c\" contenteditable=\"false\"></div><div class=\"pisi-editor-block pisi-task-block\" data-pisi-block-id=\"blk_997aaac1-e70a-466f-af90-8eef6e0d57d7\" data-pisi-block-type=\"task\" data-pisi-task-id=\"task_5762773f-2c06-4854-a706-b97163ca8322\" contenteditable=\"false\"></div>"
+  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_27c10eaa-abf2-4fb0-bba9-3c3610f35af4\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Proje planının ilk paragrafı.</div><div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_0162ec5b-3f5b-439e-8d3a-4097717c9671\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">İkinci paragraf: takvim ve kapsam.</div><div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_5e45919c-cb67-45d2-bbf4-6b27d109cb48\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Üçüncü paragraf: riskler.</div><div class=\"pisi-editor-block pisi-task-block\" data-pisi-block-id=\"blk_00ceefa0-3bfd-44a4-a8a7-445c5eac7538\" data-pisi-block-type=\"task\" data-pisi-task-id=\"task_1812b961-497a-4902-9fe1-dfd05b6b7343\" contenteditable=\"false\"></div><div class=\"pisi-editor-block pisi-task-block\" data-pisi-block-id=\"blk_5abe8737-0488-4f9d-ab05-35c5fccda5e8\" data-pisi-block-type=\"task\" data-pisi-task-id=\"task_20dbc6d3-bff2-413d-9909-b09d5e5e6088\" contenteditable=\"false\"></div>"
 }

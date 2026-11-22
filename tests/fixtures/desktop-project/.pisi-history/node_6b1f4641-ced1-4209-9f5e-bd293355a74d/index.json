@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-22T03:29:07.183Z",
+  "entries": [
+    {
+      "historyId": "1795318147180-2026-11-22T03-29-07-180Z-695f7565a680fc66.json.gz",
+      "capturedAt": "2026-11-22T03:29:07.180Z",
+      "reason": "editor-save",
+      "hash": "695f7565a680fc66",
+      "preview": "Proje planının ilk paragrafı. İkinci paragraf: takvim ve kapsam. Üçüncü paragraf: riskler.",
+      "size": 563,
+      "compressed": true
+    },
+    {
+      "historyId": "1795318147122-2026-11-22T03-29-07-122Z-83f1a56d721be82d.json.gz",
+      "capturedAt": "2026-11-22T03:29:07.122Z",
+      "reason": "editor-save",
+      "hash": "83f1a56d721be82d",
+      "preview": "Proje planının ilk paragrafı. İkinci paragraf: takvim ve kapsam. Üçüncü paragraf: riskler.",
+      "size": 480,
+      "compressed": true
+    },
+    {
+      "historyId": "1795318147077-2026-11-22T03-29-07-077Z-c167ad8037151682.json.gz",
+      "capturedAt": "2026-11-22T03:29:07.077Z",
+      "reason": "editor-save",
+      "hash": "c167ad8037151682",
+      "preview": "",
+      "size": 260,
+      "compressed": true
+    }
+  ]
+}

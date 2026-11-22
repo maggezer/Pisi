@@ -106,7 +106,16 @@ export function getPisiTaskReminderLabel(mode) {
 
 export const PISI_TASK_REMINDER_MODE_LABELS = PISI_TASK_REMINDER_LABELS;
 
+/** The text of a task's tags, `#proje #acil`, or '' (G6). */
+export function formatPisiTaskTags(tags) {
+    return (Array.isArray(tags) ? tags : []).map((tag) => `#${tag}`).join(' ');
+}
+
 function describePisiTaskChip(task, kind) {
+    if (kind === 'tags') {
+        const text = formatPisiTaskTags(task.tags);
+        return { text: text || pisiTaskViewTranslate('Etiket'), empty: !text, label: pisiTaskViewTranslate('Etiketler') };
+    }
     if (kind === 'date') {
         const text = [formatPisiTaskDay(task.dueDate), task.dueDate ? task.dueTime || '' : ''].filter(Boolean).join(' ');
         return { text: text || pisiTaskViewTranslate('Tarih'), empty: !text, label: pisiTaskViewTranslate('Tarih') };
@@ -126,8 +135,8 @@ function describePisiTaskChip(task, kind) {
     return { text: empty ? pisiTaskViewTranslate('Hatırlatma') : `⏰ ${text}`, empty, label: pisiTaskViewTranslate('Hatırlatma') };
 }
 
-/** The chips of a task (date, priority, repeat, reminder), updated in place; an empty chip shows only on hover or focus. */
-export function ensurePisiTaskChips(container, task, { kinds = ['date', 'priority', 'repeat', 'reminder'], readOnly = false } = {}) {
+/** The chips of a task (date, priority, repeat, reminder, tags), updated in place; an empty chip shows only on hover or focus. */
+export function ensurePisiTaskChips(container, task, { kinds = ['date', 'priority', 'repeat', 'reminder', 'tags'], readOnly = false } = {}) {
     let chips = container.querySelector(':scope > .pisi-task-chips');
     if (!chips) {
         chips = makePisiTaskView('span', 'pisi-task-chips');

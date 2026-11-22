@@ -2,13 +2,13 @@
   "pisi": {
     "version": 1,
     "type": "node",
-    "id": "node_75b69b68-d593-4109-86b5-7767b01657e1",
+    "id": "node_6fb404a1-bc6c-4220-9728-7c277e87b137",
     "title": "20-11-2026",
-    "sidecar": "inv_20-11-2026__node_75b69b68-d593-4109-86b5-7767b01657e1",
-    "createdAt": "2026-11-21T09:30:47.000Z",
+    "sidecar": "inv_20-11-2026__node_6fb404a1-bc6c-4220-9728-7c277e87b137",
+    "createdAt": "2026-11-22T03:29:07.222Z",
     "updatedAt": "2026-11-14T09:30:00.000Z",
     "parentMap": "diary",
     "diaryDate": "2026-11-20"
   },
-  "content": "<div><br></div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-20\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_b07895fb-e865-4e50-a55b-085e0be07d74\"></div>\n</div>"
+  "content": "<div><br></div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-20\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_a0100128-27e7-49eb-91d1-20371492fe89\"></div>\n</div>"
 }

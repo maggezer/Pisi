@@ -15,6 +15,7 @@ import {
     pisiTaskPanelText as t
 } from './pisi-task-panel-dom.mjs';
 import { PISI_TASK_REMINDER_MODE_LABELS } from './pisi-task-view.mjs';
+import { makePisiTaskTagEditor } from './pisi-task-tags.mjs';
 
 // The task detail window (docs/task-plan.md G4.3): every field of a task, its
 // dependencies (a loop is refused before it is sent, with the rule the task
@@ -23,7 +24,7 @@ import { PISI_TASK_REMINDER_MODE_LABELS } from './pisi-task-view.mjs';
 // task.update.v1 with the changed fields, then task.move.v1 when the place
 // changed. Nothing is written while the window is being edited.
 
-const pisiTaskDetailState = { overlay: null, taskId: null, returnFocus: null, dependencies: [], completions: [] };
+const pisiTaskDetailState = { overlay: null, taskId: null, returnFocus: null, dependencies: [], completions: [], tags: [] };
 
 function makePisiTaskDetailField(labelText, control, name) {
     const label = makePisiTaskPanelElement('label', 'pisi-task-detail-field');
@@ -159,6 +160,7 @@ function readPisiTaskDetailValues(form) {
         completionOffsetDays: data.get('completionOffsetDays'),
         reminderMode: data.get('reminderMode'),
         reminderAt: data.get('reminderAt') || null,
+        tags: pisiTaskDetailState.tags,
         dependencies: pisiTaskDetailState.dependencies,
         durationMinutes: data.get('durationMinutes'),
         actualMinutes: data.get('actualMinutes'),
@@ -257,11 +259,19 @@ function buildPisiTaskDetailForm(task) {
     actual.max = '100000';
     actual.step = '5';
 
+    // Tags are written with the rest of the form (Kaydet), as one task.update.v1 (G6).
+    const tags = makePisiTaskTagEditor(task.tags, (next) => (pisiTaskDetailState.tags = next), { readOnly });
+    // A div, not a label: the field holds several buttons (one per tag).
+    const tagsField = makePisiTaskPanelElement('div', 'pisi-task-detail-field pisi-task-detail-wide');
+    tagsField.dataset.field = 'tags';
+    tagsField.append(makePisiTaskPanelElement('span', 'pisi-task-detail-label', t('Etiketler')), tags.element);
+
     const grid = makePisiTaskPanelElement('div', 'pisi-task-detail-grid');
     const titleField = makePisiTaskDetailField('Başlık', title, 'title');
     titleField.classList.add('pisi-task-detail-wide');
     grid.append(
         titleField,
+        tagsField,
         makePisiTaskDetailField('Durum', state, 'status'),
         makePisiTaskDetailField('Öncelik', priority, 'priority'),
         makePisiTaskDetailField('Tarih', dueDate, 'dueDate'),
@@ -357,6 +367,7 @@ async function openPisiTaskDetail(taskId) {
     pisiTaskDetailState.taskId = task.id;
     pisiTaskDetailState.dependencies = Array.isArray(task.dependencies) ? [...task.dependencies] : [];
     pisiTaskDetailState.completions = Array.isArray(task.completions) ? [...task.completions] : [];
+    pisiTaskDetailState.tags = Array.isArray(task.tags) ? [...task.tags] : [];
 
     const overlay = makePisiTaskPanelElement('div', 'pisi-quick-add-overlay pisi-task-detail-overlay');
     const dialog = makePisiTaskPanelElement('section', 'pisi-quick-add-dialog pisi-task-detail-dialog');

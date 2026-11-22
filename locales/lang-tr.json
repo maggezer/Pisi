@@ -1339,6 +1339,15 @@
         "{count} açık görev": "{count} açık görev",
         "{title}; {open} açık; {blocked} engelli; {overdue} gecikmiş": "{title}; {open} açık; {blocked} engelli; {overdue} gecikmiş",
         "Açık": "Açık",
-        "Görevler okunamadı; görevli not kopyalanamaz.": "Görevler okunamadı; görevli not kopyalanamaz."
+        "Görevler okunamadı; görevli not kopyalanamaz.": "Görevler okunamadı; görevli not kopyalanamaz.",
+        "Etiketler": "Etiketler",
+        "Etiketi kaldır": "Etiketi kaldır",
+        "#etiket": "#etiket",
+        "Etiket ekle": "Etiket ekle",
+        "Etiket yalnız harf, rakam, - ve _ içerebilir.": "Etiket yalnız harf, rakam, - ve _ içerebilir.",
+        "Bir görevde en çok 20 etiket olabilir.": "Bir görevde en çok 20 etiket olabilir.",
+        "Bağlantılı notu aç": "Bağlantılı notu aç",
+        "Etkilenecek görev": "Etkilenecek görev",
+        "Bu map, günlük notlar veya görevler içinde kullanıcı etiketi yok.": "Bu map, günlük notlar veya görevler içinde kullanıcı etiketi yok."
     }
 }

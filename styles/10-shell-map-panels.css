@@ -1418,6 +1418,27 @@
     line-height: 1.45;
 }
 
+.pisi-tag-results-heading {
+    margin-top: 4px;
+    color: #9a9a9a;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.pisi-tag-result-card.pisi-tag-result-task {
+    width: 100%;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+.pisi-tag-result-task.pisi-task-done .pisi-tag-result-text {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
 .pisi-tag-result-tags {
     display: flex;
     flex-wrap: wrap;

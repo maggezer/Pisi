@@ -24,10 +24,20 @@ import {
 
 const PISI_WIKI_LINK_SELECTOR = 'a.pisi-wiki-link[data-pisi-node-id]';
 const PISI_WIKI_SKIPPED_TEXT = 'a, pre, code, .pisi-task-metadata, [contenteditable="false"]';
+// A task title field (docs/task-plan.md G6) sits in a non-editable task block,
+// but its [[…]] text is a link: highlighted and followed like legacy text.
+const PISI_WIKI_TASK_TITLE = '[data-pisi-task-title]';
 const pisiWikiState = { editor: null, request: 0, highlightTimer: 0, chooser: null, initialized: false };
 
 function pisiWikiTranslate(value) {
     return window.pisiT?.(value) ?? String(value ?? '');
+}
+
+/** Whether [[…]] in this text node is not a link (code, a link's own text, a non-editable part outside a task title). */
+function isPisiWikiTextSkipped(node) {
+    const parent = node?.parentElement;
+    if (parent?.closest(PISI_WIKI_TASK_TITLE)) return false;
+    return Boolean(parent?.closest(PISI_WIKI_SKIPPED_TEXT));
 }
 
 function isPisiWikiMacPlatform() {
@@ -133,10 +143,19 @@ async function routePisiWikiInput(editor) {
         if (context && /\[\[[^\]\n]{1,200}\]\]$/.test(context.textBefore)) await convertPisiTypedWikiLink(editor, context, request);
         return;
     }
+    const items = await buildPisiWikiMenuForTrigger(trigger, getPisiWikiEditorNodePath(editor), request);
+    if (!items) return;
+    if (!items.length) return closePisiWikiMenu(editor);
+    pisiWikiState.editor = editor;
+    window.openPisiTagMenuForEditor?.(editor, { mode: 'wiki-link', items, token: `[[${trigger.query}`, wiki: { block: context.block } });
+}
+
+/** The suggestion list for an open [[… (null when a newer input came meanwhile). */
+async function buildPisiWikiMenuForTrigger(trigger, currentPath, request) {
     const index = await getPisiWikiIndex();
-    if (request !== pisiWikiState.request) return;
+    if (request !== pisiWikiState.request) return null;
     const documents = getPisiWikiDocuments(index);
-    const matches = rankPisiWikiMatches(index, documents, trigger.title, getPisiWikiEditorNodePath(editor));
+    const matches = rankPisiWikiMatches(index, documents, trigger.title, currentPath);
     let blocks = null;
     if (trigger.hasBlock) {
         const target = resolvePisiLegacyWikiTitle(documents, trigger.title)[0] || matches[0];
@@ -148,10 +167,74 @@ async function routePisiWikiInput(editor) {
             title: target.title
         }));
     }
-    const items = buildPisiWikiMenuItems({ trigger, matches, blocks, createLabel: pisiWikiTranslate('Yeni not oluştur') });
-    if (!items.length) return closePisiWikiMenu(editor);
-    pisiWikiState.editor = editor;
-    window.openPisiTagMenuForEditor?.(editor, { mode: 'wiki-link', items, token: `[[${trigger.query}`, wiki: { block: context.block } });
+    return buildPisiWikiMenuItems({ trigger, matches, blocks, createLabel: pisiWikiTranslate('Yeni not oluştur') });
+}
+
+// ---- Task titles (docs/task-plan.md G6) ------------------------------------------
+// A task title is plain text in tasks.json, so a chosen note goes in as the
+// text [[Başlık]] (or [[Başlık#blk_…]]), never as an id link. The title
+// field's own input handler (renderer/tasks/pisi-task-editing.mjs) keeps the
+// draft and writes it.
+
+function getPisiTaskTitleTextBefore(field) {
+    const selection = window.getSelection?.();
+    if (!field || !selection?.rangeCount || !selection.isCollapsed) return null;
+    const range = selection.getRangeAt(0);
+    if (!field.contains(range.startContainer)) return null;
+    const before = document.createRange();
+    before.selectNodeContents(field);
+    before.setEnd(range.startContainer, range.startOffset);
+    return before.toString();
+}
+
+function isPisiTaskTitleField(element) {
+    return Boolean(element?.matches?.(PISI_WIKI_TASK_TITLE));
+}
+
+/** Called by a task title field after each input: opens, narrows or closes the [[ menu. */
+async function routePisiTaskTitleWikiInput(field) {
+    if (!isPisiTaskTitleField(field) || field.getAttribute('contenteditable') === 'false') return;
+    const textBefore = getPisiTaskTitleTextBefore(field);
+    const trigger = textBefore === null ? null : getPisiWikiTrigger(textBefore);
+    const request = ++pisiWikiState.request;
+    if (!trigger) return closePisiWikiMenu(field);
+    const editor = field.closest('.pisi-rich-editor');
+    const items = await buildPisiWikiMenuForTrigger(trigger, getPisiWikiEditorNodePath(editor), request);
+    if (!items) return;
+    if (!items.length || document.activeElement !== field) return closePisiWikiMenu(field);
+    pisiWikiState.editor = field;
+    window.openPisiTagMenuForEditor?.(field, { mode: 'wiki-link', items, token: `[[${trigger.query}`, wiki: { taskTitle: true } });
+}
+
+/** Replaces the open [[… before the caret in a title field with `[[title]] ` (or `[[title#blk_…]] `). */
+function insertPisiTaskTitleWikiLink(field, { title, blockId = '' }) {
+    const textBefore = getPisiTaskTitleTextBefore(field);
+    const trigger = textBefore === null ? null : getPisiWikiTrigger(textBefore);
+    const text = String(title || '')
+        .replace(/[[\]\n\r]/g, ' ')
+        .trim();
+    if (!trigger || !text || !field.isConnected) return false;
+    const range = makePisiWikiRangeFromOffsets(field, trigger.start, trigger.end);
+    if (!range) return false;
+    field.focus({ preventScroll: true });
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    // insertText keeps the field a plain text node and sends the input event the title handler saves.
+    document.execCommand('insertText', false, `[[${text}${isPisiWikiBlockId(blockId) ? '#' + blockId : ''}]] `);
+    schedulePisiWikiDecorations();
+    return true;
+}
+
+function applyPisiTaskTitleWikiMenuItem(field, item) {
+    window.closePisiTagMenu?.();
+    if (item.kind === 'wiki-create') {
+        void createPisiWikiTargetNote(field.closest('.pisi-rich-editor'), item.title)
+            .then((link) => insertPisiTaskTitleWikiLink(field, { title: link.title }))
+            .catch((error) => pisiNotifyError(error.message));
+        return true;
+    }
+    return insertPisiTaskTitleWikiLink(field, { title: item.title, blockId: item.blockId });
 }
 
 // "[[Başlık]]" typed in full becomes an id link right away when exactly one note
@@ -209,6 +292,7 @@ async function createPisiWikiTargetNote(editor, title) {
 }
 
 function applyPisiWikiMenuItem(editor, item) {
+    if (isPisiTaskTitleField(editor)) return applyPisiTaskTitleWikiMenuItem(editor, item);
     const offsets = getPisiWikiTokenOffsets(editor);
     window.closePisiTagMenu?.();
     if (!offsets) return false;
@@ -286,16 +370,29 @@ function showPisiWikiChooser(candidates, x, y) {
 async function followPisiLegacyWikiLink(event) {
     const caret = document.caretRangeFromPoint?.(event.clientX, event.clientY);
     const node = caret?.startContainer;
-    if (node?.nodeType !== Node.TEXT_NODE || node.parentElement?.closest(PISI_WIKI_SKIPPED_TEXT)) return false;
+    if (node?.nodeType !== Node.TEXT_NODE || isPisiWikiTextSkipped(node)) return false;
     const legacy = findPisiLegacyWikiLinkAt(node.nodeValue, caret.startOffset);
     if (!legacy) return false;
     event.preventDefault();
     event.stopImmediatePropagation();
+    await openPisiWikiTitle(legacy.title, legacy.block, { x: event.clientX, y: event.clientY });
+    return true;
+}
+
+/**
+ * Opens the note a [[Başlık]] link names, by title: a warning when no note has
+ * it, the note when one has it, a chooser at `x`/`y` when several have it.
+ * Task titles (G6) and legacy text in notes use it.
+ */
+async function openPisiWikiTitle(title, blockId = '', { x = 0, y = 0 } = {}) {
     const documents = getPisiWikiDocuments(await getPisiWikiIndex());
-    const owners = resolvePisiLegacyWikiTitle(documents, legacy.title);
-    if (!owners.length) pisiNotifyWarning(pisiWikiTranslate('Bu başlıkta bir not bulunamadı.'));
-    else if (owners.length === 1) await openPisiWikiDocument(owners[0], isPisiWikiBlockId(legacy.block) ? legacy.block : '');
-    else showPisiWikiChooser(owners, event.clientX, event.clientY);
+    const owners = resolvePisiLegacyWikiTitle(documents, title);
+    if (!owners.length) {
+        pisiNotifyWarning(pisiWikiTranslate('Bu başlıkta bir not bulunamadı.'));
+        return false;
+    }
+    if (owners.length === 1) return openPisiWikiDocument(owners[0], isPisiWikiBlockId(blockId) ? blockId : '');
+    showPisiWikiChooser(owners, x, y);
     return true;
 }
 
@@ -336,7 +433,7 @@ async function refreshPisiWikiDecorations() {
         const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
         while (walker.nextNode()) {
             const node = walker.currentNode;
-            if (!node.nodeValue.includes('[[') || node.parentElement?.closest(PISI_WIKI_SKIPPED_TEXT)) continue;
+            if (!node.nodeValue.includes('[[') || isPisiWikiTextSkipped(node)) continue;
             for (const match of node.nodeValue.matchAll(/\[\[([^\]\n]{1,200})\]\]/g)) {
                 const range = new Range();
                 range.setStart(node, match.index);
@@ -387,14 +484,19 @@ function applyPisiWikiRenameToOpenEditors({ nodeId = '', oldTitle = '', newTitle
  */
 async function renamePisiItemWithLinkReview(oldPath, newTitle, titleInput = null) {
     if (/\.node$/i.test(String(oldPath || ''))) {
+        // A task title being typed is written first, so the rename sees (and rewrites) its [[…]] text.
+        await window.flushPisiTaskTitles?.();
         const impact = await window.pisiDomain?.query?.('links.rename-impact.v1', { nodePath: oldPath, newTitle });
-        if (impact?.ok && impact.notes > 0) {
+        if (impact?.ok && (impact.notes > 0 || impact.tasks > 0)) {
             const message = [
                 pisiWikiTranslate('Bu notu yeniden adlandırmak ona verilen bağlantıları da günceller.'),
                 `${pisiWikiTranslate('Etkilenecek not')}: ${impact.notes}`,
+                impact.tasks > 0 ? `${pisiWikiTranslate('Etkilenecek görev')}: ${impact.tasks}` : '',
                 `${pisiWikiTranslate('Güncellenecek bağlantı')}: ${impact.links}`,
                 pisiWikiTranslate('Devam edilsin mi?')
-            ].join('\n');
+            ]
+                .filter(Boolean)
+                .join('\n');
             if (!(await pisiConfirm(message, { title: pisiWikiTranslate('Bağlantıları güncelle'), confirmText: pisiWikiTranslate('Yeniden adlandır') }))) {
                 const current = await window.pisiProject?.getPisiDocument?.(oldPath);
                 const title = current?.metadata?.title || '';
@@ -404,10 +506,9 @@ async function renamePisiItemWithLinkReview(oldPath, newTitle, titleInput = null
         }
     }
     const result = await window.pisiProject?.renamePisiFile?.(oldPath, newTitle);
-    if (result?.ok && result.wikiLinks?.notes) {
-        applyPisiWikiRenameToOpenEditors(result.wikiLinks);
-        window.invalidatePisiSearchIndex?.('wiki-link-rename');
-    }
+    if (result?.ok && result.wikiLinks?.notes) applyPisiWikiRenameToOpenEditors(result.wikiLinks);
+    // Task titles come back through pisi:tasks-changed; the links panel counts them from the index.
+    if (result?.ok && (result.wikiLinks?.notes || result.wikiLinks?.tasks)) window.invalidatePisiSearchIndex?.('wiki-link-rename');
     return result;
 }
 
@@ -485,6 +586,8 @@ const moduleApi = {
     applyPisiWikiMenuItem,
     renamePisiItemWithLinkReview,
     openPisiWikiTarget,
+    openPisiWikiTitle,
+    routePisiTaskTitleWikiInput,
     applyPisiWikiRenameToOpenEditors,
     repairPisiWikiLinksInProject,
     refreshPisiWikiDecorations,

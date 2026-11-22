@@ -1,5 +1,33 @@
 # PISI Güncelleme Takip Dosyası
 
+## 22-11-2026 — Görevlerde etiket ve not bağlantısı (G6)
+
+Görev işi (`docs/task-plan.md` G6). Başlık G2'de düz metne geçince kaybolan iki yetenek kayıt üzerinden geri geldi.
+
+- `tasks.json` kaydına `tags` alanı eklendi (`shared/task-model.mjs`): `#` olmadan, not etiketlerinin karakter
+  kuralıyla, büyük küçük harf farkıyla tekrar etmeden, en çok 20 etiket × 64 karakter. Alanı olmayan eski kayıt
+  boş liste okunur; geçersiz istek reddedilir (`TASK_INVALID`, sınır aşılınca `too-many`). Görev kopyası
+  etiketleri alır. Project Integrity alanın geçerliliğini denetler. Geçiş adımı yok; telefon alanı korur.
+- Etiketler not bloğunda ve günlük satırında çip olarak, görev ayrıntısında "Etiketler" alanında düzenlenir
+  (`renderer/tasks/pisi-task-tags.mjs`). Her değişiklik `task.update.v1`'dir; hiçbir `.node` okunmaz ya da yazılmaz.
+- Etiketler paneli etiketli görevleri `tasks.json`'dan (projenin bütün görevleri, tarama yok) ayrı bir "Görevler"
+  grubunda listeler ve görevin yerini açar; görev deposu değişince yenilenir. Panel kartları etiketleri gösterir;
+  arama görevi etiketiyle (`#` ile ya da onsuz) bulur.
+- Görev başlığında `[[Not]]` (ya da `[[Not#blk_…]]`) bağlantıdır. Düz metin olarak yazılır ve başlıkla çözülür.
+  Editörde başlıkta `[[` yazınca bağlantı menüsü açılır; seçilen not `[[Başlık]]` metni olarak girer ("Yeni not
+  oluştur" da çalışır). Menü açıkken Enter yeni görev açmaz. Başlıktaki bağlantı vurgulanır ve Ctrl/Cmd+tıklamayla
+  açılır. Panel ve çalışma alanı kartları bağlantıyı notun başlığıyla çizer ve her not için bir "↗" düğmesi verir.
+- Bağlantılar panelinde "Bu node'a bağlantı verenler" (geri bağlantılar), başlığı bu nota bağlanan görevleri
+  "Görev" çipiyle sayar. Bir notun kendi görevlerinin bağlandığı notlar "bağlantı verdikleri" listesindedir.
+- Not yeniden adlandırılınca başlığında `[[Eski]]` olan görevler `[[Yeni]]` olur. Bu, notlardaki bağlantılarla
+  aynı `project.item.rename.v1` atomik mutation'ındadır ve tek `tasks.json` yazmasıdır; bir hata notları, dosyayı
+  ve `tasks.json`'u birlikte geri alır. Onay penceresi etkilenecek görev sayısını da yazar. Eski başlığı taşıyan
+  başka bir not varsa (notlardaki eski bağlantı kuralı) metin değişmez.
+- Testler: `tests/shared-task-tags.test.mjs`, `tests/shared-wiki-link-text.test.mjs`, `tests/task-links-service.test.mjs`
+  (gerçek dağıtıcıyla yeniden adlandırma, kesilen mutation'ın geri alınması), `tests/task-links-panels.test.mjs`,
+  `tests/search-task-records.test.mjs`; Electron E2E `scripts/electron-tasks-links-e2e.mjs` (`test:e2e` listesinde).
+- Masaüstü fixture'ı `scripts/electron-mobile-fixture-e2e.mjs --write` ile yeniden üretildi; kayıtlar `tags: []` taşır.
+
 ## 22-11-2026 — Görevleri gösteren öteki yüzeyler (G5)
 
 Görev işi (`docs/task-plan.md` G5). Kapanan bulgular: GB11, GK3, GK9, GK10.

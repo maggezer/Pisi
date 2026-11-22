@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-22T03:29:10.357Z",
+  "entries": [
+    {
+      "historyId": "1795318150355-2026-11-22T03-29-10-354Z-0a74f8d148e148e3.json.gz",
+      "capturedAt": "2026-11-22T03:29:10.354Z",
+      "reason": "quit",
+      "hash": "0a74f8d148e148e3",
+      "preview": "2 not kartı",
+      "size": 551,
+      "compressed": true
+    },
+    {
+      "historyId": "1795318147379-2026-11-22T03-29-07-378Z-28fb685e6bd0e8b6.json.gz",
+      "capturedAt": "2026-11-22T03:29:07.378Z",
+      "reason": "auto",
+      "hash": "28fb685e6bd0e8b6",
+      "preview": "0 not kartı",
+      "size": 377,
+      "compressed": true
+    }
+  ]
+}

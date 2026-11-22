@@ -8,6 +8,7 @@
 //                     data-pisi-node-title="Başlık" [data-pisi-link-block="blk_…"]
 //                     contenteditable="false">Başlık</a>
 // Legacy link:     the literal text [[Başlık]] or [[Başlık#blk_…]].
+// Task titles (plain text) carry links only in the legacy form.
 
 const PISI_WIKI_NODE_ID = /^node_[A-Za-z0-9_-]{1,96}$/;
 const PISI_WIKI_BLOCK_ID = /^blk_[A-Za-z0-9_-]{1,120}$/;
@@ -273,6 +274,66 @@ function replacePisiWikiLinkMarkdown(escapedHtml) {
     });
 }
 
+// ---- Plain-text links (task titles, docs/task-plan.md G6) ------------------------
+// A task title is plain text, so a link in it is the text [[Başlık]] or
+// [[Başlık#blk_…]], resolved by title like a legacy link in a note.
+
+/** Every [[…]] in a plain text: `{ start, end, raw, title, block, hasBlock }`, in order. */
+function listPisiWikiTextLinks(text) {
+    const links = [];
+    for (const match of String(text ?? '').matchAll(PISI_WIKI_LEGACY_LINK)) {
+        const target = parsePisiWikiTarget(match[1]);
+        if (!target.title) continue;
+        links.push({ start: match.index, end: match.index + match[0].length, raw: match[0], ...target });
+    }
+    return links;
+}
+
+/**
+ * A plain text cut into what is drawn: `{ kind: 'text', text }` and
+ * `{ kind: 'link', text, title, block }` parts (`text` of a link is the
+ * written [[…]]). Joined, the parts' text is the input.
+ */
+function splitPisiWikiText(text) {
+    const value = String(text ?? '');
+    const parts = [];
+    let at = 0;
+    for (const link of listPisiWikiTextLinks(value)) {
+        if (link.start > at) parts.push({ kind: 'text', text: value.slice(at, link.start) });
+        parts.push({ kind: 'link', text: link.raw, title: link.title, block: isPisiWikiBlockId(link.block) ? link.block : '' });
+        at = link.end;
+    }
+    if (at < value.length) parts.push({ kind: 'text', text: value.slice(at) });
+    return parts;
+}
+
+/** Whether a plain text links to the title `title` (title identity of normalizePisiWikiTitle). */
+function hasPisiWikiTextLinkTo(text, title) {
+    const key = normalizePisiWikiTitle(title);
+    return Boolean(key) && listPisiWikiTextLinks(text).some((link) => normalizePisiWikiTitle(link.title) === key);
+}
+
+/**
+ * A plain text after a note called `oldTitle` was renamed to `newTitle`:
+ * [[Old]] and [[Old#…]] become [[New]] and [[New#…]]. A new title that
+ * cannot be written inside [[…]] (it holds a bracket or a line break) changes
+ * nothing. Returns `{ text, count, changed }`.
+ */
+function rewritePisiWikiTextForRename(text, { oldTitle, newTitle }) {
+    const value = String(text ?? '');
+    const oldKey = normalizePisiWikiTitle(oldTitle);
+    const next = String(newTitle ?? '').trim();
+    if (!oldKey || !next || /[[\]\n\r]/.test(next)) return { text: value, count: 0, changed: false };
+    let count = 0;
+    const rewritten = value.replace(PISI_WIKI_LEGACY_LINK, (match, inner) => {
+        const target = parsePisiWikiTarget(inner);
+        if (normalizePisiWikiTitle(target.title) !== oldKey) return match;
+        count += 1;
+        return `[[${next}${target.hasBlock ? '#' + inner.slice(inner.indexOf('#') + 1) : ''}]]`;
+    });
+    return { text: rewritten, count, changed: rewritten !== value };
+}
+
 export {
     PISI_WIKI_BLOCK_ID,
     PISI_WIKI_LEGACY_LINK,
@@ -283,9 +344,11 @@ export {
     escapePisiWikiHtml,
     findPisiLegacyWikiLinkAt,
     getPisiWikiTrigger,
+    hasPisiWikiTextLinkTo,
     isPisiWikiBlockId,
     isPisiWikiLinkAttributeAllowed,
     isPisiWikiNodeId,
+    listPisiWikiTextLinks,
     makePisiWikiLinkHtml,
     mapPisiWikiHtml,
     normalizePisiWikiTitle,
@@ -294,5 +357,7 @@ export {
     replacePisiWikiLinkMarkdown,
     resolvePisiLegacyWikiTitle,
     rewritePisiWikiLinksForRename,
-    serializePisiWikiLinkMarkdown
+    rewritePisiWikiTextForRename,
+    serializePisiWikiLinkMarkdown,
+    splitPisiWikiText
 };

@@ -107,13 +107,29 @@ function handlePisiTaskTitleInput(event) {
         field.textContent = normalized;
         focusPisiTaskTitleField(field);
     }
+    const composing = event.isComposing || pisiTaskWorkState.composing.has(field);
+    // "[[" opens the note link menu in the title too (G6); the chosen note goes in as [[Başlık]] text.
+    if (!composing) queueMicrotask(() => void window.routePisiTaskTitleWikiInput?.(field));
     const taskId = field.dataset.pisiTaskTitle;
     if (!taskId) return;
     const editor = getPisiEditorOfTaskElement(field);
     if (editor && !pisiTaskTitleDrafts.has(taskId)) window.rebasePisiEditorHistory?.(editor);
     pisiTaskTitleDrafts.set(taskId, normalized);
     if (editor) window.recordPisiEditorHistory?.(editor, 'typing');
-    if (!event.isComposing && !pisiTaskWorkState.composing.has(field)) schedulePisiTaskTitleCommit(taskId);
+    if (!composing) schedulePisiTaskTitleCommit(taskId);
+}
+
+/** While the [[ menu of this title is open, the arrows, Enter, Tab and Escape belong to it. */
+function handlePisiTaskTitleMenuKey(event, field) {
+    const menu = window.pisiTagMenuState;
+    if (!menu?.active || menu.mode !== 'wiki-link' || menu.editor !== field) return false;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') window.movePisiTagSelection?.(event.key === 'ArrowDown' ? 1 : -1);
+    else if (event.key === 'Enter' || event.key === 'Tab') {
+        const item = menu.items[menu.selectedIndex];
+        if (item) window.applyPisiTagMenuItem?.(field, item);
+    } else if (event.key === 'Escape') window.closePisiTagMenu?.();
+    else return false;
+    return true;
 }
 
 function handlePisiTaskTitlePaste(event) {
@@ -466,6 +482,10 @@ function handlePisiTaskTitleKeydown(event) {
         event.preventDefault();
         event.stopImmediatePropagation();
     };
+    if (!mod && !event.altKey && !event.shiftKey && handlePisiTaskTitleMenuKey(event, field)) {
+        done();
+        return;
+    }
     if (mod && !event.altKey && (key.toLowerCase() === 'z' || key.toLowerCase() === 'y')) {
         done();
         window.stepPisiEditorHistory?.(editor, key.toLowerCase() === 'y' || event.shiftKey ? 1 : -1);

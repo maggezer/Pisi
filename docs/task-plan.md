@@ -174,6 +174,7 @@ Bu kurallar her fazda geçerlidir. Bir PR bunlardan birini çiğniyorsa bitmiş 
         {
             "id": "task_6f1c2a0e-1b7d-4c55-9a1e-2f9d6c0b8a11",
             "title": "Spor",
+            "tags": [],
             "status": "todo",
             "priority": 3,
             "dueDate": "2026-11-22",
@@ -202,6 +203,7 @@ Bu kurallar her fazda geçerlidir. Bir PR bunlardan birini çiğniyorsa bitmiş 
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`                                    | `task_<uuid>`; değişmez.                                                                                                                                                                                                                 |
 | `title`                                 | Düz metin, tek satır; boşluklar sadeleşir; en çok 500 karakter. Yeni yazılan görevde boş olabilir.                                                                                                                                       |
+| `tags`                                  | Etiketler (G6): `#` olmadan, not etiketi karakterleriyle; büyük küçük harf farkıyla tekrar eden tek sayılır; en çok 20 etiket, her biri en çok 64 karakter. Alanı olmayan kayıt boş liste okunur.                                        |
 | `status`                                | `todo`, `doing`, `waiting`, `blocked`, `done`.                                                                                                                                                                                           |
 | `priority`                              | 1–5.                                                                                                                                                                                                                                     |
 | `dueDate`, `dueTime`                    | `YYYY-MM-DD` ve `HH:MM` ya da `null`. Saat yalnız tarih varken anlamlıdır. Görevin günü her yerde `dueDate`'tir.                                                                                                                         |

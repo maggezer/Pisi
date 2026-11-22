@@ -281,6 +281,51 @@ export function normalizePisiTaskRecord(payload = {}, existing = null, { now, ma
 export const PISI_TASK_STORE_VERSION = 2;
 export const PISI_TASK_REMINDER_MODES = Object.freeze(['none', 'due-morning', 'day-before', 'three-days-before']);
 export const PISI_TASK_TITLE_MAX_LENGTH = 500;
+export const PISI_TASK_TAG_LIMIT = 20;
+export const PISI_TASK_TAG_MAX_LENGTH = 64;
+
+// A task tag follows the note tag rule (renderer/tags/pisi-tag-editor.mjs):
+// letters, digits, `_` and `-`, with `.` between levels; no leading `#`.
+const TAG_CHARS = 'A-Za-z0-9ğüşöçıİĞÜŞÖÇ_-';
+const TASK_TAG = new RegExp(`^[${TAG_CHARS}]+(?:\\.[${TAG_CHARS}]+)*$`);
+
+/** One tag as stored (`#` and stray dots dropped, the note tag rule), or null when it is not a tag. */
+export function normalizePisiTaskTag(value) {
+    if (typeof value !== 'string') return null;
+    const tag = value
+        .normalize('NFC')
+        .trim()
+        .replace(/^#+/, '')
+        .replace(/\.+/g, '.')
+        .replace(/^\.|\.$/g, '');
+    return tag && tag.length <= PISI_TASK_TAG_MAX_LENGTH && TASK_TAG.test(tag) ? tag : null;
+}
+
+/**
+ * The tags of a task as stored (docs/task-plan.md G6): valid tags only, the
+ * first spelling of a tag kept (case-insensitive, Turkish), in the given
+ * order, at most PISI_TASK_TAG_LIMIT. A value that is not a list gives [].
+ */
+export function normalizePisiTaskTags(value) {
+    if (!Array.isArray(value)) return [];
+    const tags = [];
+    const seen = new Set();
+    for (const item of value) {
+        const tag = normalizePisiTaskTag(item);
+        const key = tag?.toLocaleLowerCase('tr-TR');
+        if (!tag || seen.has(key)) continue;
+        seen.add(key);
+        tags.push(tag);
+        if (tags.length === PISI_TASK_TAG_LIMIT) break;
+    }
+    return tags;
+}
+
+/** Whether two tags are the same tag (case-insensitive, Turkish). */
+export function isSamePisiTaskTag(a, b) {
+    const left = normalizePisiTaskTag(a);
+    return Boolean(left) && left.toLocaleLowerCase('tr-TR') === normalizePisiTaskTag(b)?.toLocaleLowerCase('tr-TR');
+}
 
 const ISO_DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
 const HH_MM = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -357,6 +402,7 @@ function normalizeCompletion(entry) {
  */
 const LENIENT_READERS = Object.freeze({
     title: (value) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, PISI_TASK_TITLE_MAX_LENGTH) : ''),
+    tags: (value) => normalizePisiTaskTags(value),
     status: (value) => (PISI_TASK_STATUSES.has(value) ? value : 'todo'),
     priority: (value) => clampInteger(value, 1, 5) ?? 3,
     dueDate: (value) => normalizePisiTaskDay(value),
@@ -382,6 +428,7 @@ const LENIENT_READERS = Object.freeze({
 export const PISI_TASK_FIELDS = Object.freeze([
     'id',
     'title',
+    'tags',
     'status',
     'priority',
     'dueDate',
@@ -438,6 +485,13 @@ function checkRequestedField(field, value, taskId) {
     switch (field) {
         case 'title':
             return typeof value === 'string' ? { value: LENIENT_READERS.title(value) } : invalid;
+        case 'tags': {
+            // Every item must be a tag; duplicates fold. More than the limit is an error, not a cut.
+            if (!Array.isArray(value) || !value.every((item) => normalizePisiTaskTag(item))) return invalid;
+            const tags = normalizePisiTaskTags(value);
+            const distinct = new Set(value.map((item) => normalizePisiTaskTag(item).toLocaleLowerCase('tr-TR'))).size;
+            return distinct > PISI_TASK_TAG_LIMIT ? { error: 'too-many' } : { value: tags };
+        }
         case 'status':
             return PISI_TASK_STATUSES.has(value) ? { value } : invalid;
         case 'priority':
@@ -758,6 +812,7 @@ export function findPisiTaskDependencyCycle(tasks, taskId, dependencyIds) {
 // and has no completions, dependencies or order of its own.
 const PISI_TASK_COPY_FIELDS = Object.freeze([
     'title',
+    'tags',
     'status',
     'priority',
     'dueDate',
@@ -773,6 +828,7 @@ const PISI_TASK_COPY_FIELDS = Object.freeze([
 export function makePisiTaskCopyFields(task) {
     const fields = {};
     for (const field of PISI_TASK_COPY_FIELDS) if (task && task[field] !== undefined) fields[field] = task[field];
+    if (fields.tags !== undefined) fields.tags = normalizePisiTaskTags(fields.tags);
     if (fields.status === 'done') fields.status = 'todo';
     return fields;
 }

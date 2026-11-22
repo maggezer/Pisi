@@ -1,4 +1,5 @@
 import { getPisiTaskDependencyState, getPisiTaskProgress } from '../../shared/task-views.mjs';
+import { getPisiTaskTitleReadingText } from './pisi-task-title-links.mjs';
 import {
     PISI_TASK_CALENDAR_DAY_LIMIT,
     PISI_TASK_KANBAN_PAGE,
@@ -33,7 +34,7 @@ function openPisiTaskDetailFor(taskId) {
 }
 
 function makePisiTaskViewTaskButton(task, className, { blocked = false } = {}) {
-    const title = task.title || t('Başlıksız görev');
+    const title = getPisiTaskTitleReadingText(task.title) || t('Başlıksız görev');
     const button = createPisiTaskPanelButton(className, title, { onClick: () => openPisiTaskDetailFor(task.id) });
     button.dataset.pisiTaskViewTask = task.id;
     button.dataset.status = task.status;

@@ -164,7 +164,9 @@
             "makePisiTaskCommandContext",
             "savePisiNoteWithTasks",
             "writePisiRestoredNote",
-            "getOrCreatePisiDiaryWithTasks"
+            "getOrCreatePisiDiaryWithTasks",
+            "countPisiTaskTitleLinks",
+            "renamePisiTaskTitleLinks"
         ]
     },
     {

@@ -2,13 +2,13 @@
   "pisi": {
     "version": 1,
     "type": "node",
-    "id": "node_45a7a2c8-32b2-493d-a490-1f72068c790f",
+    "id": "node_243c5041-0f3a-473e-b42f-6e932f713945",
     "title": "14-11-2026",
-    "sidecar": "inv_14-11-2026__node_45a7a2c8-32b2-493d-a490-1f72068c790f",
-    "createdAt": "2026-11-21T09:30:46.843Z",
+    "sidecar": "inv_14-11-2026__node_243c5041-0f3a-473e-b42f-6e932f713945",
+    "createdAt": "2026-11-22T03:29:07.098Z",
     "updatedAt": "2026-11-14T09:30:00.000Z",
     "parentMap": "diary",
     "diaryDate": "2026-11-14"
   },
-  "content": "<div><br></div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-14\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_22f06dd6-dc1c-4c78-9340-b71952ddb6bc\"></div>\n    <div data-pisi-task-ref=\"task_3d792e5f-41a4-42cb-858c-23ec4c3be32a\"></div>\n    <div data-pisi-task-ref=\"task_42767ccb-a303-4455-a940-bf3c983fb9c2\"></div>\n    <div data-pisi-task-ref=\"task_777d976c-fdcd-4244-8744-5886c284291c\"></div>\n</div>"
+  "content": "<div><br></div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-14\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_1812b961-497a-4902-9fe1-dfd05b6b7343\"></div>\n    <div data-pisi-task-ref=\"task_1f299d14-af2e-4fb1-9337-ea6d5ffd3445\"></div>\n    <div data-pisi-task-ref=\"task_c3c4fbbb-c18c-45d2-9664-d49cf243014d\"></div>\n    <div data-pisi-task-ref=\"task_ed10cb5e-c911-45a8-9e70-39014a526cff\"></div>\n</div>"
 }
