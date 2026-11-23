@@ -593,11 +593,163 @@ jobs:
                   if-no-files-found: error
                   retention-days: 1
 
+    android-release:
+        needs: validate
+        permissions:
+            contents: read
+            actions: read
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        env:
+            PISI_ANDROID_TEST_KEYSTORE_BASE64: ${{ secrets.PISI_ANDROID_TEST_KEYSTORE_BASE64 }}
+            PISI_ANDROID_TEST_KEYSTORE_PASSWORD: ${{ secrets.PISI_ANDROID_TEST_KEYSTORE_PASSWORD }}
+            PISI_ANDROID_TEST_KEY_ALIAS: ${{ secrets.PISI_ANDROID_TEST_KEY_ALIAS }}
+            PISI_ANDROID_TEST_KEY_PASSWORD: ${{ secrets.PISI_ANDROID_TEST_KEY_PASSWORD }}
+        defaults:
+            run:
+                working-directory: mobile
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Setup Node
+              uses: actions/setup-node@v5
+              with:
+                  node-version: 24
+                  cache: npm
+                  cache-dependency-path: mobile/package-lock.json
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: 21
+
+            - name: Verify mobile version matches the release tag
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  version=$(node -p "require('./package.json').version")
+                  if [[ "${{ github.ref_name }}" != "v$version" ]]; then
+                    echo "Release tag ${{ github.ref_name }} does not match mobile/package.json version $version." >&2
+                    exit 1
+                  fi
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Enforce dependency audit policy
+              run: npm run audit
+
+            - name: Validate (format, lint, i18n, structure, tests, build)
+              run: npm run validate
+
+            # The release APK must install over the test APKs of the Mobile workflow (their version
+            # code is that workflow's run number) and the next test APK must install over it, so it
+            # takes the run number of the latest Mobile run.
+            - name: Choose the Android version code
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  set -euo pipefail
+                  code=$(gh api "repos/${{ github.repository }}/actions/workflows/mobile.yml/runs?per_page=1" --jq '.workflow_runs[0].run_number // 0')
+                  if ! [[ "$code" =~ ^[0-9]+$ ]] || [[ "$code" -lt 1 ]]; then
+                    code=1
+                  fi
+                  echo "PISI_ANDROID_VERSION_CODE=$code" >> "$GITHUB_ENV"
+
+            - name: Build the web app and sync it into the Android project
+              run: npm run android:sync
+
+            - name: Prepare the fixed test signing key
+              id: signing
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  if [[ -n "${PISI_ANDROID_TEST_KEYSTORE_BASE64}" && -n "${PISI_ANDROID_TEST_KEYSTORE_PASSWORD}" && -n "${PISI_ANDROID_TEST_KEY_ALIAS}" && -n "${PISI_ANDROID_TEST_KEY_PASSWORD}" ]]; then
+                    keystore="${RUNNER_TEMP}/pisi-test.keystore"
+                    printf '%s' "${PISI_ANDROID_TEST_KEYSTORE_BASE64}" | base64 --decode > "${keystore}"
+                    echo "PISI_ANDROID_TEST_KEYSTORE_FILE=${keystore}" >> "${GITHUB_ENV}"
+                    echo "fixed=true" >> "${GITHUB_OUTPUT}"
+                  else
+                    echo "::warning::The fixed Android test key is not configured. The APK cannot be installed over an earlier Pisi APK."
+                    echo "fixed=false" >> "${GITHUB_OUTPUT}"
+                  fi
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v4
+
+            - name: Run the Android unit tests
+              working-directory: mobile/android
+              run: ./gradlew testDebugUnitTest
+
+            - name: Assemble the APK
+              working-directory: mobile/android
+              run: ./gradlew assembleDebug
+
+            - name: Verify the APK and collect it with its checksum
+              working-directory: mobile/android
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  apk=app/build/outputs/apk/debug/app-debug.apk
+                  apksigner="$(ls -1 "${ANDROID_HOME}"/build-tools/*/apksigner | sort -V | tail -1)"
+                  aapt2="$(ls -1 "${ANDROID_HOME}"/build-tools/*/aapt2 | sort -V | tail -1)"
+                  version_name="$(node -p "require('../package.json').version")"
+
+                  "${apksigner}" verify --verbose --print-certs "${apk}" | tee "${RUNNER_TEMP}/apk-signature.txt"
+                  "${aapt2}" dump badging "${apk}" > "${RUNNER_TEMP}/apk-badging.txt"
+                  grep -F "package: name='com.mumin.pisi' versionCode='${PISI_ANDROID_VERSION_CODE}' versionName='${version_name}'" "${RUNNER_TEMP}/apk-badging.txt"
+                  grep -F "minSdkVersion:'26'" "${RUNNER_TEMP}/apk-badging.txt"
+
+                  if [[ "${{ steps.signing.outputs.fixed }}" == "true" ]]; then
+                    expected="$(keytool -list -v -keystore "${PISI_ANDROID_TEST_KEYSTORE_FILE}" -storepass "${PISI_ANDROID_TEST_KEYSTORE_PASSWORD}" -alias "${PISI_ANDROID_TEST_KEY_ALIAS}" | sed -n 's/^\s*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')"
+                    actual="$(sed -n -E 's/^(Signer #1|V[0-9.]+ Signer:) certificate SHA-256 digest: //p' "${RUNNER_TEMP}/apk-signature.txt" | sort -u)"
+                    if [[ -z "${expected}" || "${expected}" != "${actual}" ]]; then
+                      echo "The APK is not signed with the fixed test key (expected: ${expected:-none}, APK: ${actual:-none})." >&2
+                      exit 1
+                    fi
+                  fi
+
+                  out="${GITHUB_WORKSPACE}/release-android"
+                  mkdir -p "${out}"
+                  cp "${apk}" "${out}/Pisi-${version_name}-Android.apk"
+                  (
+                    cd "${out}"
+                    sha256sum *.apk > SHA256SUMS-Android.txt
+                  )
+
+            - name: Summarize
+              if: always()
+              shell: bash
+              run: |
+                  {
+                    echo "### Pisi Android APK"
+                    echo
+                    echo "- Version code: \`${PISI_ANDROID_VERSION_CODE:-?}\`"
+                    if [[ "${{ steps.signing.outputs.fixed }}" == "true" ]]; then
+                      echo "- Signed with the fixed test key: installs over earlier Pisi test APKs."
+                    else
+                      echo "- **Not signed with the fixed test key:** it cannot be installed over an earlier Pisi APK."
+                    fi
+                  } >> "${GITHUB_STEP_SUMMARY}"
+
+            - name: Upload Android release artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: pisi-release-android
+                  path: release-android/*
+                  if-no-files-found: error
+                  retention-days: 1
+
     publish-release:
         needs:
             - windows-release
             - macos-release
             - linux-release
+            - android-release
         permissions:
             contents: write
         runs-on: ubuntu-latest
@@ -632,6 +784,8 @@ jobs:
                     "SHA256SUMS.txt"
                     "SHA256SUMS-macOS.txt"
                     "SHA256SUMS-Linux.txt"
+                    "Pisi-$version-Android.apk"
+                    "SHA256SUMS-Android.txt"
                   )
 
                   if [[ -n "${PISI_UPDATE_FEED_URL:-}" ]]; then
