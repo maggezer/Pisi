@@ -35,6 +35,8 @@ Bileşen galerisi yalnız geliştirme sunucusunda açılır: `npm --prefix mobil
 
 Her çalıştırmanın sürüm kodu bir öncekinden büyüktür. Bu yüzden yeni APK, aynı anahtarla imzalandığı sürece eskisinin üzerine kurulur ve telefondaki veriler kalır.
 
+Sürüm etiketiyle (`v*.*.*`) çalışan **Release** iş akışı da aynı anahtarla bir APK derler ve GitHub sürümüne `Pisi-<sürüm>-Android.apk` adıyla ekler (geliştirici bölümü olmadan). Sürüm kodu, o anki son **Mobile** çalıştırmasının numarasıdır: sürüm APK'sı önceki test APK'larının, sonraki test APK'sı da sürüm APK'sının üzerine kurulur.
+
 ### Sabit test anahtarı
 
 Android, kurulu bir uygulamayı ancak aynı anahtarla imzalanmış bir APK ile günceller. Anahtar tanımlı değilse iş akışı APK'yı yine üretir, ama özetinde **"Bu APK güncelleme olarak kurulamaz"** uyarısını gösterir: o APK'yı kurmak için telefondaki Pisi'yi kaldırmak gerekir ve verisi silinir.

@@ -1,5 +1,19 @@
 # PISI Güncelleme Takip Dosyası
 
+## 23-11-2026 — Sürüm: Android APK'sı da sürümde
+
+CI işi; uygulama kodu ve dosya biçimi değişmedi.
+
+- `.github/workflows/release.yml`'e `android-release` işi eklendi: mobil paketi doğrular (`npm run audit`, `npm run
+validate`), Android birim testlerini çalıştırır, APK'yı sabit test anahtarıyla derler, imzasını ve sürümünü denetler,
+  `Pisi-<sürüm>-Android.apk` ile `SHA256SUMS-Android.txt`'yi üretir. `publish-release` bu işi de bekler ve iki dosyayı
+  sürümün zorunlu dosyaları arasında sayar.
+- Sürüm APK'sının sürüm kodu son Mobile çalıştırmasının numarasıdır; böylece test APK'larının üzerine kurulur ve sonraki
+  test APK'sı onun üzerine kurulur. Sürüm APK'sında geliştirici bölümü yoktur (`VITE_PISI_DEVELOPER` verilmez).
+- `docs/releases/v0.70.0.md` ve `docs/mobile-qa.md` §2 buna göre güncellendi.
+- Test: `tests/macos-linux-release.test.js` iş akışını YAML olarak okuyup işi, sürüm kodu kuralını, dosya adlarını ve
+  yayın işinin bağımlılığını denetler.
+
 ## 22-11-2026 — Görevler: cihazda kabul listesi (G10)
 
 Görev işi (`docs/task-plan.md` G10). Yalnız belge değişikliği; kod ve dosya biçimi değişmedi.

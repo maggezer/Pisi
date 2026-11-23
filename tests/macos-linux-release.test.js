@@ -80,3 +80,33 @@ test('cross-platform release workflow and entitlements remain parseable', () => 
         assert.match(content, /com\.apple\.security\.cs\.allow-unsigned-executable-memory/);
     }
 });
+
+test('the release also builds the Android APK and publishes it with its checksum', () => {
+    const workflow = yaml.load(read('.github/workflows/release.yml'));
+    const android = workflow.jobs['android-release'];
+    assert.ok(android, 'android-release job');
+    assert.equal(android.needs, 'validate');
+    assert.equal(android.defaults.run['working-directory'], 'mobile');
+
+    const runs = android.steps.map((step) => String(step.run || ''));
+    assert.ok(
+        runs.some((run) => run.trim() === 'npm run validate'),
+        'mobile validate runs before the APK is built'
+    );
+    assert.ok(
+        runs.some((run) => run.includes('actions/workflows/mobile.yml/runs')),
+        'version code follows the Mobile test APKs'
+    );
+    assert.ok(runs.some((run) => run.trim() === './gradlew assembleDebug'));
+    assert.ok(runs.some((run) => run.includes('Pisi-${version_name}-Android.apk') && run.includes('SHA256SUMS-Android.txt')));
+    assert.ok(!JSON.stringify(android.env || {}).includes('VITE_PISI_DEVELOPER'), 'the release APK has no developer section');
+
+    const upload = android.steps.find((step) => String(step.uses || '').startsWith('actions/upload-artifact'));
+    assert.equal(upload.with.name, 'pisi-release-android');
+
+    const publish = workflow.jobs['publish-release'];
+    assert.ok(publish.needs.includes('android-release'), 'publish waits for the APK');
+    const verify = publish.steps.find((step) => step.name === 'Verify release payload').run;
+    assert.match(verify, /"Pisi-\$version-Android\.apk"/);
+    assert.match(verify, /"SHA256SUMS-Android\.txt"/);
+});
