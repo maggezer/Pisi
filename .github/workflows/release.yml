@@ -821,10 +821,18 @@ jobs:
                   fi
 
                   gh release upload "$tag" "${assets[@]}" --clobber
+                  # The release is created as a draft so that no one sees it half uploaded;
+                  # once every asset is there it is published as a beta (pre-release).
                   gh release edit "$tag" \
                     --title "Pisi $version Beta" \
                     --notes-file "docs/releases/$tag.md" \
-                    --prerelease
+                    --prerelease \
+                    --draft=false
+
+                  [[ "$(gh release view "$tag" --json isDraft --jq .isDraft)" == "false" ]] || {
+                    echo "Release $tag is still a draft." >&2
+                    exit 1
+                  }
 
             - name: Clean up temporary release workflow artifacts
               if: success()
