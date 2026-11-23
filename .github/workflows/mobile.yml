@@ -7,11 +7,13 @@ on:
         branches:
             - main
         paths:
+            - 'package.json'
             - 'mobile/**'
             - 'shared/**'
             - '.github/workflows/mobile.yml'
     pull_request:
         paths:
+            - 'package.json'
             - 'mobile/**'
             - 'shared/**'
             - '.github/workflows/mobile.yml'
