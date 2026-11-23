@@ -1,5 +1,14 @@
 # PISI Güncelleme Takip Dosyası
 
+## 23-11-2026 — Sürüm: yayın taslak olarak kalmıyor
+
+CI işi; uygulama kodu değişmedi.
+
+- `release.yml` `publish-release` sürümü `--draft` ile açıyor, dosyaları yüklüyor ama taslağı hiç yayına almıyordu:
+  0.70.0 koşusu başarılı bittiği hâlde sürüm görünmedi (yalnız `untagged-…` adresli taslak kaldı). Son `gh release edit`
+  artık `--draft=false` verir ve sürüm hâlâ taslaksa iş düşer.
+- Test: `tests/macos-linux-release.test.js` iş akışını YAML olarak okuyup yayın adımının taslağı kapattığını denetler.
+
 ## 23-11-2026 — Sürüm: Android APK'sı da sürümde
 
 CI işi; uygulama kodu ve dosya biçimi değişmedi.

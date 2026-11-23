@@ -110,3 +110,12 @@ test('the release also builds the Android APK and publishes it with its checksum
     assert.match(verify, /"Pisi-\$version-Android\.apk"/);
     assert.match(verify, /"SHA256SUMS-Android\.txt"/);
 });
+
+test('the final job publishes the release instead of leaving it as a draft', () => {
+    const workflow = yaml.load(read('.github/workflows/release.yml'));
+    const publish = workflow.jobs['publish-release'].steps.find((step) => step.name === 'Publish GitHub beta release').run;
+    const edit = publish.slice(publish.indexOf('gh release edit'));
+    assert.match(edit, /--prerelease/);
+    assert.match(edit, /--draft=false/);
+    assert.match(publish, /--json isDraft/);
+});
