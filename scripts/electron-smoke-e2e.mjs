@@ -246,8 +246,42 @@ try {
         const toolbarSheetActionsAbsent = !toolbar.querySelector(
             '[data-pisi-excel-action]'
         );
-        const tableRect = tableTrigger?.getBoundingClientRect();
-        const rollupRect = rollupTrigger?.getBoundingClientRect();
+        // Toolbar layout: Table/Roll/Image/File in a 2x2 grid, F1-F4 in one row with the
+        // formula bar under them, x and y under Canvas, and no horizontal scrollbar.
+        const rectOf = (selector) => toolbar.querySelector(selector)?.getBoundingClientRect() || null;
+        const near = (a, b) => Math.abs(a - b) <= 1;
+        const [tableRect, rollupRect, imageRect, fileRect] = ['table', 'rollup', 'image', 'file'].map((name) => rectOf('[data-pisi-' + name + '-trigger]'));
+        const formulaRects = ['logical', 'text', 'math', 'personal'].map((name) => rectOf('[data-pisi-formula-trigger="' + name + '"]'));
+        const formulaBarRect = rectOf('.pisi-sheet-formula-bar');
+        const canvasRect = rectOf('[data-pisi-paint-action="createCanvas"]');
+        const [widthRect = null, heightRect = null] = [...toolbar.querySelectorAll('.pisi-toolbar-dimension-stack > .pisi-ribbon-number')].map((label) => label.getBoundingClientRect());
+        const toolbarLayout = {
+            dataButtonsGrid: Boolean(
+                tableRect && rollupRect && imageRect && fileRect &&
+                near(rollupRect.top, tableRect.top) && rollupRect.left > tableRect.right &&
+                near(imageRect.left, tableRect.left) && imageRect.top > tableRect.bottom &&
+                near(fileRect.left, rollupRect.left) && near(fileRect.top, imageRect.top)
+            ),
+            formulaButtonsRow: Boolean(
+                formulaRects.every(Boolean) &&
+                formulaRects.every((rect) => near(rect.top, formulaRects[0].top)) &&
+                formulaRects.every((rect, index) => index === 0 || rect.left > formulaRects[index - 1].right)
+            ),
+            formulaBarUnderButtons: Boolean(
+                formulaBarRect && formulaRects.every(Boolean) &&
+                formulaBarRect.top > formulaRects[0].bottom &&
+                near(formulaBarRect.left, formulaRects[0].left) &&
+                near(formulaBarRect.right, formulaRects[3].right)
+            ),
+            canvasSizesStacked: Boolean(
+                canvasRect && widthRect && heightRect &&
+                widthRect.top >= canvasRect.bottom && heightRect.top >= widthRect.bottom &&
+                near(widthRect.left, canvasRect.left) && near(heightRect.left, canvasRect.left)
+            ),
+            toolbarFits: toolbar.scrollWidth <= toolbar.clientWidth,
+            toolbarContentWidth: Math.round(toolbar.querySelector('.pisi-unified-toolbar')?.scrollWidth || 0),
+            toolbarWidth: Math.round(toolbar.clientWidth)
+        };
 
         tableTrigger?.click();
 
@@ -3559,14 +3593,7 @@ try {
             typedStages,
             hasTableTrigger: Boolean(tableTrigger),
             hasRollupTrigger: Boolean(rollupTrigger),
-            mainButtonsStacked: Boolean(
-                tableRect &&
-                rollupRect &&
-                rollupRect.top > tableRect.top &&
-                Math.abs(
-                    rollupRect.left - tableRect.left
-                ) <= 1
-            ),
+            toolbarLayout,
             toolbarSheetActionsAbsent,
             directTableSize,
             alignmentButtonsMatchFontSizeEdge,
@@ -3902,7 +3929,11 @@ try {
         sheetResult.typedStages.reopenMetadata.checkboxChecked !== 'true' ||
         !sheetResult.hasTableTrigger ||
         !sheetResult.hasRollupTrigger ||
-        !sheetResult.mainButtonsStacked ||
+        !sheetResult.toolbarLayout?.dataButtonsGrid ||
+        !sheetResult.toolbarLayout?.formulaButtonsRow ||
+        !sheetResult.toolbarLayout?.formulaBarUnderButtons ||
+        !sheetResult.toolbarLayout?.canvasSizesStacked ||
+        !sheetResult.toolbarLayout?.toolbarFits ||
         !sheetResult.toolbarSheetActionsAbsent ||
         sheetResult.directTableSize?.rows !== 5 ||
         sheetResult.directTableSize?.cols !== 5 ||

@@ -23,13 +23,14 @@
 }
 
 .pisi-unified-toolbar {
-    min-width: 1232px;
+    width: max-content;
+    min-width: 100%;
     min-height: 98px;
     display: grid;
-    grid-template-columns: 250px 118px 226px 104px 236px 44px;
+    grid-template-columns: repeat(6, max-content);
     align-items: stretch;
-    gap: 6px;
-    padding: 4px 8px 1px;
+    gap: 0;
+    padding: 4px 4px 1px;
     background: linear-gradient(180deg, #26272a 0%, #202124 100%);
 }
 
@@ -39,7 +40,7 @@
     flex-direction: column;
     justify-content: flex-start;
     gap: 4px;
-    padding: 4px 10px 1px 6px;
+    padding: 4px 6px 1px;
     border: 0;
     border-right: 1px solid #3a3b40;
     border-radius: 0;
@@ -56,8 +57,8 @@
 }
 
 .pisi-toolbar-section-portability {
-    width: 38px;
-    min-width: 38px;
+    width: 34px;
+    min-width: 34px;
     justify-self: end;
     align-items: center;
     justify-content: center;
@@ -174,7 +175,9 @@
 }
 
 .pisi-style-select {
-    width: 100%;
+    width: 86px;
+    padding-left: 6px;
+    padding-right: 18px;
 }
 
 .pisi-ribbon-btn,
@@ -272,30 +275,25 @@
     min-width: 26px;
 }
 
-.pisi-toolbar-formula-row {
-    justify-content: center;
-    gap: 6px;
-}
-
 .pisi-toolbar-formula-layout {
-    min-width: 0;
+    width: 153px;
     display: grid;
-    grid-template-columns: 90px minmax(0, 1fr);
-    align-items: center;
-    gap: 8px;
+    grid-template-rows: 26px 26px;
+    gap: 5px;
 }
 
 .pisi-toolbar-formula-buttons {
     display: grid;
-    gap: 4px;
+    grid-template-columns: repeat(4, 36px);
+    gap: 3px;
 }
 
 .pisi-sheet-formula-bar {
     min-width: 0;
     display: grid;
-    grid-template-columns: 22px minmax(0, 1fr);
+    grid-template-columns: 16px minmax(0, 1fr);
     align-items: center;
-    gap: 4px;
+    gap: 3px;
 }
 
 .pisi-sheet-formula-bar > span {
@@ -308,7 +306,7 @@
 .pisi-sheet-formula-input {
     width: 100%;
     min-width: 0;
-    height: 30px;
+    height: 26px;
     box-sizing: border-box;
     border: 1px solid #4c4e54;
     border-radius: 5px;
@@ -327,18 +325,18 @@
 }
 
 .pisi-formula-btn {
-    width: 42px;
-    height: 38px;
+    width: 36px;
+    height: 26px;
     display: grid;
-    grid-template-columns: 18px 1fr;
+    grid-template-columns: 14px 1fr;
     align-items: center;
-    gap: 2px;
-    padding: 4px 12px 4px 5px;
+    gap: 1px;
+    padding: 2px 9px 2px 3px;
 }
 
 .pisi-formula-btn .pisi-toolbar-icon {
-    width: 17px;
-    height: 17px;
+    width: 14px;
+    height: 14px;
 }
 
 .pisi-formula-btn span {
@@ -349,14 +347,13 @@
 
 .pisi-toolbar-section-excel {
     padding-top: 4px;
-    padding-right: 6px;
 }
 
 .pisi-sheet-main-stack {
     display: grid;
+    grid-template-columns: repeat(2, 42px);
     grid-template-rows: repeat(2, 38px);
     gap: 3px;
-    width: 42px;
 }
 
 .pisi-toolbar-data-btn {
@@ -411,33 +408,39 @@
 .pisi-toolbar-drawing-layout {
     height: 100%;
     display: grid;
-    grid-template-columns: 112px minmax(0, 1fr);
-    gap: 7px;
+    grid-template-columns: 52px max-content;
+    gap: 6px;
 }
 
 .pisi-toolbar-canvas-column {
-    width: 112px;
+    width: 52px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
+    gap: 3px;
 }
 
 .pisi-ribbon-btn-canvas {
-    width: 60px;
-    height: 54px;
+    width: 52px;
+    height: 36px;
+    gap: 2px;
+    padding: 3px;
 }
 
-.pisi-toolbar-dimension-row {
-    width: 108px;
+.pisi-ribbon-btn-canvas .pisi-toolbar-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.pisi-toolbar-dimension-stack {
     display: grid;
-    grid-template-columns: repeat(2, 52px);
-    gap: 4px;
+    grid-template-rows: repeat(2, 22px);
+    gap: 3px;
 }
 
 .pisi-ribbon-number {
     width: 52px;
-    height: 24px;
+    height: 22px;
     min-width: 52px;
     display: grid;
     grid-template-columns: 13px minmax(0, 1fr);
@@ -455,7 +458,7 @@
 .pisi-ribbon-number input {
     width: 100%;
     min-width: 0;
-    height: 22px;
+    height: 20px;
     border: none;
     border-left: 1px solid #46484e;
     background: #202124;

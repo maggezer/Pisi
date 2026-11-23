@@ -1,5 +1,23 @@
 # PISI Güncelleme Takip Dosyası
 
+## 23-11-2026 — Editör toolbar'ı daraltıldı
+
+Arayüz işi; dosya biçimi ve komutlar değişmedi.
+
+- Table, Roll, Image ve File düğmeleri yeniden 2x2 dizilir. 05-11 ve 06-11'de Image ile File aynı gruba eklenince
+  grubun CSS'i tek sütun/iki satır kaldığı için dört düğme alt alta dizilmiş, toolbar 98 px'ten 171 px'e uzamıştı.
+- F1–F4 küçüldü (36×26) ve yan yana tek satırda; fx formül kutusu onların altında, satır boyunca uzar.
+- Canvas düğmesi küçüldü (52×36); x ve y kutuları onun altında alt alta durur.
+- Toolbar sabit `min-width: 1232px` ve sabit sütun genişlikleri yerine bölümlerin içerik genişliğini kullanır; bölüm
+  iç boşlukları ve bölümler arası boşluk kısaldı. İçerik genişliği yaklaşık 1232 px'ten 796 px'e indi: 1366 px ve
+  1536 px genişliğindeki pencerelerde (15.6 inç dizüstü) orta paneldeki toolbar'da yatay kaydırma çubuğu çıkmaz.
+  Daha dar panelde kaydırma çubuğu yine çıkar.
+- Styles seçicisi 86 px'e sabitlendi.
+- Test: `scripts/electron-smoke-e2e.mjs` gerçek Electron'da düğmelerin yerini ölçer (2x2 veri düğmeleri, tek satır
+  F1–F4 ve altındaki formül kutusu, Canvas altında alt alta x/y, 1400 px pencerede kaydırma çubuğu yok). Eski sabit
+  genişlikleri regex ile denetleyen satırlar `tests/toolbar-refinement.test.js` ve `tests/source-invariants.test.js`
+  dosyalarından çıkarıldı ya da güncellendi.
+
 ## 23-11-2026 — Sürüm: yayın taslak olarak kalmıyor
 
 CI işi; uygulama kodu değişmedi.
