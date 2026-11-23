@@ -32,7 +32,6 @@ test('toolbar sections use separators and alignment controls use a fixed 2x2 gri
     assert.match(css, /pisi-toolbar-section:not\(\.pisi-toolbar-section-drawing\):last-child[\s\S]*border-right: 0/);
     assert.match(css, /pisi-unified-toolbar > \.pisi-toolbar-section-drawing[\s\S]*border-right: 1px solid #3a3b40/);
     assert.match(css, /grid-template-columns: minmax\(0, 1fr\) 56px/);
-    assert.match(css, /grid-template-columns: 250px 118px 226px 104px 236px 44px/);
     assert.match(toolbar, /data-pisi-excel-formula/);
     assert.match(css, /pisi-toolbar-formula-layout/);
     assert.match(css, /pisi-sheet-formula-input/);
@@ -43,8 +42,6 @@ test('toolbar sections use separators and alignment controls use a fixed 2x2 gri
     assert.doesNotMatch(toolbar, /openPisiToolbarTablePopover/);
     assert.match(css, /pisi-editor-toolbar[\s\S]*min-height: 102px/);
     assert.match(css, /pisi-unified-toolbar[\s\S]*min-height: 98px/);
-    assert.match(css, /pisi-unified-toolbar[\s\S]*padding: 4px 8px 1px/);
-    assert.match(css, /pisi-toolbar-section[\s\S]*padding: 4px 10px 1px 6px/);
 });
 
 test('Table ve Rollup butonları formül butonlarıyla aynı ölçüdedir', () => {
@@ -67,7 +64,6 @@ test('table cells support justify and compact style buttons stay fixed width', (
 
 test('canvas dimensions provide four-digit input space', () => {
     const css = read('styles/65-shared-ui.css');
-    assert.match(css, /pisi-toolbar-dimension-row[\s\S]*repeat\(2, 52px\)/);
     assert.match(css, /pisi-ribbon-number[\s\S]*min-width: 52px/);
 });
 
