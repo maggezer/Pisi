@@ -132,6 +132,7 @@ Test APK'sı Android 8.0 ve üstüne kurulur (QR okuyucu için `minSdkVersion` 2
 - [x] **Klavye:** Pisi sekmesinde "Görev ekle" alanına dokunun: alan klavyenin üstünde görünür; menü düğmesi ve tarih çarkı klavye açıkken gizlenir, klavye kapanınca geri gelir.
 - [x] Günlük alanına uzun bir metin yazın: yazılan satır klavyenin altında kalmaz.
 - [x] Uzun bir notun sonuna yazın: imleç biçim çubuğunun ve klavyenin üstünde kalır; biçim çubuğu klavyenin hemen üstündedir.
+- [ ] **Türkçe klavye (Gboard):** günlük alanına, "Görev ekle" alanına ve bir notun paragrafına `ğüşıöçİĞÜŞÖÇ` yazın: bütün harfler girer. Aynı alanlarda bir kelimeyi kaydırarak yazın: kelime girer, öneri şeridi çalışır. Bir harfe uzun basıp açılan menüden aksanlı harfi seçin: harf girer.
 - [x] Görevler sekmesinde hızlı ekle, Notlar'da arama alanı ve görev detayında başlık alanı yazılırken alt menü gizlenir, alan görünür kalır.
 - [x] **Yatay ekran:** her sekmede, notta, haritada ve Ayarlar'da telefonu yatay çevirip geri alın: yatay kaydırma oluşmaz, içerik kesilmez, kaydırılabilir.
 - [x] **Yazı boyutu:** Android yazı boyutunu %130'a (ya da en büyüğe) alın: hiçbir ekranda yatay kaydırma oluşmaz, sekme etiketleri ve düğmeler kesilmez, düğmeler parmakla rahat seçilir.
