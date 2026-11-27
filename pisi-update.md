@@ -1,5 +1,21 @@
 # PISI Güncelleme Takip Dosyası
 
+## 27-11-2026 — Mobil: logo turkuaz zeminsiz
+
+Mobil işi; dosya biçimi değişmedi.
+
+- Logo her yerde masaüstündeki gibi zeminsizdir: yalnız kâğıt üstündeki kedi (`assets/pisi.png`).
+- Uygulama ikonu: uyarlanabilir ikonun arka planı turkuaz yerine saydamdır (`@android:color/transparent`); başlatıcının
+  şeklinde duvar kâğıdının üstünde yalnız kedi görünür. Kedinin altına hafif bir gölge eklendi, krem kâğıdın kenarı açık
+  duvar kâğıdında ve açık açılış ekranında da seçilir. Eski Android ikonları (`mipmap-*/ic_launcher*.png`) da zeminsiz.
+- Açılış ekranı: kedinin arkasındaki turkuaz daire (`windowSplashScreenIconBackgroundColor`) kalktı; kedi doğrudan
+  uygulamanın arka planında durur. Kullanılmayan `ic_launcher_background` rengi silindi.
+- Bildirim: vurgu rengi turkuaz yerine uygulamanın vurgu rengi (`#D9801F`).
+- Tarayıcı favicon'u (`mobile/public/favicon.svg`) turkuaz karesiz kedidir.
+- Test: `mobile/tests/android-config.test.mjs` arka planın saydam olduğunu, açılış temasında ikon zemin rengi olmadığını,
+  bildirim rengini ve `ic_launcher_background` renginin hiçbir kaynak dosyada kalmadığını denetler.
+  `./gradlew assembleDebug testDebugUnitTest` geçer. `docs/mobile-qa.md` ikon maddesi güncellendi.
+
 ## 27-11-2026 — Mobil: hatırlatma bildirimleri
 
 Mobil ve ortak çekirdek işi; dosya biçimi değişmedi, projeye yeni dosya yazılmaz.
