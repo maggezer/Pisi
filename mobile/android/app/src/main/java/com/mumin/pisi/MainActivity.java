@@ -2,6 +2,7 @@ package com.mumin.pisi;
 
 import android.os.Bundle;
 import android.view.Window;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -15,6 +16,9 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(PisiSecretsPlugin.class);
         registerPlugin(PisiFilesPlugin.class);
         super.onCreate(savedInstanceState);
+        // Until the page draws, the WebView shows the splash screen's background (light or dark with the system), so the
+        // light theme does not flash dark on start.
+        getBridge().getWebView().setBackgroundColor(ContextCompat.getColor(this, R.color.pisi_background));
         hideNavigationBar();
     }
 

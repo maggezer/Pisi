@@ -16,7 +16,14 @@
     </style>
 
 
+    <!--
+        The splash screen: the launcher icon (the cat on its teal circle) in the middle of the app's background, light or
+        dark with the system. Android 12+ draws it from these attributes; on Android 8-11 Theme.SplashScreen draws the same.
+    -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/pisi_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

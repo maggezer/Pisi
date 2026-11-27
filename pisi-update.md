@@ -1,5 +1,25 @@
 # PISI Güncelleme Takip Dosyası
 
+## 27-11-2026 — Mobil: uygulama ikonu çerçevesiz, açılış ekranı yenilendi
+
+Mobil işi; dosya biçimi değişmedi.
+
+- İkon çerçeveliydi: manifest uyarlanabilir ikonu değil, turkuaz kareyi ve siyah köşeleri resmin içinde taşıyan
+  `drawable-nodpi/pisi_launcher.png`'yi gösteriyordu; başlatıcı bu kareyi kendi şeklinin içine koyuyordu. Manifest artık
+  `@mipmap/ic_launcher` ve `@mipmap/ic_launcher_round`'u kullanır. Ön plan katmanı masaüstü ikonundan (`assets/pisi.png`)
+  saydam zeminle yeniden üretildi; kedi her maskenin tuttuğu 66 dp'lik dairenin içinde durur, bu yüzden `inset` kalktı.
+  Android 13 temalı ikonları için tek renkli katman (`ic_launcher_monochrome`) eklendi.
+- Açılış ekranı eski "KEDI" resmini (`splash.png`, 26 dosya) gösteriyordu. Açılış teması (`AppTheme.NoActionBarLaunch`)
+  artık Android 12 API'siyle çizer: uygulamanın arka planı (açık `#FBF7F1`, koyu `#171310`, sistem temasıyla) ortasında
+  turkuaz daire üstünde aynı kedi. WebView sayfa çizilene kadar aynı rengi gösterir (`MainActivity`); Capacitor'ın
+  sabit koyu `backgroundColor`'ı kalktı, açık temada açılışta koyu parlama olmaz.
+- Kullanılmayan eski dosyalar silindi: `pisi_launcher.png`, `splash.png`'ler, `mipmap-ldpi` (eski çerçeveli ikon),
+  şablondaki Android robotu vektörleri ve kullanılmayan `ic_launcher_background.png`'ler.
+- Test: `mobile/tests/android-config.test.mjs` manifest'in, uyarlanabilir ikonun (inset yok, monochrome var, katmanlar
+  saydam) ve açılış temasının ayarlarını XML olarak okuyup denetler; açılış renkleri `app/theme.mjs`'teki tema
+  renkleriyle aynıdır; eski açılış resimleri yoktur. `./gradlew assembleDebug testDebugUnitTest` geçer, `aapt2` APK
+  ikonunun `mipmap-anydpi-v26/ic_launcher.xml` olduğunu gösterir. Cihazda kabul maddesi `docs/mobile-qa.md`'de.
+
 ## 27-11-2026 — Mobil: alttaki gezinme düğmeleri gizlenir
 
 Mobil işi; dosya biçimi değişmedi.
