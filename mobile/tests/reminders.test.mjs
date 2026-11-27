@@ -197,6 +197,20 @@ describe('hatırlatma bildirimleri: planlama', () => {
         expect(told.at(-1)).toBe(2);
     });
 
+    it('Android’in izni açılışta, planlamadan önce okunur; hatırlatmasız bir plan sonra durumu değiştirmez', async () => {
+        current = setup({ tasks: [task('task_b', 'Hatırlatmasız')] });
+        const { scheduler, tasks, notifier } = current;
+        await scheduler.ready();
+        expect(scheduler.getStatus()).toMatchObject({ permission: 'prompt', exact: null, count: 0 });
+        const told = [];
+        scheduler.subscribe((status) => told.push(status));
+        tasks.set(tasks.list);
+        await scheduler.settled();
+        expect(told).toEqual([]);
+        // Nothing to remind of: Android is not asked.
+        expect(notifier.requests()).toBe(0);
+    });
+
     it('bildirime dokununca görevin kimliği gelir; başka uygulamanın bildirimi sayılmaz', () => {
         current = setup({ tasks: [] });
         const opened = [];

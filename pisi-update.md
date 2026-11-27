@@ -1,5 +1,17 @@
 # PISI Güncelleme Takip Dosyası
 
+## 27-11-2026 — Mobil: Ayarlar hatırlatma izni yüzünden ikinci kez çizilmez
+
+Mobil işi; davranış ve dosya biçimi değişmedi.
+
+- Hatırlatma zamanlayıcısı Android'in bildirim iznini ilk planlamada (görevler okunduktan 300 ms sonra) öğreniyordu.
+  Ayarlar proje sayılarıyla çizildikten hemen sonra bir kez daha baştan çiziliyordu; yavaş CI makinesinde
+  `e2e/project.spec.mjs` "%130 yazıda" testi o arada ölçtüğü öğeyi DOM'da bulamadı. Zamanlayıcı izni artık açılışta,
+  planlamadan önce okur (`reminders.ready()`) ve proje açılışı sayıları çizmeden önce bunu bekler; Ayarlar sayılarla ve
+  izinle bir kez çizilir.
+- Test: `mobile/tests/reminders.test.mjs` (izin planlamadan önce okunur; hatırlatmasız plan durumu değiştirmez).
+  Sayfa CDP ile 8 kat yavaşlatılınca önce iki çizim, düzeltmeden sonra tek çizim görüldü.
+
 ## 27-11-2026 — Mobil: logo turkuaz zeminsiz
 
 Mobil işi; dosya biçimi değişmedi.
