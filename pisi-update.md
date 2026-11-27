@@ -1,5 +1,19 @@
 # PISI Güncelleme Takip Dosyası
 
+## 27-11-2026 — Mobil: Türkçe harfler, kaydırarak yazma ve uzun basma menüsü
+
+Mobil işi; dosya biçimi değişmedi.
+
+- Telefonda ğ, ü, ş, ı, ö, İ yazılamıyor, kaydırarak yazma ve harfe uzun basınca açılan menü çalışmıyordu. Neden
+  `mobile/capacitor.config.json`'daki `android.captureInput: true` idi: Capacitor bu ayarla WebView'e klavyenin tam
+  giriş bağlantısı yerine yalın bir `BaseInputConnection` verir. Klavyenin gönderdiği metin tuş olaylarına çevrilir,
+  sanal tuş haritasında olmayan harfler düşer, birleştirme (composition) çalışmaz. Ayar kaldırıldı; geri tuşu
+  Capacitor'ın `backButton` olayından geldiği için ona bağlı bir şey yoktu.
+- Test: `mobile/tests/android-config.test.mjs` ayarın geri gelmediğini denetler. `mobile/e2e/ime.spec.mjs` Chrome'un IME
+  girişiyle (CDP `Input.imeSetComposition`/`insertText`) kaydırarak yazılan kelimeyi ve tek tek seçilen Türkçe harfleri
+  günlüğe, "Görev ekle" alanına ve nota yazar; metnin ekranda ve dosyada olduğunu sınar. Cihazda kabul maddesi
+  `docs/mobile-qa.md` "Genel tarama"ya eklendi.
+
 ## 23-11-2026 — Editör toolbar'ı daraltıldı
 
 Arayüz işi; dosya biçimi ve komutlar değişmedi.
