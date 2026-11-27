@@ -1,5 +1,21 @@
 # PISI Güncelleme Takip Dosyası
 
+## 27-11-2026 — Mobil: alttaki gezinme düğmeleri gizlenir
+
+Mobil işi; dosya biçimi değişmedi.
+
+- Android 15'ten beri uygulama ekranın altına kadar çizilir ve alttaki gezinme düğmeleri alt menünün, biçim çubuğunun
+  ve sheet'lerin üstüne biniyordu. Kullanıcının kararıyla düğmeler artık tamamen gizlidir: `MainActivity` gezinme
+  çubuğunu `WindowInsetsControllerCompat` ile gizler, davranışı `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`'tır (alt kenardan
+  kaydırınca düğmeler bir süre içeriği oynatmadan üstte görünür, sonra kendiliğinden gizlenir). Android çubuğu odağın
+  döndüğü her an (klavye, pencere, QR okuyucu, başka uygulama) geri getirdiği için açılışta, `onResume`'da ve
+  `onWindowFocusChanged`'da yeniden gizlenir. Durum çubuğu kalır. Gizli çubuğun boşluğu (inset) olmadığından SystemBars
+  eklentisinin verdiği `--safe-area-inset-bottom` 0'dır; CSS değişmedi.
+- Capacitor'ın `SystemBars.hide` çağrısı kullanılmadı: davranışı ayarlamaz, kaydırınca açılan düğmeler kalıcı olarak
+  geri gelir ve içeriği yukarı iter.
+- Test: `./gradlew assembleDebug testDebugUnitTest` geçer. Davranış Activity'de olduğu için birim testi yok; cihazda
+  kabul maddesi `docs/mobile-qa.md` "Genel tarama"ya eklendi.
+
 ## 27-11-2026 — Mobil: Türkçe harfler, kaydırarak yazma ve uzun basma menüsü
 
 Mobil işi; dosya biçimi değişmedi.
