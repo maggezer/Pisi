@@ -74,7 +74,10 @@ export function createReminderScheduler({ notifier, tasks, preferences, getT, no
     let chain = Promise.resolve();
     let destroyed = false;
 
+    // Settings is drawn again from scratch for every change it hears of, so only a real change is told:
+    // a plan that changes nothing (the tasks changed, but not their reminders) draws nothing.
     function setStatus(patch) {
+        if (Object.entries(patch).every(([key, value]) => status[key] === value)) return;
         status = Object.freeze({ ...status, ...patch });
         for (const listener of listeners) listener(status);
     }

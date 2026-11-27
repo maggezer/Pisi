@@ -18,6 +18,9 @@ Mobil ve ortak çekirdek işi; dosya biçimi değişmedi, projeye yeni dosya yaz
   izni (Android 13+; ilk hatırlatmada bir kez sorulur, sonra buradan istenir), Android 12+ "tam zamanında" izni (yoksa
   bildirim birkaç dakika gecikebilir; satıra dokununca Android'in ayar ekranı açılır) ve planlanan hatırlatma sayısı
   ile sıradakinin zamanı. Görev ayrıntısındaki "mobilde bildirim henüz yok" notu güncellendi.
+- Zamanlayıcı durumunu yalnız gerçekten değişince bildirir. Ayarlar her bildirimde baştan çizildiği için önce her
+  planlama (ör. ilk senkron indirmesinde gelen `tasks.json`) ekranı yeniden çiziyor, açık Ayarlar'daki senkron ilerleme
+  öğesi DOM'dan düşüyordu (CI'da `sync-initial.spec.mjs` "ilk indirmede…" testi kırıldı).
 - Android: `@capacitor/local-notifications` 8.3.1 (izinler `POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`,
   `RECEIVE_BOOT_COMPLETED` eklentiden gelir), "Görev hatırlatmaları" bildirim kanalı, durum çubuğu ikonu
   `ic_stat_pisi` (tek renkli kedi).

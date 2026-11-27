@@ -175,6 +175,28 @@ describe('hatırlatma bildirimleri: planlama', () => {
         expect(notifier.scheduled().map((item) => item.exact)).toEqual([true]);
     });
 
+    it('durum yalnız gerçekten değişince bildirilir: hatırlatmayı değiştirmeyen görev değişikliği Ayarlar’ı yeniden çizdirmez', async () => {
+        current = setup({ tasks: [task('task_a', 'Rapor', { reminderAt: '2026-11-14T15:00' })] });
+        const { scheduler, tasks } = current;
+        const told = [];
+        scheduler.subscribe((status) => told.push(status.count));
+        tasks.set(tasks.list);
+        await scheduler.settled();
+        expect(told.length).toBeGreaterThan(0);
+        const before = told.length;
+
+        // A sync turn brings tasks.json again, or a task without a reminder changes: nothing to tell.
+        tasks.set([...tasks.list, task('task_b', 'Hatırlatmasız')]);
+        await scheduler.settled();
+        tasks.set(tasks.list);
+        await scheduler.settled();
+        expect(told.length).toBe(before);
+
+        tasks.set([...tasks.list, task('task_c', 'Yeni', { reminderAt: '2026-11-15T10:00' })]);
+        await scheduler.settled();
+        expect(told.at(-1)).toBe(2);
+    });
+
     it('bildirime dokununca görevin kimliği gelir; başka uygulamanın bildirimi sayılmaz', () => {
         current = setup({ tasks: [] });
         const opened = [];
