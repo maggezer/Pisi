@@ -134,6 +134,8 @@ Test APK'sı Android 8.0 ve üstüne kurulur (QR okuyucu için `minSdkVersion` 2
 - [x] Uzun bir notun sonuna yazın: imleç biçim çubuğunun ve klavyenin üstünde kalır; biçim çubuğu klavyenin hemen üstündedir.
 - [ ] **Türkçe klavye (Gboard):** günlük alanına, "Görev ekle" alanına ve bir notun paragrafına `ğüşıöçİĞÜŞÖÇ` yazın: bütün harfler girer. Aynı alanlarda bir kelimeyi kaydırarak yazın: kelime girer, öneri şeridi çalışır. Bir harfe uzun basıp açılan menüden aksanlı harfi seçin: harf girer.
 - [x] Görevler sekmesinde hızlı ekle, Notlar'da arama alanı ve görev detayında başlık alanı yazılırken alt menü gizlenir, alan görünür kalır.
+- [ ] **Gezinme düğmeleri:** uygulama açılınca alttaki geri/ana ekran/son uygulamalar düğmeleri (ya da hareket çubuğu) görünmez; alt menü, biçim çubuğu ve sheet'ler ekranın en altına kadar iner, hiçbiri kesilmez. Alt kenardan yukarı kaydırınca düğmeler bir süre uygulamanın üstünde görünür, içerik yerinden oynamaz, sonra kendiliğinden gizlenir. Klavyeyi açıp kapatınca, QR okuyucudan ve başka bir uygulamadan dönünce düğmeler yine gizlidir. Durum çubuğu (saat, pil) her zaman görünür.
+- [ ] **İkon ve açılış:** ana ekranda ve uygulama çekmecesinde Pisi ikonu başlatıcının şeklini alır (daire, yuvarlak kare): turkuaz zeminde kâğıt üstünde kedi; içinde ikinci bir kare ya da siyah köşe yoktur. Temalı ikonlar açıkken (Android 13+) ikon duvar kâğıdının renklerini alır. Uygulamayı soğuk açın: açık temada krem, koyu temada koyu zemin ortasında aynı ikon görünür; "KEDI" yazısı yoktur, açık temada arada koyu bir ekran parlamaz.
 - [x] **Yatay ekran:** her sekmede, notta, haritada ve Ayarlar'da telefonu yatay çevirip geri alın: yatay kaydırma oluşmaz, içerik kesilmez, kaydırılabilir.
 - [x] **Yazı boyutu:** Android yazı boyutunu %130'a (ya da en büyüğe) alın: hiçbir ekranda yatay kaydırma oluşmaz, sekme etiketleri ve düğmeler kesilmez, düğmeler parmakla rahat seçilir.
 - [x] **TalkBack** açıkken temel akışlar: Pisi sekmesinde gün başlığı, günlük alanı, görev onay kutusu ("… tamamla") ve "Görev ekle" okunur; menüden Notlar açılır, bir not açılıp okunur; Takvim'de bir gün tarihiyle ve işaretleriyle okunur; Ayarlar'da tema değiştirilir. Adı okunmayan ("düğme" diye geçen) bir kontrol yoktur.
@@ -213,6 +215,19 @@ Masaüstü blokları (Sheet, Paint, görsel, dosya: "Masaüstünde düzenlenir" 
 - [x] Telefonu yatay çevirin: kaydırılmamış harita yeni ekrana yeniden sığar.
 - [x] TalkBack not kartlarını başlıklarıyla okur; altında daraltılmış not olan kart "…, altında 1 gizli not" diye okunur.
 - [x] Koyu temada ve Android yazı boyutu %130'da düzen bozulmaz.
+
+### Hatırlatma bildirimleri
+
+- [ ] Uygulamayı yeni kurup bir göreve iki dakika sonrasına **Hatırlatma zamanı** verin: Android bildirim izni bir kez sorulur. İzin verin.
+- [ ] Uygulamayı arka plana alın ya da kapatın: zamanı gelince "Pisi görev hatırlatması" başlıklı, görevin adını taşıyan bildirim çıkar; durum çubuğunda Pisi'nin kedi ikonu görünür. Telefon kilitliyken de gelir.
+- [ ] Bildirime dokunun: Pisi açılır (kapalıysa açılış ekranından sonra) ve görevin ayrıntısı gelir.
+- [ ] Ayarlar → **Hatırlatmalar**: "Görev hatırlatmaları: Açık", "Hatırlatma saati: 09:00", "Bildirim izni: Verildi", "Planlanan hatırlatma" sayısı ve sıradaki hatırlatmanın zamanı görünür. "Tam zamanında" satırı görünüyorsa dokunun: Android'in "Alarmlar ve hatırlatıcılar" ekranı açılır; izin verip dönünce satır kaybolur.
+- [ ] Bir görevin bitiş gününü yarın yapıp **Hatırlatma: 1 gün önce** seçin; Ayarlar'da hatırlatma saatini 18:00 yapın: sıradaki hatırlatma bugün 18:00 olur.
+- [ ] Hatırlatması kurulu bir görevi tamamlayın ya da hatırlatmasını kaldırın: zamanı gelince bildirim çıkmaz.
+- [ ] Masaüstünde bir göreve hatırlatma kurun, telefonda senkronu bekleyin: telefonda da bildirim planlanır (Ayarlar'daki sayı artar) ve zamanı gelince iki cihazda da bildirim çıkar.
+- [ ] Ayarlar'da "Görev hatırlatmaları"nı **Kapalı** yapın: planlanan hatırlatmalar kalkar; **Açık** yapınca geri gelir.
+- [ ] Android ayarlarından Pisi'nin bildirim iznini kapatın, uygulamaya dönün: Ayarlar "Bildirim izni: Verilmedi" gösterir; izni açıp satıra dokununca "Verildi" olur.
+- [ ] Telefonu yeniden başlatın: kurulu hatırlatmalar yine zamanında gelir.
 
 ### Büyük proje (M10)
 

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The app's background (the pisi-bg token in mobile/src/ui/tokens.css): the splash screen and the WebView before the page draws. -->
+    <color name="pisi_background">#FBF7F1</color>
+</resources>

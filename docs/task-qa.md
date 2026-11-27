@@ -203,7 +203,7 @@ Ayarlar → **Proje bütünlüğü** → **Projeyi denetle**: yeni bulgu yoktur.
 
 ## 11. Hatırlatma (masaüstü)
 
-Telefonda hatırlatma bildirimi henüz yoktur ("Hatırlatma değerleri saklanır; mobilde bildirim henüz yok."); bu bölüm yalnız masaüstündedir.
+Bu bölüm masaüstünün bildirimleridir. Telefonun hatırlatma bildirimleri `docs/mobile-qa.md` "Hatırlatma bildirimleri" bölümündedir; aynı görev iki cihazda da hatırlatır.
 
 - [ ] Not A'daki bir görevin ayrıntısında **Hatırlatma**: "Belirli bir an", zaman: **iki dakika sonrası**; kaydedin. Zamanı gelince işletim sisteminin bildirimi görev başlığıyla çıkar.
 - [ ] Bildirime tıklayın: Pisi öne gelir, görevin notu açılır.

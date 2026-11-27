@@ -1,5 +1,72 @@
 # PISI Güncelleme Takip Dosyası
 
+## 27-11-2026 — Mobil: hatırlatma bildirimleri
+
+Mobil ve ortak çekirdek işi; dosya biçimi değişmedi, projeye yeni dosya yazılmaz.
+
+- Telefonda görevin hatırlatması (`reminderAt` ya da `reminderMode`) artık Android bildirimi olarak gelir; uygulama
+  kapalıyken, telefon kilitliyken ve yeniden başladıktan sonra da. Bildirim "Pisi görev hatırlatması" başlığını ve
+  görevin adını taşır; dokununca Pisi açılır ve görevin ayrıntısı gelir.
+- Hatırlatma anının kuralı masaüstünden `shared/reminder-schedule.mjs`'e taşındı (`getPisiTaskReminderTime` ve
+  yardımcıları; yeni `listPisiUpcomingReminders`). `main/functions/reminder-schedule-core.js` aynı adları oradan verir;
+  masaüstünün davranışı değişmedi. Böylece bir görev iki cihazda aynı dakikada hatırlatır.
+- `mobile/src/app/reminders.mjs`: görevler değişince (telefonda ya da senkronla), uygulama öne gelince ve ayar
+  değişince en yakın 50 hatırlatma Android'e verilir. Görev başına tek bildirim kimliği vardır; yeni an eskisinin
+  yerine geçer, biten ya da hatırlatması kalkan görevin gelecek bildirimi iptal olur, gösterilmiş bildirim çekmecede
+  kalır. Telefon kendi durumunu tutmaz; masaüstünün `.pisi/reminder-state.json`'u cihaza özel kalır ve okunmaz.
+- Ayarlar → **Hatırlatmalar**: aç/kapat, bitiş gününe göre kurulan hatırlatmaların saati (varsayılan 09:00), bildirim
+  izni (Android 13+; ilk hatırlatmada bir kez sorulur, sonra buradan istenir), Android 12+ "tam zamanında" izni (yoksa
+  bildirim birkaç dakika gecikebilir; satıra dokununca Android'in ayar ekranı açılır) ve planlanan hatırlatma sayısı
+  ile sıradakinin zamanı. Görev ayrıntısındaki "mobilde bildirim henüz yok" notu güncellendi.
+- Zamanlayıcı durumunu yalnız gerçekten değişince bildirir. Ayarlar her bildirimde baştan çizildiği için önce her
+  planlama (ör. ilk senkron indirmesinde gelen `tasks.json`) ekranı yeniden çiziyor, açık Ayarlar'daki senkron ilerleme
+  öğesi DOM'dan düşüyordu (CI'da `sync-initial.spec.mjs` "ilk indirmede…" testi kırıldı).
+- Android: `@capacitor/local-notifications` 8.3.1 (izinler `POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`,
+  `RECEIVE_BOOT_COMPLETED` eklentiden gelir), "Görev hatırlatmaları" bildirim kanalı, durum çubuğu ikonu
+  `ic_stat_pisi` (tek renkli kedi).
+- Test: `tests/shared-reminder-schedule.test.mjs` (masaüstü shared kuralını kullanır; yaklaşan hatırlatmalar),
+  `mobile/tests/reminders.test.mjs` (planlama, yeniden kurma, iptal, saat, kapatma, izin, tam zamanlı alarm, dokunma;
+  uygulamada kurulum, dokununca görev ayrıntısı, Ayarlar bölümü), `mobile/e2e/reminders.spec.mjs` (görev ayrıntısında
+  kurulan hatırlatmanın planlanması, Ayarlar, kapat/aç, dokunma). Telefonda kabul listesi `docs/mobile-qa.md`
+  "Hatırlatma bildirimleri". `docs/mobile-plan.md`, `docs/task-qa.md` §11 ve `docs/single-source-of-truth.md`
+  güncellendi.
+
+## 27-11-2026 — Mobil: uygulama ikonu çerçevesiz, açılış ekranı yenilendi
+
+Mobil işi; dosya biçimi değişmedi.
+
+- İkon çerçeveliydi: manifest uyarlanabilir ikonu değil, turkuaz kareyi ve siyah köşeleri resmin içinde taşıyan
+  `drawable-nodpi/pisi_launcher.png`'yi gösteriyordu; başlatıcı bu kareyi kendi şeklinin içine koyuyordu. Manifest artık
+  `@mipmap/ic_launcher` ve `@mipmap/ic_launcher_round`'u kullanır. Ön plan katmanı masaüstü ikonundan (`assets/pisi.png`)
+  saydam zeminle yeniden üretildi; kedi her maskenin tuttuğu 66 dp'lik dairenin içinde durur, bu yüzden `inset` kalktı.
+  Android 13 temalı ikonları için tek renkli katman (`ic_launcher_monochrome`) eklendi.
+- Açılış ekranı eski "KEDI" resmini (`splash.png`, 26 dosya) gösteriyordu. Açılış teması (`AppTheme.NoActionBarLaunch`)
+  artık Android 12 API'siyle çizer: uygulamanın arka planı (açık `#FBF7F1`, koyu `#171310`, sistem temasıyla) ortasında
+  turkuaz daire üstünde aynı kedi. WebView sayfa çizilene kadar aynı rengi gösterir (`MainActivity`); Capacitor'ın
+  sabit koyu `backgroundColor`'ı kalktı, açık temada açılışta koyu parlama olmaz.
+- Kullanılmayan eski dosyalar silindi: `pisi_launcher.png`, `splash.png`'ler, `mipmap-ldpi` (eski çerçeveli ikon),
+  şablondaki Android robotu vektörleri ve kullanılmayan `ic_launcher_background.png`'ler.
+- Test: `mobile/tests/android-config.test.mjs` manifest'in, uyarlanabilir ikonun (inset yok, monochrome var, katmanlar
+  saydam) ve açılış temasının ayarlarını XML olarak okuyup denetler; açılış renkleri `app/theme.mjs`'teki tema
+  renkleriyle aynıdır; eski açılış resimleri yoktur. `./gradlew assembleDebug testDebugUnitTest` geçer, `aapt2` APK
+  ikonunun `mipmap-anydpi-v26/ic_launcher.xml` olduğunu gösterir. Cihazda kabul maddesi `docs/mobile-qa.md`'de.
+
+## 27-11-2026 — Mobil: alttaki gezinme düğmeleri gizlenir
+
+Mobil işi; dosya biçimi değişmedi.
+
+- Android 15'ten beri uygulama ekranın altına kadar çizilir ve alttaki gezinme düğmeleri alt menünün, biçim çubuğunun
+  ve sheet'lerin üstüne biniyordu. Kullanıcının kararıyla düğmeler artık tamamen gizlidir: `MainActivity` gezinme
+  çubuğunu `WindowInsetsControllerCompat` ile gizler, davranışı `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`'tır (alt kenardan
+  kaydırınca düğmeler bir süre içeriği oynatmadan üstte görünür, sonra kendiliğinden gizlenir). Android çubuğu odağın
+  döndüğü her an (klavye, pencere, QR okuyucu, başka uygulama) geri getirdiği için açılışta, `onResume`'da ve
+  `onWindowFocusChanged`'da yeniden gizlenir. Durum çubuğu kalır. Gizli çubuğun boşluğu (inset) olmadığından SystemBars
+  eklentisinin verdiği `--safe-area-inset-bottom` 0'dır; CSS değişmedi.
+- Capacitor'ın `SystemBars.hide` çağrısı kullanılmadı: davranışı ayarlamaz, kaydırınca açılan düğmeler kalıcı olarak
+  geri gelir ve içeriği yukarı iter.
+- Test: `./gradlew assembleDebug testDebugUnitTest` geçer. Davranış Activity'de olduğu için birim testi yok; cihazda
+  kabul maddesi `docs/mobile-qa.md` "Genel tarama"ya eklendi.
+
 ## 27-11-2026 — Mobil: Türkçe harfler, kaydırarak yazma ve uzun basma menüsü
 
 Mobil işi; dosya biçimi değişmedi.

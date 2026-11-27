@@ -4,7 +4,9 @@ import { addSampleMap } from './data/sample-map.mjs';
 import { loadSampleProject } from './data/sample-project.mjs';
 import { createCapacitorFsDriver } from './platform/capacitor-fs-driver.mjs';
 import { createCapacitorPlatform } from './platform/capacitor-platform.mjs';
+import { createMemoryNotifier } from './app/memory-notifier.mjs';
 import { createFileOpener } from './platform/file-opener.mjs';
+import { createNotifier } from './platform/notifications.mjs';
 import { createQrScanner } from './platform/qr-scanner.mjs';
 import { createSecrets } from './platform/secrets.mjs';
 import { createSyncCodec } from './sync/codec.mjs';
@@ -40,10 +42,17 @@ if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('gall
     const project = createProject({ driver: createCapacitorFsDriver(), makeUuid: () => window.crypto.randomUUID(), onError });
     // Debug builds only: a stand-in for another device, so tests can change files "from outside" (docs/sync-plan.md S4).
     const fileOpener = createFileOpener();
+    // Task reminders: Android's notifications; a debug build in a browser keeps them in memory for the tests.
+    const notifier = createNotifier() ?? (developer ? createMemoryNotifier() : null);
     if (developer) {
         void import('./data/external-source.mjs').then(({ createExternalSource }) => {
             // `openedFiles()`: the attachments a browser build was asked to open (nothing opens there, S6).
-            window.pisiDeveloper = Object.freeze({ external: createExternalSource(project), openedFiles: () => [...(fileOpener.opened ?? [])] });
+            window.pisiDeveloper = Object.freeze({
+                external: createExternalSource(project),
+                openedFiles: () => [...(fileOpener.opened ?? [])],
+                // The memory notifier of a browser build: what is scheduled, and a tap on a notification.
+                notifications: notifier?.scheduled ? notifier : null
+            });
         });
     }
     const platform = createCapacitorPlatform();
@@ -74,6 +83,7 @@ if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('gall
         sync,
         qrScanner: createQrScanner(),
         fileOpener,
+        notifier,
         project,
         loadSample: developer ? loadSampleProject : null,
         loadSampleMap: developer ? addSampleMap : null,

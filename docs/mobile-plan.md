@@ -426,7 +426,7 @@ Her faz: amaç → yapılacaklar → kabul kriterleri. Madde kimlikleri PR'larda
 
 1. **Görünümler:** Bugün (**varsayılan**), Yaklaşan, Gecikmiş, Gelen kutusu (tarihsiz), Tamamlanan. Sayılar çiplerde gösterilir. Çipler ekrana sığmazsa yatay kaydırılır ve kenarda bir solma efektiyle bunun ipucu verilir (G14).
 2. **Görev satırı:** M5'teki bileşen kullanılır.
-3. **Görev detayı (bottom sheet):** başlık, durum (5 durum), öncelik (1–5), `dueDate`, `scheduledAt` (saat), `reminderAt` ve `reminderMode` (yalnız değer olarak saklanır, bildirim MVP'de yok), tekrar ve kaynak not bağlantısı (dokununca not açılır).
+3. **Görev detayı (bottom sheet):** başlık, durum (5 durum), öncelik (1–5), `dueDate`, `scheduledAt` (saat), `reminderAt` ve `reminderMode` (MVP'de yalnız değer olarak saklanıyordu; 27-11-2026'dan beri telefonda bildirim olarak gelir, aşağıdaki "Hatırlatma bildirimleri"), tekrar ve kaynak not bağlantısı (dokununca not açılır).
 4. **Hızlı ekle:**
     - Üstte bir giriş alanı bulunur.
     - Masaüstüyle aynı ayrıştırıcı kullanılır.
@@ -572,7 +572,7 @@ Aşağıdakiler MVP'ye girmez. Her biri ayrı bir karar ve ayrı bir plan gerekt
 - Harita düzenleme.
 - Not içinde görev bloğu oluşturma.
 - Wiki-link oluşturma (yalnız açma var).
-- Bildirimler ve hatırlatma zamanlaması.
+- Bildirimler ve hatırlatma zamanlaması. (MVP'den sonra yapıldı: 27-11-2026, `mobile/src/app/reminders.mjs`.)
 - Sürüm geçmişi arayüzü, çöp kutusu arayüzü, Bases/özellik görünümleri, dışa aktarma.
 - iOS, Play Store yayını, tablet için özel düzen. Tablet MVP'de telefon düzeniyle çalışır, bozulmaması yeterlidir.
 
