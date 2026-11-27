@@ -9,6 +9,10 @@
         },
         "SystemBars": {
             "insetsHandling": "css"
+        },
+        "LocalNotifications": {
+            "smallIcon": "ic_stat_pisi",
+            "iconColor": "#00B5BD"
         }
     },
     "android": {

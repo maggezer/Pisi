@@ -12,6 +12,7 @@ import { createNoteScreen } from '../screens/notes/note.mjs';
 import { createAttachments } from '../sync/attachments.mjs';
 import { createPisiScreen } from '../screens/pisi/index.mjs';
 import { renderSettingsScreen } from '../screens/settings/index.mjs';
+import { renderRemindersSheet } from '../screens/settings/reminders-section.mjs';
 import { renderConflictRows } from '../screens/settings/sync-section.mjs';
 import { createSyncPairScreen } from '../screens/sync/pair.mjs';
 import { createTasksScreen } from '../screens/tasks/index.mjs';
@@ -24,6 +25,7 @@ import { createSnackbarController, renderSnackbar } from '../ui/snackbar.mjs';
 import { watchExternalChanges } from './external-changes.mjs';
 import { createLifecycle } from './lifecycle.mjs';
 import { PISI_THEME_PREFERENCES, createPreferences } from './preferences.mjs';
+import { createReminderScheduler } from './reminders.mjs';
 import { PISI_HOME_TAB, PISI_TABS, createRouter } from './router.mjs';
 import { PISI_THEME_BACKGROUNDS, resolveTheme } from './theme.mjs';
 
@@ -36,6 +38,7 @@ import { PISI_THEME_BACKGROUNDS, resolveTheme } from './theme.mjs';
  * sync service (sync/sync-service.mjs) and `qrScanner` the camera's QR reader
  * (null in a browser); without `sync` Settings has no sync section.
  * `fileOpener` (platform/file-opener.mjs) opens a note's file attachment in another app.
+ * `notifier` (platform/notifications.mjs) shows task reminders as notifications; null where there are none.
  */
 export function createApp({
     root,
@@ -50,6 +53,7 @@ export function createApp({
     sync = null,
     qrScanner = null,
     fileOpener = null,
+    notifier = null,
     now = () => new Date(),
     onError = () => {}
 }) {
@@ -78,6 +82,17 @@ export function createApp({
 
     // One task list for both tabs that show tasks, and the task sheets either of them opens.
     const tasks = createTaskController({ project, platform, snackbar, now, getT: () => i18n.t, onError });
+    // Task reminders as notifications (app/reminders.mjs), planned again whenever the tasks change.
+    const reminders = createReminderScheduler({
+        notifier,
+        tasks,
+        preferences,
+        getT: () => i18n.t,
+        now,
+        setTimer: (callback, delay) => view.setTimeout(callback, delay),
+        clearTimer: (timer) => view.clearTimeout(timer),
+        onError
+    });
     const taskSheets = createTaskSheets({
         tasks,
         getContext: () => ({ t: i18n.t, locale: i18n.locale, today }),
@@ -194,6 +209,14 @@ export function createApp({
         closeOverlay();
         const result = await sync.rejoin();
         if (result?.ok) snackbar.show({ message: i18n.t('sync.rejoined') });
+    }
+
+    /** A tapped reminder opens its task, once the project is open; a task deleted since then is said so. */
+    async function openReminder(taskId) {
+        await ready;
+        if (destroyed) return;
+        if (tasks.find(taskId)) navigate(() => taskSheets.open(taskId));
+        else snackbar.show({ message: i18n.t('reminders.taskMissing') });
     }
 
     // What the sync service reports: Settings is drawn again; events the user must know of become a snackbar.
@@ -324,10 +347,27 @@ export function createApp({
                     preferences.setLanguage(value);
                     i18n = createI18n(value);
                     applyLanguage();
+                    // The notifications already scheduled take the new language.
+                    reminders.refresh();
                     closeOverlay();
                 }
             });
         }
+        const reminderSheet = renderRemindersSheet({
+            overlay,
+            t: i18n.t,
+            status: reminders.getStatus(),
+            onClose: closeOverlay,
+            onSetEnabled(enabled) {
+                closeOverlay();
+                void reminders.setEnabled(enabled);
+            },
+            onSetTime(time) {
+                closeOverlay();
+                void reminders.setDefaultTime(time);
+            }
+        });
+        if (reminderSheet) return reminderSheet;
         // The Notes tab is always asked, so that it lets go of its sheet once that has closed.
         const notesSheet = notesScreen.renderOverlay(overlay);
         return taskSheets.renderOverlay(overlay, state.overlays, render) ?? tasksScreen.renderOverlay(overlay) ?? notesSheet ?? pisi.renderOverlay(overlay);
@@ -416,7 +456,13 @@ export function createApp({
                       onUnpair: () => router.openOverlay('sync-unpair'),
                       onRejoin: () => router.openOverlay('sync-rejoin')
                   }
-                : null
+                : null,
+            reminders: {
+                status: reminders.getStatus(),
+                openOverlay: router.openOverlay,
+                onRequestPermission: () => void reminders.requestPermission(),
+                onOpenExactAlarms: () => void reminders.openExactAlarmSettings()
+            }
         });
         root.replaceChildren(renderShell({ ...chrome, title: i18n.t('screen.settings'), inSubScreen: true, body, sheet, snackbar: snack }));
 
@@ -439,6 +485,8 @@ export function createApp({
     function handleResume() {
         applyTheme();
         sync?.handleResume();
+        // Time has passed and the permission may have been changed in Android's settings.
+        reminders.refresh();
         // Midnight may have passed in the background. The selected day stays; what counts as today moves on.
         const current = getPisiTodayIsoDate(now());
         if (current === today) return;
@@ -466,6 +514,8 @@ export function createApp({
         router.subscribe(render),
         // The task sheets show a task as it is stored; they are drawn again when the tasks change.
         tasks.subscribe(() => !destroyed && render()),
+        reminders.subscribe(() => !destroyed && settingsShown() && render()),
+        reminders.onOpen((taskId) => void openReminder(taskId).catch(onError)),
         systemTheme.subscribe(applyTheme),
         platform.onBackButton(handleBack),
         platform.onPause(() => lifecycle.flush()),
@@ -494,6 +544,8 @@ export function createApp({
         handleBack,
         /** Resolves when the project has been opened and counted (or opening failed). */
         ready,
+        /** Resolves when the reminders asked for so far have been planned. */
+        remindersSettled: () => reminders.settled(),
         /** Resolves when every change from outside seen so far is on screen. */
         whenExternalSettled: () => external?.settled() ?? Promise.resolve(),
         destroy() {
@@ -507,6 +559,7 @@ export function createApp({
             mapsScreen.destroy();
             mapViewer.destroy();
             pairScreen?.destroy();
+            reminders.destroy();
             tasks.destroy();
             for (const stop of stops) stop?.();
             root.replaceChildren();

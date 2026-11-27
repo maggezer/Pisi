@@ -300,7 +300,9 @@ describe('Görev detayı', () => {
             'Hatırlatma yok'
         ]);
         expect([$('[data-task-input="time"]').value, $('[data-task-input="reminderAt"]').value]).toEqual(['07:30', '']);
-        expect($('[data-task-note]').textContent).toBe('Hatırlatma değerleri saklanır; mobilde bildirim henüz yok.');
+        expect($('[data-task-note]').textContent).toBe(
+            "Hatırlatma zamanı gelince bu telefonda ve masaüstünde bildirim çıkar. Bitiş gününe göre olanların saati Ayarlar'dadır."
+        );
         // There is no "deadline" any more (§3.1); the place is the day's diary.
         expect($('[data-task-field="deadline"]')).toBe(null);
         expect(rowValue('place')).toBe('Günlük · Cumartesi, 14 Kasım');

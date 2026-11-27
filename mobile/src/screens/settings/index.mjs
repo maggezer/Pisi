@@ -1,10 +1,12 @@
 // Settings (docs/mobile-plan.md M10): theme and language, what is in the
 // project and whether every file could be read, sync with the desktop
-// (docs/sync-plan.md S5, sync-section.mjs), the app version and, in debug
-// builds, the developer section.
+// (docs/sync-plan.md S5, sync-section.mjs), task reminders
+// (reminders-section.mjs), the app version and, in debug builds, the
+// developer section.
 
 import { h } from '../../ui/dom.mjs';
 import { renderList, renderListRow } from '../../ui/list.mjs';
+import { renderRemindersSection } from './reminders-section.mjs';
 import { renderSyncSection } from './sync-section.mjs';
 
 /** The version line: `0.1.0`, or `0.1.0 (42)` when the build carries the APK's version code; a dash when unknown. */
@@ -87,7 +89,8 @@ export function renderSettingsScreen({
     onLoadSample = null,
     onLoadSampleMap = null,
     locale = 'tr-TR',
-    sync = null
+    sync = null,
+    reminders = null
 }) {
     const row = (id, value) => renderListRow({ title: t(`settings.${id}`), value, chevron: true, dataset: { setting: id }, onClick: () => openOverlay(id) });
     const sections = [
@@ -95,6 +98,7 @@ export function renderSettingsScreen({
     ];
     if (project) sections.push(...renderProjectSection({ t, project }));
     if (sync) sections.push(...renderSyncSection({ t, locale, ...sync }));
+    if (reminders) sections.push(...renderRemindersSection({ t, locale, ...reminders }));
     sections.push(...renderAboutSection({ t, version }));
     if (developer && project) sections.push(...renderDeveloperSection({ t, onLoadSample, onLoadSampleMap }));
     return h('section', { class: 'pisi-screen', dataset: { screen: 'settings' } }, sections);

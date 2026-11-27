@@ -1,61 +1,25 @@
 // Pure reminder rules shared by the main-process reminder service and its
 // tests. No Electron, no filesystem.
 //
-// One model: every reminder resolves to a single instant.
-// - An explicit task.reminderAt ("YYYY-MM-DDTHH:MM", local time) wins.
-// - Otherwise a relative reminderMode (due-morning, day-before,
-//   three-days-before) is derived from task.dueDate at the user's default
-//   reminder time. It is derived on every plan, never written back, so a new
-//   due date or default time moves the reminder without stale data.
-// Presentation state (shown, pending, snoozed) lives in .pisi/reminder-state.json.
+// When a reminder comes is decided in shared/reminder-schedule.mjs, which the
+// phone uses too; this file keeps the desktop's own part: the single timer and
+// the presentation state (shown, pending, snoozed) in .pisi/reminder-state.json.
+
+import {
+    PISI_REMINDER_DEFAULT_TIME,
+    PISI_REMINDER_RELATIVE_DAYS,
+    getPisiReminderKey,
+    getPisiTaskReminderTime,
+    normalizePisiReminderTimeOfDay,
+    parsePisiLocalDateTime
+} from '../../shared/reminder-schedule.mjs';
 
 const PISI_REMINDER_STATE_VERSION = 1;
-const PISI_REMINDER_DEFAULT_TIME = '09:00';
 const PISI_REMINDER_SNOOZE_MINUTES = 10;
 // The single timer never waits longer than this, so a changed system clock or
 // a long sleep is picked up on the next wake and setTimeout's 24.8-day limit is
 // never reached.
 const PISI_REMINDER_MAX_WAIT_MS = 15 * 60 * 1000;
-const PISI_REMINDER_RELATIVE_DAYS = Object.freeze({ 'due-morning': 0, 'day-before': 1, 'three-days-before': 3 });
-
-function normalizePisiReminderTimeOfDay(value) {
-    const match = String(value || '').match(/^([01]\d|2[0-3]):([0-5]\d)$/);
-    return match ? `${match[1]}:${match[2]}` : PISI_REMINDER_DEFAULT_TIME;
-}
-
-function parsePisiLocalDateTime(value) {
-    const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})(?:T([01]\d|2[0-3]):([0-5]\d))?$/);
-    if (!match) return null;
-    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4] || 0), Number(match[5] || 0), 0, 0);
-    if (date.getFullYear() !== Number(match[1]) || date.getMonth() !== Number(match[2]) - 1 || date.getDate() !== Number(match[3])) return null;
-    return date;
-}
-
-function isPisiReminderTaskOpen(task) {
-    return Boolean(task && typeof task === 'object' && task.status !== 'done' && !task.completedAt && task.completed !== true);
-}
-
-/**
- * Returns the reminder instant (ms since epoch) of a canonical task, or null.
- * @param {any} task
- * @param {{ defaultTime?: string }} [options]
- */
-function getPisiTaskReminderTime(task, options = {}) {
-    if (!isPisiReminderTaskOpen(task)) return null;
-    const explicit = parsePisiLocalDateTime(task.reminderAt);
-    if (explicit && /T/.test(String(task.reminderAt))) return explicit.getTime();
-    const offset = PISI_REMINDER_RELATIVE_DAYS[String(task.reminderMode || '').toLowerCase()];
-    if (offset === undefined) return null;
-    const due = parsePisiLocalDateTime(String(task.dueDate || '').slice(0, 10));
-    if (!due) return null;
-    const [hours, minutes] = normalizePisiReminderTimeOfDay(options.defaultTime).split(':').map(Number);
-    // Calendar arithmetic in local time keeps the wall-clock hour across DST changes.
-    return new Date(due.getFullYear(), due.getMonth(), due.getDate() - offset, hours, minutes, 0, 0).getTime();
-}
-
-function getPisiReminderKey(taskId, time) {
-    return `${taskId}@${new Date(time).toISOString()}`;
-}
 
 function normalizePisiReminderEntry(value) {
     if (!value || typeof value !== 'object') return null;
