@@ -23,7 +23,7 @@ describe('Android yapılandırması', () => {
         expect(config.android?.captureInput).toBeUndefined();
     });
 
-    it('uygulama ikonu uyarlanabilir ikondur: başlatıcı kendi şeklini verir, resmin içinde çerçeve yoktur', () => {
+    it('uygulama ikonu uyarlanabilir ikondur ve zeminsizdir: başlatıcının şeklinde yalnız kedi, resmin içinde çerçeve yoktur', () => {
         const application = xml('android/app/src/main/AndroidManifest.xml').querySelector('application');
         expect(attr(application, 'icon')).toBe('@mipmap/ic_launcher');
         expect(attr(application, 'roundIcon')).toBe('@mipmap/ic_launcher_round');
@@ -31,7 +31,8 @@ describe('Android yapılandırması', () => {
         for (const name of ['ic_launcher', 'ic_launcher_round']) {
             const icon = xml(`android/app/src/main/res/mipmap-anydpi-v26/${name}.xml`).documentElement;
             expect(icon.tagName).toBe('adaptive-icon');
-            expect(attr(icon.querySelector('background'), 'drawable')).toBe('@color/ic_launcher_background');
+            // No coloured background of its own: the wallpaper shows around the cat.
+            expect(attr(icon.querySelector('background'), 'drawable')).toBe('@android:color/transparent');
             // The foreground is drawn to fit the launcher's safe zone itself; an inset would only shrink the cat.
             expect(icon.querySelector('foreground > *')).toBeNull();
             expect(attr(icon.querySelector('foreground'), 'drawable')).toBe('@mipmap/ic_launcher_foreground');
@@ -47,7 +48,7 @@ describe('Android yapılandırması', () => {
         }
     });
 
-    it('açılış ekranı Android 12 API ile çizilir: uygulamanın arka planında ikon; eski açılış resimleri yok', () => {
+    it('açılış ekranı Android 12 API ile çizilir: uygulamanın arka planında zeminsiz kedi; eski açılış resimleri yok', () => {
         const launch = [...xml('android/app/src/main/res/values/styles.xml').querySelectorAll('style')].find(
             (style) => style.getAttribute('name') === 'AppTheme.NoActionBarLaunch'
         );
@@ -56,7 +57,6 @@ describe('Android yapılandırması', () => {
         expect(items).toEqual({
             windowSplashScreenBackground: '@color/pisi_background',
             windowSplashScreenAnimatedIcon: '@mipmap/ic_launcher_foreground',
-            windowSplashScreenIconBackgroundColor: '@color/ic_launcher_background',
             postSplashScreenTheme: '@style/AppTheme.NoActionBar'
         });
 
@@ -70,5 +70,14 @@ describe('Android yapılandırması', () => {
 
         const pictures = fs.readdirSync(res, { recursive: true }).filter((file) => /(^|\/)(splash|pisi_launcher)\.png$/.test(file));
         expect(pictures).toEqual([]);
+    });
+
+    it('bildirimin rengi uygulamanın vurgu rengidir; eski turkuaz zemin rengi hiçbir yerde kalmaz', () => {
+        expect(config.plugins.LocalNotifications).toEqual({ smallIcon: 'ic_stat_pisi', iconColor: '#D9801F' });
+        const colours = fs
+            .readdirSync(res, { recursive: true })
+            .filter((file) => file.endsWith('.xml'))
+            .flatMap((file) => [...xml(`android/app/src/main/res/${file}`).querySelectorAll('color')].map((item) => item.getAttribute('name')));
+        expect(colours).not.toContain('ic_launcher_background');
     });
 });

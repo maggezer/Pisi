@@ -143,8 +143,19 @@ export function createReminderScheduler({ notifier, tasks, preferences, getT, no
 
     const stopTasks = tasks.subscribe(refresh);
 
+    // What Android allows is read once at the start, before any plan, so that Settings shows it from its first
+    // drawing with the project and a plan that changes nothing else draws nothing again.
+    async function readAllowed() {
+        const permission = await notifier.permission();
+        setStatus({ permission, exact: permission === 'granted' ? await notifier.exactAlarm() : null });
+    }
+    chain = notifier ? chain.then(readAllowed).catch(onError) : chain;
+    const ready = chain;
+
     return {
         getStatus: () => status,
+        /** Resolves when what Android allows has been read (the status has `permission`). */
+        ready: () => ready,
         subscribe(listener) {
             listeners.add(listener);
             return () => listeners.delete(listener);

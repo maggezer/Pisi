@@ -1,5 +1,33 @@
 # PISI Güncelleme Takip Dosyası
 
+## 27-11-2026 — Mobil: Ayarlar hatırlatma izni yüzünden ikinci kez çizilmez
+
+Mobil işi; davranış ve dosya biçimi değişmedi.
+
+- Hatırlatma zamanlayıcısı Android'in bildirim iznini ilk planlamada (görevler okunduktan 300 ms sonra) öğreniyordu.
+  Ayarlar proje sayılarıyla çizildikten hemen sonra bir kez daha baştan çiziliyordu; yavaş CI makinesinde
+  `e2e/project.spec.mjs` "%130 yazıda" testi o arada ölçtüğü öğeyi DOM'da bulamadı. Zamanlayıcı izni artık açılışta,
+  planlamadan önce okur (`reminders.ready()`) ve proje açılışı sayıları çizmeden önce bunu bekler; Ayarlar sayılarla ve
+  izinle bir kez çizilir.
+- Test: `mobile/tests/reminders.test.mjs` (izin planlamadan önce okunur; hatırlatmasız plan durumu değiştirmez).
+  Sayfa CDP ile 8 kat yavaşlatılınca önce iki çizim, düzeltmeden sonra tek çizim görüldü.
+
+## 27-11-2026 — Mobil: logo turkuaz zeminsiz
+
+Mobil işi; dosya biçimi değişmedi.
+
+- Logo her yerde masaüstündeki gibi zeminsizdir: yalnız kâğıt üstündeki kedi (`assets/pisi.png`).
+- Uygulama ikonu: uyarlanabilir ikonun arka planı turkuaz yerine saydamdır (`@android:color/transparent`); başlatıcının
+  şeklinde duvar kâğıdının üstünde yalnız kedi görünür. Kedinin altına hafif bir gölge eklendi, krem kâğıdın kenarı açık
+  duvar kâğıdında ve açık açılış ekranında da seçilir. Eski Android ikonları (`mipmap-*/ic_launcher*.png`) da zeminsiz.
+- Açılış ekranı: kedinin arkasındaki turkuaz daire (`windowSplashScreenIconBackgroundColor`) kalktı; kedi doğrudan
+  uygulamanın arka planında durur. Kullanılmayan `ic_launcher_background` rengi silindi.
+- Bildirim: vurgu rengi turkuaz yerine uygulamanın vurgu rengi (`#D9801F`).
+- Tarayıcı favicon'u (`mobile/public/favicon.svg`) turkuaz karesiz kedidir.
+- Test: `mobile/tests/android-config.test.mjs` arka planın saydam olduğunu, açılış temasında ikon zemin rengi olmadığını,
+  bildirim rengini ve `ic_launcher_background` renginin hiçbir kaynak dosyada kalmadığını denetler.
+  `./gradlew assembleDebug testDebugUnitTest` geçer. `docs/mobile-qa.md` ikon maddesi güncellendi.
+
 ## 27-11-2026 — Mobil: hatırlatma bildirimleri
 
 Mobil ve ortak çekirdek işi; dosya biçimi değişmedi, projeye yeni dosya yazılmaz.

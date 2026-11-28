@@ -184,7 +184,7 @@ export function createApp({
         try {
             await project.open();
             // The start screen reads its own two files and shows them before the whole project has been walked (M5).
-            await Promise.all([tasks.reload(), pisi.load(), calendarScreen.reload()]);
+            await Promise.all([tasks.reload(), pisi.load(), reminders.ready(), calendarScreen.reload()]);
             await refreshProject();
             // A file that cannot be read is never overwritten; the user is told (rule V7).
             if (projectState.readOnlyFiles.length) snackbar.show({ message: i18n.t('project.readOnlyNotice', { count: projectState.readOnlyFiles.length }) });

@@ -12,7 +12,7 @@
         },
         "LocalNotifications": {
             "smallIcon": "ic_stat_pisi",
-            "iconColor": "#00B5BD"
+            "iconColor": "#D9801F"
         }
     },
     "android": {
